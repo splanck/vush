@@ -17,6 +17,7 @@ and a few built-in commands.
 - Command chaining with `;`, `&&`, and `||`
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`
 - Persistent command history saved to `~/.vush_history`
+- Arrow-key command line editing with history recall
 - Prompt string configurable via the `PS1` environment variable
 
 ## Building

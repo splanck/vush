@@ -1,0 +1,31 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo foo\r"
+expect {
+    -re "[\r\n]+foo[\r\n]+vush> " {}
+    timeout { send_user "echo foo failed\n"; exit 1 }
+}
+send "echo bar\r"
+expect {
+    -re "[\r\n]+bar[\r\n]+vush> " {}
+    timeout { send_user "echo bar failed\n"; exit 1 }
+}
+# Recall 'echo foo' using up arrow twice
+send "\033[A"
+send "\033[A"
+send "\r"
+expect {
+    -re "[\r\n]+foo[\r\n]+vush> " {}
+    timeout { send_user "history recall up failed\n"; exit 1 }
+}
+# Recall 'echo bar' using down arrow
+send "\033[B"
+send "\r"
+expect {
+    -re "[\r\n]+bar[\r\n]+vush> " {}
+    timeout { send_user "history recall down failed\n"; exit 1 }
+}
+send "exit\r"
+expect eof
