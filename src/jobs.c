@@ -61,3 +61,20 @@ void print_jobs(void) {
     }
 }
 
+int wait_job(int id) {
+    Job **curr = &jobs;
+    while (*curr) {
+        if ((*curr)->id == id) {
+            int status;
+            waitpid((*curr)->pid, &status, 0);
+            Job *tmp = *curr;
+            *curr = (*curr)->next;
+            free(tmp);
+            return 0;
+        }
+        curr = &((*curr)->next);
+    }
+    fprintf(stderr, "fg: job %d not found\n", id);
+    return -1;
+}
+
