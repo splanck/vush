@@ -42,7 +42,9 @@ int main(int argc, char **argv) {
     while (1) {
         check_jobs();
         if (interactive) {
-            printf("vush> ");
+            const char *prompt = getenv("PS1");
+            if (!prompt) prompt = "vush> ";
+            printf("%s", prompt);
             fflush(stdout);
         }
         if (!fgets(line, sizeof(line), input)) break;
