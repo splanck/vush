@@ -13,10 +13,12 @@ typedef struct HistEntry {
     int id;
     char cmd[MAX_LINE];
     struct HistEntry *next;
+    struct HistEntry *prev;
 } HistEntry;
 
 static HistEntry *head = NULL;
 static HistEntry *tail = NULL;
+static HistEntry *cursor = NULL;
 static int next_id = 1;
 
 static void add_history_entry(const char *cmd, int save_file) {
@@ -27,9 +29,11 @@ static void add_history_entry(const char *cmd, int save_file) {
     e->cmd[MAX_LINE - 1] = '\0';
     e->next = NULL;
     if (!head) {
+        e->prev = NULL;
         head = tail = e;
     } else {
         tail->next = e;
+        e->prev = tail;
         tail = e;
     }
 
@@ -74,5 +78,29 @@ void load_history(void) {
         add_history_entry(line, 0);
     }
     fclose(f);
+}
+
+const char *history_prev(void) {
+    if (!tail)
+        return NULL;
+    if (!cursor)
+        cursor = tail;
+    else if (cursor->prev)
+        cursor = cursor->prev;
+    return cursor ? cursor->cmd : NULL;
+}
+
+const char *history_next(void) {
+    if (!cursor)
+        return NULL;
+    if (cursor->next)
+        cursor = cursor->next;
+    else
+        cursor = NULL;
+    return cursor ? cursor->cmd : NULL;
+}
+
+void history_reset_cursor(void) {
+    cursor = NULL;
 }
 

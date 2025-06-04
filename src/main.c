@@ -17,11 +17,13 @@
 #include "builtins.h"
 #include "execute.h"
 #include "history.h"
+#include "lineedit.h"
 
 int last_status = 0;
 
 int main(int argc, char **argv) {
-    char line[MAX_LINE];
+    char linebuf[MAX_LINE];
+    char *line;
 
     FILE *input = stdin;
     if (argc > 1) {
@@ -44,12 +46,15 @@ int main(int argc, char **argv) {
         if (interactive) {
             const char *prompt = getenv("PS1");
             if (!prompt) prompt = "vush> ";
-            printf("%s", prompt);
-            fflush(stdout);
+            history_reset_cursor();
+            line = line_edit(prompt);
+            if (!line) break;
+        } else {
+            if (!fgets(linebuf, sizeof(linebuf), input)) break;
+            size_t len = strlen(linebuf);
+            if (len && linebuf[len-1] == '\n') linebuf[len-1] = '\0';
+            line = linebuf;
         }
-        if (!fgets(line, sizeof(line), input)) break;
-        size_t len = strlen(line);
-        if (len && line[len-1] == '\n') line[len-1] = '\0';
         Command *cmds = parse_line(line);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);
@@ -71,6 +76,8 @@ int main(int argc, char **argv) {
             prev = c->op;
         }
         free_commands(cmds);
+        if (line != linebuf)
+            free(line);
     }
     if (input != stdin)
         fclose(input);
