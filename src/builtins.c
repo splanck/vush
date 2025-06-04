@@ -35,6 +35,17 @@ static int builtin_jobs(char **args) {
     return 1;
 }
 
+static int builtin_help(char **args) {
+    (void)args;
+    printf("Built-in commands:\n");
+    printf("  cd [dir]   Change the current directory\n");
+    printf("  exit       Exit the shell\n");
+    printf("  pwd        Print the current working directory\n");
+    printf("  jobs       List running background jobs\n");
+    printf("  help       Display this help message\n");
+    return 1;
+}
+
 struct builtin {
     const char *name;
     int (*func)(char **);
@@ -45,6 +56,7 @@ static struct builtin builtins[] = {
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
+    {"help", builtin_help},
     {NULL, NULL}
 };
 

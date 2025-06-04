@@ -7,7 +7,7 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
-- Built-in commands: `cd`, `exit`, `pwd`, and `jobs`
+- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, and `help`
 - Environment variable expansion for tokens beginning with `$`
 - Background job management using `&`
 
@@ -60,6 +60,7 @@ $HOME
 - `exit` - terminate the shell.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
+- `help` - display information about built-in commands.
 
 ## Background Jobs Example
 
