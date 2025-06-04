@@ -5,6 +5,7 @@
 
 #define _GNU_SOURCE
 #include "parser.h"
+#include "builtins.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -128,6 +129,22 @@ Command *parse_line(char *line) {
 
             int quoted = 0;
             char *tok = read_token(&p, &quoted);
+
+            if (!quoted && argc == 0) {
+                const char *alias = get_alias(tok);
+                if (alias) {
+                    free(tok);
+                    char *dup = strdup(alias);
+                    char *sp = NULL;
+                    char *word = strtok_r(dup, " \t", &sp);
+                    while (word && argc < MAX_TOKENS - 1) {
+                        seg->argv[argc++] = strdup(word);
+                        word = strtok_r(NULL, " \t", &sp);
+                    }
+                    free(dup);
+                    continue;
+                }
+            }
 
             if (!quoted && strcmp(tok, "<") == 0) {
                 while (*p == ' ' || *p == '\t') p++;

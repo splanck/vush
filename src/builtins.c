@@ -23,6 +23,58 @@ extern int last_status;
 #include <signal.h>
 #include <fcntl.h>
 
+#define MAX_ALIASES 32
+
+struct alias_entry {
+    char *name;
+    char *value;
+};
+
+static struct alias_entry aliases[MAX_ALIASES];
+static int alias_count = 0;
+
+const char *get_alias(const char *name) {
+    for (int i = 0; i < alias_count; i++) {
+        if (strcmp(aliases[i].name, name) == 0)
+            return aliases[i].value;
+    }
+    return NULL;
+}
+
+static void set_alias(const char *name, const char *value) {
+    for (int i = 0; i < alias_count; i++) {
+        if (strcmp(aliases[i].name, name) == 0) {
+            free(aliases[i].value);
+            aliases[i].value = strdup(value);
+            return;
+        }
+    }
+    if (alias_count >= MAX_ALIASES) {
+        fprintf(stderr, "alias table full\n");
+        return;
+    }
+    aliases[alias_count].name = strdup(name);
+    aliases[alias_count].value = strdup(value);
+    alias_count++;
+}
+
+static void remove_alias(const char *name) {
+    for (int i = 0; i < alias_count; i++) {
+        if (strcmp(aliases[i].name, name) == 0) {
+            free(aliases[i].name);
+            free(aliases[i].value);
+            aliases[i] = aliases[alias_count - 1];
+            alias_count--;
+            return;
+        }
+    }
+}
+
+static void list_aliases(void) {
+    for (int i = 0; i < alias_count; i++)
+        printf("%s='%s'\n", aliases[i].name, aliases[i].value);
+}
+
 static int builtin_cd(char **args) {
     char prev[PATH_MAX];
     if (!getcwd(prev, sizeof(prev))) {
@@ -118,6 +170,34 @@ static int builtin_history(char **args) {
     return 1;
 }
 
+static int builtin_alias(char **args) {
+    if (!args[1]) {
+        list_aliases();
+        return 1;
+    }
+    for (int i = 1; args[i]; i++) {
+        char *eq = strchr(args[i], '=');
+        if (!eq) {
+            fprintf(stderr, "usage: alias name=value\n");
+            continue;
+        }
+        *eq = '\0';
+        set_alias(args[i], eq + 1);
+        *eq = '=';
+    }
+    return 1;
+}
+
+static int builtin_unalias(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: unalias name\n");
+        return 1;
+    }
+    for (int i = 1; args[i]; i++)
+        remove_alias(args[i]);
+    return 1;
+}
+
 static int builtin_export(char **args) {
     if (!args[1] || !strchr(args[1], '=')) {
         fprintf(stderr, "usage: export NAME=value\n");
@@ -189,6 +269,8 @@ static int builtin_help(char **args) {
     printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  history    Show command history\n");
+    printf("  alias NAME=VALUE    Set an alias\n");
+    printf("  unalias NAME        Remove an alias\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
     return 1;
@@ -208,6 +290,8 @@ static struct builtin builtins[] = {
     {"kill", builtin_kill},
     {"export", builtin_export},
     {"history", builtin_history},
+    {"alias", builtin_alias},
+    {"unalias", builtin_unalias},
     {"source", builtin_source},
     {".", builtin_source},
     {"help", builtin_help},
