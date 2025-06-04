@@ -9,7 +9,8 @@ vush is a lightweight UNIX shell supporting command execution,
 pipelines, command chaining with ';', '&&' and '||',
 environment variable expansion (with "$?" storing the last exit status),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
-wildcard matching for '*' and '?', and background jobs.  When a
+wildcard matching for '*' and '?', input and output redirection with
+\'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.
@@ -64,5 +65,10 @@ Alias for \fBsource\fP.
 .TP
 .B help
 Display information about built-in commands.
+.SH REDIRECTION
+Standard input can be redirected with '<'.  Standard output may be
+redirected with '>' or '>>' to append.  Likewise, file descriptor 2
+(standard error) can be redirected using '2>' or '2>>'.  The '&>'
+operator redirects both stdout and stderr to the same file.
 .SH SEE ALSO
 README.md

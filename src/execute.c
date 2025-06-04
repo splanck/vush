@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "execute.h"
 #include "jobs.h"
@@ -52,7 +53,7 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
                 dup2(fd, STDIN_FILENO);
                 close(fd);
             }
-            if (seg->out_file) {
+            if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 && seg->append == seg->err_append) {
                 int flags = O_WRONLY | O_CREAT;
                 if (seg->append)
                     flags |= O_APPEND;
@@ -64,7 +65,37 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
                     exit(1);
                 }
                 dup2(fd, STDOUT_FILENO);
+                dup2(fd, STDERR_FILENO);
                 close(fd);
+            } else {
+                if (seg->out_file) {
+                    int flags = O_WRONLY | O_CREAT;
+                    if (seg->append)
+                        flags |= O_APPEND;
+                    else
+                        flags |= O_TRUNC;
+                    int fd = open(seg->out_file, flags, 0644);
+                    if (fd < 0) {
+                        perror(seg->out_file);
+                        exit(1);
+                    }
+                    dup2(fd, STDOUT_FILENO);
+                    close(fd);
+                }
+                if (seg->err_file) {
+                    int flags = O_WRONLY | O_CREAT;
+                    if (seg->err_append)
+                        flags |= O_APPEND;
+                    else
+                        flags |= O_TRUNC;
+                    int fd = open(seg->err_file, flags, 0644);
+                    if (fd < 0) {
+                        perror(seg->err_file);
+                        exit(1);
+                    }
+                    dup2(fd, STDERR_FILENO);
+                    close(fd);
+                }
             }
             execvp(seg->argv[0], seg->argv);
             perror("exec");
