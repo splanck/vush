@@ -96,7 +96,8 @@ Ensure `expect` is installed and run:
 make test
 ```
 
-The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.
+The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.  
+Current tests cover environment variables, `pwd`, `export`, running scripts, comment handling, and now the `cd` and `jobs` built-ins.
 
 ## License
 
