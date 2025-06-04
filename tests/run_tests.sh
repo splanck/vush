@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 failed=0
-tests="test_env.expect test_pwd.expect test_export.expect test_script.expect test_comments.expect test_history.expect test_pipe.expect test_redir.expect"
+tests="test_env.expect test_pwd.expect test_export.expect test_script.expect test_comments.expect test_history.expect test_pipe.expect test_redir.expect test_source.expect"
 for test in $tests; do
     echo "Running $test"
     if ! ./$test; then

@@ -7,7 +7,7 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
-- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, and `help`
+- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `source`, and `help`
 - Environment variable expansion for tokens beginning with `$`
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
@@ -76,6 +76,7 @@ $HOME
 - `export NAME=value` - set an environment variable for the shell.
 - `history` - show previously entered commands.
   Entries are read from and written to `~/.vush_history`.
+- `source file` or `. file` - execute commands from a file.
 - `help` - display information about built-in commands.
 
 ## Redirection Examples
