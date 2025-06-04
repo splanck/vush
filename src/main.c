@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,28 +86,57 @@ static int parse_line(char *line, char **args, int *background) {
     while (*p && argc < MAX_TOKENS - 1) {
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0') break;
-        char *start = p;
-        if (*p == '"') {
-            start = ++p;
-            while (*p && *p != '"') p++;
-        } else {
-            while (*p && *p != ' ' && *p != '\t') p++;
-        }
-        int len = p - start;
-        /* clamp length to avoid overflowing the temporary buffer */
-        if (len >= MAX_LINE)
-            len = MAX_LINE - 1;
+
         char buf[MAX_LINE];
-        strncpy(buf, start, len);
+        int len = 0;
+        int do_expand = 1;
+
+        if (*p == '\'') {
+            /* single quoted token - copy verbatim */
+            do_expand = 0;
+            p++; /* skip opening quote */
+            while (*p && *p != '\'' && len < MAX_LINE - 1) {
+                buf[len++] = *p++;
+            }
+            if (*p == '\'') p++; /* skip closing quote */
+        } else {
+            int in_double = 0;
+            if (*p == '"') {
+                in_double = 1;
+                p++; /* skip opening quote */
+            }
+            int first = 1;
+            while (*p && (in_double || (*p != ' ' && *p != '\t'))) {
+                if (*p == '\\') {
+                    p++;
+                    if (*p) {
+                        if (len < MAX_LINE - 1) buf[len++] = *p;
+                        if (first) do_expand = 0;
+                        if (*p) p++;
+                    }
+                    first = 0;
+                    continue;
+                }
+                if (in_double && *p == '"') {
+                    p++; /* end quote */
+                    break;
+                }
+                if (len < MAX_LINE - 1) buf[len++] = *p;
+                p++;
+                first = 0;
+            }
+        }
+
         buf[len] = '\0';
-        args[argc++] = expand_var(buf);
-        if (*p) p++;
+        args[argc++] = do_expand ? expand_var(buf) : strdup(buf);
     }
+
     if (argc > 0 && strcmp(args[argc-1], "&") == 0) {
         *background = 1;
         free(args[argc-1]);
         argc--;
     }
+
     args[argc] = NULL;
     return argc;
 }
