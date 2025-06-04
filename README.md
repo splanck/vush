@@ -18,6 +18,8 @@ and a few built-in commands.
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`
 - Persistent command history saved to `~/.vush_history`
 - Arrow-key command line editing with history recall
+- `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
+  and `Ctrl-U` clears back to the start
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable
 

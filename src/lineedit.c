@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void redraw_line(const char *prompt, const char *buf, int prev_len) {
+static void redraw_line(const char *prompt, const char *buf, int prev_len, int pos) {
     int len = strlen(buf);
     printf("\r%s%s", prompt, buf);
     if (prev_len > len) {
@@ -16,6 +16,8 @@ static void redraw_line(const char *prompt, const char *buf, int prev_len) {
             putchar(' ');
         printf("\r%s%s", prompt, buf);
     }
+    for (int i = len; i > pos; i--)
+        printf("\b");
     fflush(stdout);
 }
 
@@ -60,8 +62,28 @@ char *line_edit(const char *prompt) {
                     printf("\b");
                 fflush(stdout);
             }
+        } else if (c == 0x01) { /* Ctrl-A */
+            while (pos > 0) {
+                printf("\b");
+                pos--;
+            }
+            fflush(stdout);
+        } else if (c == 0x05) { /* Ctrl-E */
+            while (pos < len) {
+                printf("\x1b[C");
+                pos++;
+            }
+            fflush(stdout);
+        } else if (c == 0x15) { /* Ctrl-U */
+            if (pos > 0) {
+                memmove(buf, &buf[pos], len - pos);
+                len -= pos;
+                pos = 0;
+                redraw_line(prompt, buf, disp_len, pos);
+                disp_len = len;
+            }
         } else if (c == '\033') { /* escape sequences */
-            char seq[2];
+            char seq[3];
             if (read(STDIN_FILENO, seq, 2) != 2)
                 continue;
             if (seq[0] == '[') {
@@ -83,7 +105,7 @@ char *line_edit(const char *prompt) {
                         strncpy(buf, h, MAX_LINE - 1);
                         buf[MAX_LINE - 1] = '\0';
                         len = pos = strlen(buf);
-                        redraw_line(prompt, buf, disp_len);
+                        redraw_line(prompt, buf, disp_len, pos);
                         disp_len = len;
                     }
                 } else if (seq[1] == 'B') { /* down */
@@ -96,8 +118,24 @@ char *line_edit(const char *prompt) {
                         buf[0] = '\0';
                         len = pos = 0;
                     }
-                    redraw_line(prompt, buf, disp_len);
+                    redraw_line(prompt, buf, disp_len, pos);
                     disp_len = len;
+                } else if (seq[1] >= '0' && seq[1] <= '9') {
+                    if (read(STDIN_FILENO, &seq[2], 1) != 1)
+                        continue;
+                    if (seq[1] == '1' && seq[2] == '~') { /* Home */
+                        while (pos > 0) {
+                            printf("\b");
+                            pos--;
+                        }
+                        fflush(stdout);
+                    } else if (seq[1] == '4' && seq[2] == '~') { /* End */
+                        while (pos < len) {
+                            printf("\x1b[C");
+                            pos++;
+                        }
+                        fflush(stdout);
+                    }
                 }
             }
         } else if (c >= 32 && c < 127) { /* printable */

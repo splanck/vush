@@ -15,7 +15,9 @@ wildcard matching for '*' and '?', input and output redirection with
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.
 When run interactively, arrow keys allow editing the current line and
-recalling previous commands from history.
+recalling previous commands from history.  `Ctrl-A` or the Home key moves
+the cursor to the start of the line, `Ctrl-E` or End moves to the end and
+`Ctrl-U` clears from the cursor back to the beginning.
 If \fB~/.vushrc\fP exists, commands from this file are executed before
 the first prompt is shown.
 .SH OPTIONS
@@ -82,3 +84,6 @@ redirected with '>' or '>>' to append.  Likewise, file descriptor 2
 operator redirects both stdout and stderr to the same file.
 .SH SEE ALSO
 README.md
+.SH TESTING
+Run "make test" in the source tree to execute the automated Expect scripts.
+They exercise the interactive line editor and built-in commands.
