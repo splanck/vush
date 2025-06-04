@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX_TOKENS 64
 #define MAX_LINE 1024
@@ -164,6 +165,9 @@ int main(void) {
     char line[MAX_LINE];
     char *args[MAX_TOKENS];
 
+    /* Ignore Ctrl-C in the shell itself */
+    signal(SIGINT, SIG_IGN);
+
     while (1) {
         check_jobs();
         printf("vush> ");
@@ -180,6 +184,8 @@ int main(void) {
         }
         pid_t pid = fork();
         if (pid == 0) {
+            /* Restore default SIGINT handling for the child */
+            signal(SIGINT, SIG_DFL);
             execvp(args[0], args);
             perror("exec");
             exit(1);
