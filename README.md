@@ -9,6 +9,7 @@ and a few built-in commands.
 - Execution of external commands via `fork` and `exec`
 - Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `source`, and `help`
 - Environment variable expansion for tokens beginning with `$`
+- Wildcard expansion for unquoted `*` and `?` patterns
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
@@ -60,6 +61,9 @@ Single quotes disable all expansion. Double quotes preserve spaces while still
 expanding variables. Use a backslash to escape the next character. A `#` that
 appears outside of quotes starts a comment and everything after it on the line
 is ignored.
+
+Unquoted words containing `*` or `?` are expanded to matching filenames.  If no
+files match, the pattern is left unchanged.
 
 ```
 vush> echo '$HOME is not expanded'

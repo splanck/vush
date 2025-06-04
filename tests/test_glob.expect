@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "touch g1.c g2.c\r"
+expect "vush> "
+send "echo *.c\r"
+expect {
+    -re "[\r\n]+g1.c g2.c[\r\n]+vush> " {}
+    timeout { send_user "glob expansion failed\n"; exit 1 }
+}
+send "rm g1.c g2.c\r"
+expect "vush> "
+send "exit\r"
+expect eof
