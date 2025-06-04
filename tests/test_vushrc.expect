@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set timeout 5
+set dir [exec mktemp -d]
+set f [open "$dir/.vushrc" "w"]
+puts $f "echo rcstart"
+close $f
+set env(HOME) $dir
+spawn ../vush
+expect {
+    -re "[\r\n]+rcstart[\r\n]+vush> " {}
+    timeout { send_user "rc file not executed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $dir

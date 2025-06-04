@@ -18,6 +18,7 @@ and a few built-in commands.
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`
 - Persistent command history saved to `~/.vush_history`
 - Arrow-key command line editing with history recall
+- Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable
 
 ## Building
@@ -44,6 +45,9 @@ interactively.
 ./vush                # interactive mode
 ./vush scriptfile     # run commands from "scriptfile"
 ```
+
+When invoked without a script file, commands from `~/.vushrc` are executed
+before the first prompt if that file exists.
 
 Example interactive session:
 
