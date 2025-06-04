@@ -16,6 +16,8 @@ typedef struct PipelineSegment {
     char *in_file;
     char *out_file;
     int append;
+    char *err_file;
+    int err_append;
     struct PipelineSegment *next;
 } PipelineSegment;
 

@@ -72,6 +72,32 @@ static char *read_token(char **p, int *quoted) {
     int do_expand = 1;
     *quoted = 0;
 
+    if (**p == '2' && *(*p + 1) == '>') {
+        buf[len++] = '2';
+        (*p)++;
+        buf[len++] = '>';
+        (*p)++;
+        if (**p == '>') {
+            buf[len++] = '>';
+            (*p)++;
+        }
+        buf[len] = '\0';
+        return strdup(buf);
+    }
+
+    if (**p == '&' && *(*p + 1) == '>') {
+        buf[len++] = '&';
+        (*p)++;
+        buf[len++] = '>';
+        (*p)++;
+        if (**p == '>') {
+            buf[len++] = '>';
+            (*p)++;
+        }
+        buf[len] = '\0';
+        return strdup(buf);
+    }
+
     if (**p == '>' || **p == '<' || **p == '|' || **p == '&' || **p == ';') {
         buf[len++] = **p;
         (*p)++;
@@ -223,6 +249,28 @@ Command *parse_line(char *line) {
                 }
                 free(tok);
                 continue;
+            } else if (!quoted && (strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0)) {
+                seg->err_append = (tok[2] == '>');
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p) {
+                    int q = 0;
+                    seg->err_file = read_token(&p, &q);
+                }
+                free(tok);
+                continue;
+            } else if (!quoted && (strcmp(tok, "&>") == 0 || strcmp(tok, "&>>") == 0)) {
+                int app = (tok[2] == '>');
+                seg->append = app;
+                seg->err_append = app;
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p) {
+                    int q = 0;
+                    char *file = read_token(&p, &q);
+                    seg->out_file = file;
+                    seg->err_file = file;
+                }
+                free(tok);
+                continue;
             }
 
             if (!quoted && (strchr(tok, '*') || strchr(tok, '?'))) {
@@ -275,6 +323,8 @@ void free_pipeline(PipelineSegment *p) {
             free(p->argv[i]);
         free(p->in_file);
         free(p->out_file);
+        if (p->err_file && p->err_file != p->out_file)
+            free(p->err_file);
         free(p);
         p = next;
     }
