@@ -28,13 +28,26 @@ char *expand_var(const char *token) {
     return strdup(val ? val : "");
 }
 
-int parse_line(char *line, char **args, int *background) {
-    int argc = 0;
+PipelineSegment *parse_line(char *line, int *background) {
     *background = 0;
+    PipelineSegment *head = calloc(1, sizeof(PipelineSegment));
+    if (!head) return NULL;
+    PipelineSegment *cur = head;
+    int argc = 0;
     char *p = line;
     while (*p && argc < MAX_TOKENS - 1) {
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0' || *p == '#') break; /* comment */
+
+        if (*p == '|') {
+            cur->argv[argc] = NULL;
+            PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+            cur->next = next;
+            cur = next;
+            argc = 0;
+            p++;
+            continue;
+        }
 
         char buf[MAX_LINE];
         int len = 0;
@@ -77,16 +90,27 @@ int parse_line(char *line, char **args, int *background) {
         }
 
         buf[len] = '\0';
-        args[argc++] = do_expand ? expand_var(buf) : strdup(buf);
+        cur->argv[argc++] = do_expand ? expand_var(buf) : strdup(buf);
     }
 
-    if (argc > 0 && strcmp(args[argc-1], "&") == 0) {
+    if (argc > 0 && strcmp(cur->argv[argc-1], "&") == 0) {
         *background = 1;
-        free(args[argc-1]);
-        argc--;
+        free(cur->argv[argc-1]);
+        cur->argv[argc-1] = NULL;
+    } else {
+        cur->argv[argc] = NULL;
     }
 
-    args[argc] = NULL;
-    return argc;
+    return head;
+}
+
+void free_pipeline(PipelineSegment *p) {
+    while (p) {
+        PipelineSegment *next = p->next;
+        for (int i = 0; p->argv[i]; i++)
+            free(p->argv[i]);
+        free(p);
+        p = next;
+    }
 }
 
