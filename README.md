@@ -44,6 +44,8 @@ Example interactive session:
 ```
 vush> ls -l
 vush> cd /tmp
+vush> cd -
+/home/user
 vush> echo $HOME
 vush> sleep 5 &
 ```
@@ -69,7 +71,7 @@ $HOME
 
 ## Built-in Commands
 
-- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`.
+- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. Use `cd -` to toggle back to the previous directory.
 - `exit` - terminate the shell.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
