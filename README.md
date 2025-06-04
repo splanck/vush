@@ -27,10 +27,18 @@ make clean
 
 ## Usage
 
-Run the `vush` binary and enter commands as you would in a normal shell.
+Run the `vush` binary and enter commands as you would in a normal shell.  You
+can also provide a filename to execute commands from a script non-
+interactively.
 
 ```
-./vush
+./vush                # interactive mode
+./vush scriptfile     # run commands from "scriptfile"
+```
+
+Example interactive session:
+
+```
 vush> ls -l
 vush> cd /tmp
 vush> echo $HOME

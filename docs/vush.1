@@ -3,9 +3,12 @@
 vush \- simple UNIX shell
 .SH SYNOPSIS
 .B vush
+.RI [ scriptfile ]
 .SH DESCRIPTION
 vush is a lightweight UNIX shell supporting command execution,
-environment variable expansion and background jobs.
+environment variable expansion and background jobs.  When a
+\fIscriptfile\fP is supplied, commands are read from that file
+instead of standard input.
 .SH OPTIONS
 None.
 .SH BUILTINS
