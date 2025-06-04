@@ -71,6 +71,7 @@ $HOME
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
 - `export NAME=value` - set an environment variable for the shell.
+- `history` - show previously entered commands.
 - `help` - display information about built-in commands.
 
 ## Background Jobs Example
