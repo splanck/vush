@@ -8,7 +8,7 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
 - Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `kill`, `alias`, `unalias`, `source`, and `help`
-- Environment variable expansion for tokens beginning with `$`
+- Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
 - Command substitution using backticks or `$(...)`
@@ -63,7 +63,7 @@ vush> sleep 5 &
 
 ## Quoting and Expansion
 
-Words beginning with `$` expand to environment variables. A leading `~` expands
+Words beginning with `$` or `${...}` expand to environment variables. A leading `~` expands
 to the current user's home directory while `~user` resolves to that user's
 home directory using the system password database.
 
@@ -83,8 +83,14 @@ vush> echo '$HOME is not expanded'
 $HOME is not expanded
 vush> echo "$HOME"
 /home/user
+vush> echo "${HOME}"
+/home/user
+vush> echo ${HOME}
+/home/user
 vush> echo \$HOME
 $HOME
+vush> echo '${HOME}'
+${HOME}
 vush> false
 vush> echo $?
 1

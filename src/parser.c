@@ -47,6 +47,19 @@ char *expand_var(const char *token) {
         return ret;
     }
     if (token[0] != '$') return strdup(token);
+
+    if (token[1] == '{') {
+        const char *end = strchr(token + 2, '}');
+        if (end && end[1] == '\0') {
+            size_t len = (size_t)(end - (token + 2));
+            char *name = strndup(token + 2, len);
+            if (!name) return strdup("");
+            const char *val = getenv(name);
+            free(name);
+            return strdup(val ? val : "");
+        }
+    }
+
     const char *val = getenv(token + 1);
     return strdup(val ? val : "");
 }
@@ -169,6 +182,30 @@ static char *read_token(char **p, int *quoted) {
                 }
                 first = 0;
                 continue;
+            }
+            if (**p == '$' && *(*p + 1) == '{') {
+                const char *start = *p;
+                (*p) += 2; /* skip ${ */
+                char name[MAX_LINE];
+                int n = 0;
+                while (**p && **p != '}' && n < MAX_LINE - 1) {
+                    name[n++] = **p;
+                    (*p)++;
+                }
+                if (**p == '}') {
+                    (*p)++; /* skip closing } */
+                    name[n] = '\0';
+                    char varbuf[MAX_LINE];
+                    snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                    char *res = expand_var(varbuf);
+                    for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
+                        buf[len++] = res[ci];
+                    free(res);
+                    first = 0;
+                    continue;
+                }
+                /* unmatched '{' - treat literally */
+                *p = (char *)start;
             }
             if (in_double && **p == '"') {
                 (*p)++; /* end quote */
