@@ -91,6 +91,7 @@ vush> echo $?
 - `fg ID` - wait for background job `ID`.
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
 - `export NAME=value` - set an environment variable for the shell.
+- `unset NAME` - remove an environment variable.
 - `history` - show previously entered commands.
   Entries are read from and written to `~/.vush_history`.
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.

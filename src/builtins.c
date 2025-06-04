@@ -198,6 +198,16 @@ static int builtin_unalias(char **args) {
     return 1;
 }
 
+static int builtin_unset(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: unset NAME...\n");
+        return 1;
+    }
+    for (int i = 1; args[i]; i++)
+        unsetenv(args[i]);
+    return 1;
+}
+
 static int builtin_export(char **args) {
     if (!args[1] || !strchr(args[1], '=')) {
         fprintf(stderr, "usage: export NAME=value\n");
@@ -268,6 +278,7 @@ static int builtin_help(char **args) {
     printf("  fg ID      Wait for job ID in foreground\n");
     printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
+    printf("  unset NAME          Remove an environment variable\n");
     printf("  history    Show command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
@@ -289,6 +300,7 @@ static struct builtin builtins[] = {
     {"fg", builtin_fg},
     {"kill", builtin_kill},
     {"export", builtin_export},
+    {"unset", builtin_unset},
     {"history", builtin_history},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
