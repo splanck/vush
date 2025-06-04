@@ -11,6 +11,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <limits.h>
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 #include "parser.h"
 #include "jobs.h"
@@ -40,6 +44,46 @@ int main(int argc, char **argv) {
     signal(SIGINT, SIG_IGN);
 
     load_history();
+
+    /* Execute commands from ~/.vushrc if present */
+    const char *home = getenv("HOME");
+    if (home) {
+        char rcpath[PATH_MAX];
+        snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
+        FILE *rc = fopen(rcpath, "r");
+        if (rc) {
+            char rcline[MAX_LINE];
+            while (fgets(rcline, sizeof(rcline), rc)) {
+                size_t len = strlen(rcline);
+                if (len && rcline[len-1] == '\n')
+                    rcline[len-1] = '\0';
+
+                Command *cmds = parse_line(rcline);
+                if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+                    free_commands(cmds);
+                    continue;
+                }
+
+                add_history(rcline);
+
+                CmdOp prev = OP_SEMI;
+                for (Command *c = cmds; c; c = c->next) {
+                    int run = 1;
+                    if (c != cmds) {
+                        if (prev == OP_AND)
+                            run = (last_status == 0);
+                        else if (prev == OP_OR)
+                            run = (last_status != 0);
+                    }
+                    if (run)
+                        run_pipeline(c->pipeline, c->background, rcline);
+                    prev = c->op;
+                }
+                free_commands(cmds);
+            }
+            fclose(rc);
+        }
+    }
 
     while (1) {
         check_jobs();
