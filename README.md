@@ -11,6 +11,7 @@ and a few built-in commands.
 - Environment variable expansion for tokens beginning with `$`
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
+- Command substitution using backticks or `$(...)`
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
@@ -69,6 +70,9 @@ is ignored.
 Unquoted words containing `*` or `?` are expanded to matching filenames.  If no
 files match, the pattern is left unchanged.
 
+Commands enclosed in backticks or `$(...)` are executed and their output
+substituted into the word before other expansion occurs.
+
 ```
 vush> echo '$HOME is not expanded'
 $HOME is not expanded
@@ -82,6 +86,8 @@ vush> echo $?
 vush> true
 vush> echo $?
 0
+vush> echo $(echo hi)
+hi
 ```
 
 ## Built-in Commands

@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <glob.h>
 #include <pwd.h>
+#include <ctype.h>
+#include <ctype.h>
 
 extern int last_status;
 
@@ -47,6 +49,21 @@ char *expand_var(const char *token) {
     if (token[0] != '$') return strdup(token);
     const char *val = getenv(token + 1);
     return strdup(val ? val : "");
+}
+
+static char *command_output(const char *cmd) {
+    FILE *fp = popen(cmd, "r");
+    if (!fp) return strdup("");
+    char out[MAX_LINE];
+    size_t total = 0;
+    while (fgets(out + total, sizeof(out) - total, fp)) {
+        total = strlen(out);
+        if (total >= sizeof(out) - 1) break;
+    }
+    pclose(fp);
+    if (total > 0 && out[total - 1] == '\n')
+        out[total - 1] = '\0';
+    return strdup(out);
 }
 
 static char *read_token(char **p, int *quoted) {
@@ -86,6 +103,37 @@ static char *read_token(char **p, int *quoted) {
         int first = 1;
         while (**p && (in_double || (**p != ' ' && **p != '\t' && **p != '|' &&
                 **p != '<' && **p != '>' && **p != '&' && **p != ';'))) {
+            if (**p == '`' || (**p == '$' && *(*p + 1) == '(')) {
+                int depth = 0;
+                int is_dollar = (**p == '$');
+                (*p)++; /* skip ` or $ */
+                if (is_dollar) {
+                    (*p)++; /* skip '(' */
+                    depth = 1;
+                }
+                char cmd[MAX_LINE];
+                int clen = 0;
+                while (**p && ((is_dollar && depth > 0) || (!is_dollar && **p != '`')) && clen < MAX_LINE - 1) {
+                    if (is_dollar) {
+                        if (**p == '(') depth++;
+                        else if (**p == ')') {
+                            depth--;
+                            if (depth == 0) { (*p)++; break; }
+                        }
+                    }
+                    if (!is_dollar && **p == '`') break;
+                    cmd[clen++] = **p;
+                    (*p)++;
+                }
+                if (!is_dollar && **p == '`') (*p)++; /* closing backtick */
+                cmd[clen] = '\0';
+                char *res = command_output(cmd);
+                for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
+                    buf[len++] = res[ci];
+                free(res);
+                first = 0;
+                continue;
+            }
             if (**p == '\\') {
                 (*p)++;
                 if (**p) {
