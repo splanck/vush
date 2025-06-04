@@ -92,6 +92,26 @@ static int builtin_fg(char **args) {
     return 1;
 }
 
+static int builtin_kill(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: kill [-SIGNAL] ID\n");
+        return 1;
+    }
+    int sig = SIGTERM;
+    int idx = 1;
+    if (args[1][0] == '-') {
+        sig = atoi(args[1] + 1);
+        idx++;
+    }
+    if (!args[idx]) {
+        fprintf(stderr, "usage: kill [-SIGNAL] ID\n");
+        return 1;
+    }
+    int id = atoi(args[idx]);
+    kill_job(id, sig);
+    return 1;
+}
+
 static int builtin_history(char **args) {
     (void)args;
     print_history();
@@ -166,6 +186,7 @@ static int builtin_help(char **args) {
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
     printf("  fg ID      Wait for job ID in foreground\n");
+    printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  history    Show command history\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
@@ -184,6 +205,7 @@ static struct builtin builtins[] = {
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
     {"fg", builtin_fg},
+    {"kill", builtin_kill},
     {"export", builtin_export},
     {"history", builtin_history},
     {"source", builtin_source},
