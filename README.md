@@ -13,8 +13,16 @@ and a few built-in commands.
 
 ## Building
 
+Use the provided `Makefile` to build the shell:
+
 ```sh
-cc -o vush src/main.c
+make
+```
+
+The resulting binary will be `./vush`. Remove the binary with:
+
+```sh
+make clean
 ```
 
 ## Usage
@@ -29,12 +37,41 @@ vush> echo $HOME
 vush> sleep 5 &
 ```
 
-Single quotes prevent expansion and take text verbatim. A backslash escapes the next character:
+## Quoting and Expansion
+
+Words beginning with `$` expand to environment variables. A leading `~` is
+replaced with the value of `$HOME`.
+
+Single quotes disable all expansion. Double quotes preserve spaces while still
+expanding variables. Use a backslash to escape the next character.
 
 ```
 vush> echo '$HOME is not expanded'
 $HOME is not expanded
+vush> echo "$HOME"
+/home/user
 vush> echo \$HOME
 $HOME
 ```
 
+## Built-in Commands
+
+- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`.
+- `exit` - terminate the shell.
+- `pwd` - print the current working directory.
+- `jobs` - list background jobs started with `&`.
+
+## Background Jobs Example
+
+```
+vush> sleep 3 &
+vush> jobs
+[1] 1234 sleep 3
+vush> # continue using the shell
+[vush] job 1234 finished
+```
+
+## Documentation
+
+See [docs/vush.1](docs/vush.1) for the manual page and
+[docs/CHANGELOG.md](docs/CHANGELOG.md) for the change history.
