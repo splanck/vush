@@ -28,5 +28,13 @@ vush> cd /tmp
 vush> echo $HOME
 vush> sleep 5 &
 ```
+
+Single quotes prevent expansion and take text verbatim. A backslash escapes the next character:
+
+```
+vush> echo '$HOME is not expanded'
+$HOME is not expanded
+vush> echo \$HOME
+$HOME
 ```
 
