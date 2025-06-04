@@ -34,7 +34,7 @@ int parse_line(char *line, char **args, int *background) {
     char *p = line;
     while (*p && argc < MAX_TOKENS - 1) {
         while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0') break;
+        if (*p == '\0' || *p == '#') break; /* comment */
 
         char buf[MAX_LINE];
         int len = 0;

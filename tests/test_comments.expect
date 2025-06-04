@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "# foo\r"
+expect "vush> "
+send "echo bar # comment\r"
+expect {
+    -re "[\r\n]+bar[\r\n]+vush> " {}
+    timeout { send_user "comment parsing failed\n"; exit 1 }
+}
+send "exit\r"
+expect eof
