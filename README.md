@@ -51,13 +51,15 @@ vush> cd /tmp
 vush> cd -
 /home/user
 vush> echo $HOME
+vush> cd ~otheruser
 vush> sleep 5 &
 ```
 
 ## Quoting and Expansion
 
-Words beginning with `$` expand to environment variables. A leading `~` is
-replaced with the value of `$HOME`.
+Words beginning with `$` expand to environment variables. A leading `~` expands
+to the current user's home directory while `~user` resolves to that user's
+home directory using the system password database.
 
 Single quotes disable all expansion. Double quotes preserve spaces while still
 expanding variables. Use a backslash to escape the next character. A `#` that
@@ -84,7 +86,7 @@ vush> echo $?
 
 ## Built-in Commands
 
-- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
+- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
 - `exit` - terminate the shell.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.

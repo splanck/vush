@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <glob.h>
+#include <pwd.h>
 
 extern int last_status;
 
@@ -20,16 +21,27 @@ char *expand_var(const char *token) {
         return strdup(buf);
     }
     if (token[0] == '~') {
-        const char *home = getenv("HOME");
+        const char *rest = token + 1;
+        const char *home = NULL;
+        if (*rest == '/' || *rest == '\0') {
+            home = getenv("HOME");
+        } else {
+            const char *slash = strchr(rest, '/');
+            size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
+            char *user = strndup(rest, len);
+            if (user) {
+                struct passwd *pw = getpwnam(user);
+                if (pw) home = pw->pw_dir;
+                free(user);
+            }
+            rest = slash ? slash : rest + len;
+        }
+        if (!home) home = getenv("HOME");
         if (!home) home = "";
-        size_t home_len = strlen(home);
-        size_t token_len = strlen(token);
-        char *tmp = malloc(home_len + token_len);
-        if (!tmp) return NULL;
-        strcpy(tmp, home);
-        strcat(tmp, token + 1);
-        char *ret = strdup(tmp);
-        free(tmp);
+        char *ret = malloc(strlen(home) + strlen(rest) + 1);
+        if (!ret) return NULL;
+        strcpy(ret, home);
+        strcat(ret, rest);
         return ret;
     }
     if (token[0] != '$') return strdup(token);
