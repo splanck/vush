@@ -1,8 +1,10 @@
 CC ?= cc
 CFLAGS ?= -Wall -Wextra -std=c99
 
-vush: src/main.c
-	$(CC) $(CFLAGS) -o $@ $<
+SRCS := $(wildcard src/*.c)
+
+vush: $(SRCS)
+	$(CC) $(CFLAGS) -o $@ $(SRCS)
 
 clean:
 	rm -f vush *.o
