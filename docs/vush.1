@@ -17,7 +17,9 @@ None.
 .SH BUILTINS
 .TP
 .B cd [dir]
-Change the current directory.
+Change the current directory. Without an argument it switches to \fB$HOME\fP.
+After a successful change \fB$PWD\fP and \fB$OLDPWD\fP are updated. Using
+\fBcd -\fP prints and switches to \fB$OLDPWD\fP.
 .TP
 .B exit
 Exit the shell.
