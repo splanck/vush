@@ -14,6 +14,7 @@
 #include "parser.h"
 #include "jobs.h"
 #include "builtins.h"
+#include "history.h"
 
 int main(int argc, char **argv) {
     char line[MAX_LINE];
@@ -45,6 +46,7 @@ int main(int argc, char **argv) {
         int background = 0;
         int ac = parse_line(line, args, &background);
         if (ac == 0) continue;
+        add_history(line);
         if (run_builtin(args)) {
             for (int i = 0; i < ac; i++) free(args[i]);
             continue;
