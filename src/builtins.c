@@ -12,14 +12,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
 
+static char last_dir[PATH_MAX] = "";
+
 static int builtin_cd(char **args) {
-    const char *dir = args[1] ? args[1] : getenv("HOME");
+    char cwd[PATH_MAX];
+    if (!getcwd(cwd, sizeof(cwd))) {
+        perror("getcwd");
+        return 1;
+    }
+
+    const char *dir;
+    if (!args[1]) {
+        dir = getenv("HOME");
+    } else if (strcmp(args[1], "-") == 0) {
+        if (!last_dir[0]) {
+            fprintf(stderr, "cd: OLDPWD not set\n");
+            return 1;
+        }
+        dir = last_dir;
+        printf("%s\n", dir);
+    } else {
+        dir = args[1];
+    }
+
     if (chdir(dir) != 0) {
         perror("cd");
+    } else {
+        strncpy(last_dir, cwd, sizeof(last_dir) - 1);
+        last_dir[sizeof(last_dir) - 1] = '\0';
     }
     return 1;
 }
@@ -190,7 +218,7 @@ static int builtin_source(char **args) {
 static int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
-    printf("  cd [dir]   Change the current directory\n");
+    printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
     printf("  exit       Exit the shell\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
