@@ -12,6 +12,7 @@ and a few built-in commands.
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Input and output redirection with `<`, `>` and `>>`
+- Persistent command history saved to `~/.vush_history`
 
 ## Building
 
@@ -74,6 +75,7 @@ $HOME
 - `jobs` - list background jobs started with `&`.
 - `export NAME=value` - set an environment variable for the shell.
 - `history` - show previously entered commands.
+  Entries are read from and written to `~/.vush_history`.
 - `help` - display information about built-in commands.
 
 ## Redirection Examples
