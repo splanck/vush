@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <glob.h>
 
 char *expand_var(const char *token) {
     if (token[0] == '~') {
@@ -138,6 +139,20 @@ Command *parse_line(char *line) {
                 }
                 free(tok);
                 continue;
+            }
+
+            if (!quoted && (strchr(tok, '*') || strchr(tok, '?'))) {
+                glob_t g;
+                int r = glob(tok, 0, NULL, &g);
+                if (r == 0 && g.gl_pathc > 0) {
+                    for (size_t gi = 0; gi < g.gl_pathc && argc < MAX_TOKENS - 1; gi++) {
+                        seg->argv[argc++] = strdup(g.gl_pathv[gi]);
+                    }
+                    free(tok);
+                    globfree(&g);
+                    continue;
+                }
+                globfree(&g);
             }
 
             seg->argv[argc++] = tok;
