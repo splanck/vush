@@ -7,8 +7,8 @@ vush \- simple UNIX shell
 .SH DESCRIPTION
 vush is a lightweight UNIX shell supporting command execution,
 pipelines, command chaining with ';', '&&' and '||',
-environment variable expansion, wildcard matching for '*' and '?', and
-background jobs.  When a
+environment variable expansion (with "$?" storing the last exit status),
+wildcard matching for '*' and '?', and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.

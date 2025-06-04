@@ -10,7 +10,14 @@
 #include <stdio.h>
 #include <glob.h>
 
+extern int last_status;
+
 char *expand_var(const char *token) {
+    if (strcmp(token, "$?") == 0) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%d", last_status);
+        return strdup(buf);
+    }
     if (token[0] == '~') {
         const char *home = getenv("HOME");
         if (!home) home = "";

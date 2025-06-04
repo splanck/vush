@@ -9,6 +9,7 @@ and a few built-in commands.
 - Execution of external commands via `fork` and `exec`
 - Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `source`, and `help`
 - Environment variable expansion for tokens beginning with `$`
+- `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
@@ -72,6 +73,12 @@ vush> echo "$HOME"
 /home/user
 vush> echo \$HOME
 $HOME
+vush> false
+vush> echo $?
+1
+vush> true
+vush> echo $?
+0
 ```
 
 ## Built-in Commands

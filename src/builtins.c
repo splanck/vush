@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+extern int last_status;
 #include <limits.h>
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -132,7 +134,6 @@ static int builtin_source(char **args) {
 
         add_history(line);
 
-        int last_status = 0;
         CmdOp prev = OP_SEMI;
         for (Command *c = cmds; c; c = c->next) {
             int run = 1;
@@ -143,7 +144,7 @@ static int builtin_source(char **args) {
                     run = (last_status != 0);
             }
             if (run)
-                last_status = run_pipeline(c->pipeline, c->background, line);
+                run_pipeline(c->pipeline, c->background, line);
             prev = c->op;
         }
         free_commands(cmds);

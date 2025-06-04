@@ -9,6 +9,8 @@
 #include "jobs.h"
 #include "builtins.h"
 
+extern int last_status;
+
 int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
     if (!pipeline)
         return 0;
@@ -85,10 +87,17 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
     if (background) {
         if (i > 0)
             add_job(pids[i-1], line);
+        last_status = 0;
     } else {
         for (int j = 0; j < i; j++)
             waitpid(pids[j], &status, 0);
+        if (WIFEXITED(status))
+            last_status = WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            last_status = 128 + WTERMSIG(status);
+        else
+            last_status = status;
     }
     free(pids);
-    return WEXITSTATUS(status);
+    return last_status;
 }
