@@ -9,6 +9,7 @@
 #include "history.h"
 #include "parser.h"
 #include "execute.h"
+#include "dirstack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,6 +110,60 @@ static int builtin_cd(char **args) {
             perror("getcwd");
         }
     }
+    return 1;
+}
+
+static int builtin_pushd(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: pushd dir\n");
+        return 1;
+    }
+    char prev[PATH_MAX];
+    if (!getcwd(prev, sizeof(prev))) {
+        perror("getcwd");
+        return 1;
+    }
+    if (chdir(args[1]) != 0) {
+        perror("pushd");
+        return 1;
+    }
+    dirstack_push(prev);
+    char newcwd[PATH_MAX];
+    if (getcwd(newcwd, sizeof(newcwd))) {
+        const char *pwd = getenv("PWD");
+        if (!pwd) pwd = prev;
+        setenv("OLDPWD", pwd, 1);
+        setenv("PWD", newcwd, 1);
+    }
+    dirstack_print();
+    return 1;
+}
+
+static int builtin_popd(char **args) {
+    (void)args;
+    char *dir = dirstack_pop();
+    if (!dir) {
+        fprintf(stderr, "popd: directory stack empty\n");
+        return 1;
+    }
+    char prev[PATH_MAX];
+    if (!getcwd(prev, sizeof(prev))) {
+        perror("getcwd");
+        free(dir);
+        return 1;
+    }
+    if (chdir(dir) != 0) {
+        perror("popd");
+        free(dir);
+        return 1;
+    }
+    char newcwd[PATH_MAX];
+    if (getcwd(newcwd, sizeof(newcwd))) {
+        setenv("OLDPWD", prev, 1);
+        setenv("PWD", newcwd, 1);
+    }
+    free(dir);
+    dirstack_print();
     return 1;
 }
 
@@ -272,6 +327,8 @@ static int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
     printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
+    printf("  pushd DIR  Push current directory and switch to DIR\n");
+    printf("  popd       Switch to directory from stack\n");
     printf("  exit       Exit the shell\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
@@ -294,6 +351,8 @@ struct builtin {
 
 static struct builtin builtins[] = {
     {"cd", builtin_cd},
+    {"pushd", builtin_pushd},
+    {"popd", builtin_popd},
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},

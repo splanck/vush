@@ -29,6 +29,14 @@ database. After a successful change \fB$PWD\fP and \fB$OLDPWD\fP are updated.
 Using \fBcd -\fP prints and switches to \fB$OLDPWD\fP.
 Example: \fBcd ~otheruser\fP
 .TP
+.B pushd dir
+Push the current directory onto a stack and switch to \fIdir\fP. The stack is
+printed after the change.
+.TP
+.B popd
+Switch to the directory most recently pushed with \fBpushd\fP. The stack is
+printed after the switch.
+.TP
 .B exit
 Exit the shell.
 .TP
