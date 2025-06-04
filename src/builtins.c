@@ -46,6 +46,16 @@ static int builtin_jobs(char **args) {
     return 1;
 }
 
+static int builtin_fg(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: fg ID\n");
+        return 1;
+    }
+    int id = atoi(args[1]);
+    wait_job(id);
+    return 1;
+}
+
 static int builtin_history(char **args) {
     (void)args;
     print_history();
@@ -184,6 +194,7 @@ static int builtin_help(char **args) {
     printf("  exit       Exit the shell\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
+    printf("  fg ID      Wait for job ID in foreground\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  history    Show command history\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
@@ -201,6 +212,7 @@ static struct builtin builtins[] = {
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
+    {"fg", builtin_fg},
     {"export", builtin_export},
     {"history", builtin_history},
     {"source", builtin_source},
