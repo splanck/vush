@@ -3,6 +3,7 @@
  * Licensed under the GNU GPLv3.
  */
 
+#define _GNU_SOURCE
 #include "builtins.h"
 #include "jobs.h"
 #include <stdio.h>
@@ -40,6 +41,22 @@ static int builtin_jobs(char **args) {
     return 1;
 }
 
+static int builtin_export(char **args) {
+    if (!args[1] || !strchr(args[1], '=')) {
+        fprintf(stderr, "usage: export NAME=value\n");
+        return 1;
+    }
+
+    char *pair = args[1];
+    char *eq = strchr(pair, '=');
+    *eq = '\0';
+    if (setenv(pair, eq + 1, 1) != 0) {
+        perror("export");
+    }
+    *eq = '=';
+    return 1;
+}
+
 static int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
@@ -47,6 +64,7 @@ static int builtin_help(char **args) {
     printf("  exit       Exit the shell\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
+    printf("  export NAME=value   Set an environment variable\n");
     printf("  help       Display this help message\n");
     return 1;
 }
@@ -61,6 +79,7 @@ static struct builtin builtins[] = {
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
+    {"export", builtin_export},
     {"help", builtin_help},
     {NULL, NULL}
 };

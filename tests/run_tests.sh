@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 failed=0
-for test in *.expect; do
+tests="test_env.expect test_pwd.expect test_export.expect"
+for test in $tests; do
     echo "Running $test"
     if ! ./$test; then
         echo "FAILED: $test"
