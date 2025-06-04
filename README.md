@@ -76,3 +76,13 @@ vush> # continue using the shell
 
 See [docs/vush.1](docs/vush.1) for the manual page and
 [docs/CHANGELOG.md](docs/CHANGELOG.md) for the change history.
+
+## Tests
+
+Ensure `expect` is installed and run:
+
+```sh
+make test
+```
+
+The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.
