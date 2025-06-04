@@ -84,7 +84,7 @@ vush> echo $?
 
 ## Built-in Commands
 
-- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. Use `cd -` to toggle back to the previous directory.
+- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
 - `exit` - terminate the shell.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.

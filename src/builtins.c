@@ -23,11 +23,9 @@ extern int last_status;
 #include <signal.h>
 #include <fcntl.h>
 
-static char last_dir[PATH_MAX] = "";
-
 static int builtin_cd(char **args) {
-    char cwd[PATH_MAX];
-    if (!getcwd(cwd, sizeof(cwd))) {
+    char prev[PATH_MAX];
+    if (!getcwd(prev, sizeof(prev))) {
         perror("getcwd");
         return 1;
     }
@@ -36,11 +34,11 @@ static int builtin_cd(char **args) {
     if (!args[1]) {
         dir = getenv("HOME");
     } else if (strcmp(args[1], "-") == 0) {
-        if (!last_dir[0]) {
+        dir = getenv("OLDPWD");
+        if (!dir) {
             fprintf(stderr, "cd: OLDPWD not set\n");
             return 1;
         }
-        dir = last_dir;
         printf("%s\n", dir);
     } else {
         dir = args[1];
@@ -49,8 +47,15 @@ static int builtin_cd(char **args) {
     if (chdir(dir) != 0) {
         perror("cd");
     } else {
-        strncpy(last_dir, cwd, sizeof(last_dir) - 1);
-        last_dir[sizeof(last_dir) - 1] = '\0';
+        char newcwd[PATH_MAX];
+        if (getcwd(newcwd, sizeof(newcwd))) {
+            const char *pwd = getenv("PWD");
+            if (!pwd) pwd = prev;
+            setenv("OLDPWD", pwd, 1);
+            setenv("PWD", newcwd, 1);
+        } else {
+            perror("getcwd");
+        }
     }
     return 1;
 }
