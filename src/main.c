@@ -79,6 +79,9 @@ static int parse_line(char *line, char **args, int *background) {
             while (*p && *p != ' ' && *p != '\t') p++;
         }
         int len = p - start;
+        /* clamp length to avoid overflowing the temporary buffer */
+        if (len >= MAX_LINE)
+            len = MAX_LINE - 1;
         char buf[MAX_LINE];
         strncpy(buf, start, len);
         buf[len] = '\0';
