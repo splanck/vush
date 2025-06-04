@@ -11,6 +11,7 @@ and a few built-in commands.
 - Environment variable expansion for tokens beginning with `$`
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
+- Input and output redirection with `<`, `>` and `>>`
 
 ## Building
 
@@ -74,6 +75,15 @@ $HOME
 - `export NAME=value` - set an environment variable for the shell.
 - `history` - show previously entered commands.
 - `help` - display information about built-in commands.
+
+## Redirection Examples
+
+```
+vush> echo hello >out.txt
+vush> cat < out.txt
+hello
+vush> echo again >>out.txt
+```
 
 ## Background Jobs Example
 

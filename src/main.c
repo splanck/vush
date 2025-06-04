@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "parser.h"
 #include "jobs.h"
@@ -78,6 +79,29 @@ int main(int argc, char **argv) {
                     close(pipefd[0]);
                     dup2(pipefd[1], STDOUT_FILENO);
                     close(pipefd[1]);
+                }
+                if (seg->in_file) {
+                    int fd = open(seg->in_file, O_RDONLY);
+                    if (fd < 0) {
+                        perror(seg->in_file);
+                        exit(1);
+                    }
+                    dup2(fd, STDIN_FILENO);
+                    close(fd);
+                }
+                if (seg->out_file) {
+                    int flags = O_WRONLY | O_CREAT;
+                    if (seg->append)
+                        flags |= O_APPEND;
+                    else
+                        flags |= O_TRUNC;
+                    int fd = open(seg->out_file, flags, 0644);
+                    if (fd < 0) {
+                        perror(seg->out_file);
+                        exit(1);
+                    }
+                    dup2(fd, STDOUT_FILENO);
+                    close(fd);
                 }
                 execvp(seg->argv[0], seg->argv);
                 perror("exec");

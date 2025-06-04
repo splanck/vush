@@ -28,6 +28,64 @@ char *expand_var(const char *token) {
     return strdup(val ? val : "");
 }
 
+static char *read_token(char **p, int *quoted) {
+    char buf[MAX_LINE];
+    int len = 0;
+    int do_expand = 1;
+    *quoted = 0;
+
+    if (**p == '>' || **p == '<') {
+        buf[len++] = **p;
+        (*p)++;
+        if (buf[0] == '>' && **p == '>') {
+            buf[len++] = **p;
+            (*p)++;
+        }
+        buf[len] = '\0';
+        return strdup(buf);
+    }
+
+    if (**p == '\'') {
+        *quoted = 1;
+        do_expand = 0;
+        (*p)++; /* skip opening quote */
+        while (**p && **p != '\'' && len < MAX_LINE - 1) {
+            buf[len++] = *(*p)++;
+        }
+        if (**p == '\'') (*p)++; /* skip closing quote */
+    } else {
+        int in_double = 0;
+        if (**p == '"') {
+            in_double = 1;
+            *quoted = 1;
+            (*p)++; /* skip opening quote */
+        }
+        int first = 1;
+        while (**p && (in_double || (**p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>'))) {
+            if (**p == '\\') {
+                (*p)++;
+                if (**p) {
+                    if (len < MAX_LINE - 1) buf[len++] = **p;
+                    if (first) do_expand = 0;
+                    if (**p) (*p)++;
+                }
+                first = 0;
+                continue;
+            }
+            if (in_double && **p == '"') {
+                (*p)++; /* end quote */
+                break;
+            }
+            if (len < MAX_LINE - 1) buf[len++] = **p;
+            (*p)++;
+            first = 0;
+        }
+    }
+
+    buf[len] = '\0';
+    return do_expand ? expand_var(buf) : strdup(buf);
+}
+
 PipelineSegment *parse_line(char *line, int *background) {
     *background = 0;
     PipelineSegment *head = calloc(1, sizeof(PipelineSegment));
@@ -49,48 +107,29 @@ PipelineSegment *parse_line(char *line, int *background) {
             continue;
         }
 
-        char buf[MAX_LINE];
-        int len = 0;
-        int do_expand = 1;
+        int quoted = 0;
+        char *tok = read_token(&p, &quoted);
 
-        if (*p == '\'') {
-            /* single quoted token - copy verbatim */
-            do_expand = 0;
-            p++; /* skip opening quote */
-            while (*p && *p != '\'' && len < MAX_LINE - 1) {
-                buf[len++] = *p++;
+        if (!quoted && strcmp(tok, "<") == 0) {
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p) {
+                int q = 0;
+                cur->in_file = read_token(&p, &q);
             }
-            if (*p == '\'') p++; /* skip closing quote */
-        } else {
-            int in_double = 0;
-            if (*p == '"') {
-                in_double = 1;
-                p++; /* skip opening quote */
+            free(tok);
+            continue;
+        } else if (!quoted && (strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0)) {
+            cur->append = (tok[1] == '>');
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p) {
+                int q = 0;
+                cur->out_file = read_token(&p, &q);
             }
-            int first = 1;
-            while (*p && (in_double || (*p != ' ' && *p != '\t'))) {
-                if (*p == '\\') {
-                    p++;
-                    if (*p) {
-                        if (len < MAX_LINE - 1) buf[len++] = *p;
-                        if (first) do_expand = 0;
-                        if (*p) p++;
-                    }
-                    first = 0;
-                    continue;
-                }
-                if (in_double && *p == '"') {
-                    p++; /* end quote */
-                    break;
-                }
-                if (len < MAX_LINE - 1) buf[len++] = *p;
-                p++;
-                first = 0;
-            }
+            free(tok);
+            continue;
         }
 
-        buf[len] = '\0';
-        cur->argv[argc++] = do_expand ? expand_var(buf) : strdup(buf);
+        cur->argv[argc++] = tok;
     }
 
     if (argc > 0 && strcmp(cur->argv[argc-1], "&") == 0) {
@@ -109,6 +148,8 @@ void free_pipeline(PipelineSegment *p) {
         PipelineSegment *next = p->next;
         for (int i = 0; p->argv[i]; i++)
             free(p->argv[i]);
+        free(p->in_file);
+        free(p->out_file);
         free(p);
         p = next;
     }

@@ -13,6 +13,9 @@
 
 typedef struct PipelineSegment {
     char *argv[MAX_TOKENS];
+    char *in_file;
+    char *out_file;
+    int append;
     struct PipelineSegment *next;
 } PipelineSegment;
 
