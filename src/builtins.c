@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "jobs.h"
+#include "history.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,12 @@ static int builtin_jobs(char **args) {
     return 1;
 }
 
+static int builtin_history(char **args) {
+    (void)args;
+    print_history();
+    return 1;
+}
+
 static int builtin_export(char **args) {
     if (!args[1] || !strchr(args[1], '=')) {
         fprintf(stderr, "usage: export NAME=value\n");
@@ -65,6 +72,7 @@ static int builtin_help(char **args) {
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
     printf("  export NAME=value   Set an environment variable\n");
+    printf("  history    Show command history\n");
     printf("  help       Display this help message\n");
     return 1;
 }
@@ -80,6 +88,7 @@ static struct builtin builtins[] = {
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
     {"export", builtin_export},
+    {"history", builtin_history},
     {"help", builtin_help},
     {NULL, NULL}
 };
