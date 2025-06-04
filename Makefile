@@ -8,3 +8,7 @@ vush: $(SRCS)
 
 clean:
 	rm -f vush *.o
+
+
+test: vush
+	cd tests && ./run_tests.sh
