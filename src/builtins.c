@@ -220,7 +220,15 @@ static int builtin_kill(char **args) {
 }
 
 static int builtin_history(char **args) {
-    (void)args;
+    if (args[1]) {
+        if (strcmp(args[1], "-c") == 0 && !args[2]) {
+            clear_history();
+            return 1;
+        } else {
+            fprintf(stderr, "usage: history [-c]\n");
+            return 1;
+        }
+    }
     print_history();
     return 1;
 }
@@ -336,7 +344,7 @@ static int builtin_help(char **args) {
     printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  unset NAME          Remove an environment variable\n");
-    printf("  history    Show command history\n");
+    printf("  history [-c]   Show or clear command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
