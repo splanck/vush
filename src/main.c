@@ -15,25 +15,38 @@
 #include "jobs.h"
 #include "builtins.h"
 
-int main(void) {
+int main(int argc, char **argv) {
     char line[MAX_LINE];
     char *args[MAX_TOKENS];
+
+    FILE *input = stdin;
+    if (argc > 1) {
+        input = fopen(argv[1], "r");
+        if (!input) {
+            perror(argv[1]);
+            return 1;
+        }
+    }
+
+    int interactive = (input == stdin);
 
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
 
     while (1) {
         check_jobs();
-        printf("vush> ");
-        fflush(stdout);
-        if (!fgets(line, sizeof(line), stdin)) break;
+        if (interactive) {
+            printf("vush> ");
+            fflush(stdout);
+        }
+        if (!fgets(line, sizeof(line), input)) break;
         size_t len = strlen(line);
         if (len && line[len-1] == '\n') line[len-1] = '\0';
         int background = 0;
-        int argc = parse_line(line, args, &background);
-        if (argc == 0) continue;
+        int ac = parse_line(line, args, &background);
+        if (ac == 0) continue;
         if (run_builtin(args)) {
-            for (int i = 0; i < argc; i++) free(args[i]);
+            for (int i = 0; i < ac; i++) free(args[i]);
             continue;
         }
         pid_t pid = fork();
@@ -53,8 +66,10 @@ int main(void) {
         } else {
             perror("fork");
         }
-        for (int i = 0; i < argc; i++) free(args[i]);
+        for (int i = 0; i < ac; i++) free(args[i]);
     }
+    if (input != stdin)
+        fclose(input);
     return 0;
 }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 failed=0
-tests="test_env.expect test_pwd.expect test_export.expect"
+tests="test_env.expect test_pwd.expect test_export.expect test_script.expect"
 for test in $tests; do
     echo "Running $test"
     if ! ./$test; then
