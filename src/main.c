@@ -59,6 +59,19 @@ static void print_jobs(void) {
 }
 
 static char *expand_var(const char *token) {
+    if (token[0] == '~') {
+        const char *home = getenv("HOME");
+        if (!home) home = "";
+        size_t home_len = strlen(home);
+        size_t token_len = strlen(token);
+        char *tmp = malloc(home_len + token_len);
+        if (!tmp) return NULL;
+        strcpy(tmp, home);
+        strcat(tmp, token + 1);
+        char *ret = strdup(tmp);
+        free(tmp);
+        return ret;
+    }
     if (token[0] != '$') return strdup(token);
     const char *val = getenv(token + 1);
     return strdup(val ? val : "");
