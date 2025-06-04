@@ -10,6 +10,7 @@ and a few built-in commands.
 - Built-in commands: `cd`, `exit`, `pwd`, `jobs`, and `help`
 - Environment variable expansion for tokens beginning with `$`
 - Background job management using `&`
+- Simple pipelines using `|` to connect commands
 
 ## Building
 
