@@ -18,6 +18,8 @@
 #include "execute.h"
 #include "history.h"
 
+int last_status = 0;
+
 int main(int argc, char **argv) {
     char line[MAX_LINE];
 
@@ -53,7 +55,6 @@ int main(int argc, char **argv) {
         }
         add_history(line);
 
-        int last_status = 0;
         CmdOp prev = OP_SEMI;
         for (Command *c = cmds; c; c = c->next) {
             int run = 1;
@@ -63,9 +64,8 @@ int main(int argc, char **argv) {
                 else if (prev == OP_OR)
                     run = (last_status != 0);
             }
-            if (run) {
-                last_status = run_pipeline(c->pipeline, c->background, line);
-            }
+            if (run)
+                run_pipeline(c->pipeline, c->background, line);
             prev = c->op;
         }
         free_commands(cmds);

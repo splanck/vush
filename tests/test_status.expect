@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "false\r"
+expect "vush> "
+send "echo $?\r"
+expect {
+    -re "[\r\n]+1[\r\n]+vush> " {}
+    timeout { send_user "false status mismatch\n"; exit 1 }
+}
+send "true\r"
+expect "vush> "
+send "echo $?\r"
+expect {
+    -re "[\r\n]+0[\r\n]+vush> " {}
+    timeout { send_user "true status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect eof
