@@ -3,5 +3,6 @@
 
 void add_history(const char *cmd);
 void print_history(void);
+void load_history(void);
 
 #endif /* HISTORY_H */

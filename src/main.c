@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
 
+    load_history();
+
     while (1) {
         check_jobs();
         if (interactive) {
