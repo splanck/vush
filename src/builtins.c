@@ -8,6 +8,7 @@
 #include "jobs.h"
 #include "history.h"
 #include "parser.h"
+#include "execute.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,93 +124,29 @@ static int builtin_source(char **args) {
         size_t len = strlen(line);
         if (len && line[len-1] == '\n') line[len-1] = '\0';
 
-        int background = 0;
-        PipelineSegment *pipeline = parse_line(line, &background);
-        if (!pipeline || !pipeline->argv[0]) {
-            free_pipeline(pipeline);
+        Command *cmds = parse_line(line);
+        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+            free_commands(cmds);
             continue;
         }
 
         add_history(line);
 
-        if (!pipeline->next && run_builtin(pipeline->argv)) {
-            free_pipeline(pipeline);
-            continue;
-        }
-
-        int seg_count = 0;
-        for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next) seg_count++;
-        pid_t *pids = calloc(seg_count, sizeof(pid_t));
-        int i = 0;
-        int in_fd = -1;
-        PipelineSegment *seg = pipeline;
-        int pipefd[2];
-        while (seg) {
-            if (seg->next && pipe(pipefd) < 0) {
-                perror("pipe");
-                break;
+        int last_status = 0;
+        CmdOp prev = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prev == OP_AND)
+                    run = (last_status == 0);
+                else if (prev == OP_OR)
+                    run = (last_status != 0);
             }
-            pid_t pid = fork();
-            if (pid == 0) {
-                signal(SIGINT, SIG_DFL);
-                if (in_fd != -1) {
-                    dup2(in_fd, STDIN_FILENO);
-                    close(in_fd);
-                }
-                if (seg->next) {
-                    close(pipefd[0]);
-                    dup2(pipefd[1], STDOUT_FILENO);
-                    close(pipefd[1]);
-                }
-                if (seg->in_file) {
-                    int fd = open(seg->in_file, O_RDONLY);
-                    if (fd < 0) {
-                        perror(seg->in_file);
-                        exit(1);
-                    }
-                    dup2(fd, STDIN_FILENO);
-                    close(fd);
-                }
-                if (seg->out_file) {
-                    int flags = O_WRONLY | O_CREAT;
-                    if (seg->append)
-                        flags |= O_APPEND;
-                    else
-                        flags |= O_TRUNC;
-                    int fd = open(seg->out_file, flags, 0644);
-                    if (fd < 0) {
-                        perror(seg->out_file);
-                        exit(1);
-                    }
-                    dup2(fd, STDOUT_FILENO);
-                    close(fd);
-                }
-                execvp(seg->argv[0], seg->argv);
-                perror("exec");
-                exit(1);
-            } else if (pid < 0) {
-                perror("fork");
-            } else {
-                pids[i++] = pid;
-                if (in_fd != -1) close(in_fd);
-                if (seg->next) {
-                    close(pipefd[1]);
-                    in_fd = pipefd[0];
-                }
-            }
-            seg = seg->next;
+            if (run)
+                last_status = run_pipeline(c->pipeline, c->background, line);
+            prev = c->op;
         }
-        if (in_fd != -1) close(in_fd);
-
-        if (background) {
-            if (i > 0) add_job(pids[i-1], line);
-        } else {
-            int status;
-            for (int j = 0; j < i; j++)
-                waitpid(pids[j], &status, 0);
-        }
-        free(pids);
-        free_pipeline(pipeline);
+        free_commands(cmds);
     }
     fclose(input);
     return 1;

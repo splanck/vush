@@ -11,6 +11,7 @@ and a few built-in commands.
 - Environment variable expansion for tokens beginning with `$`
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
+- Command chaining with `;`, `&&`, and `||`
 - Input and output redirection with `<`, `>` and `>>`
 - Persistent command history saved to `~/.vush_history`
 

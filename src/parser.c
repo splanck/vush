@@ -34,10 +34,12 @@ static char *read_token(char **p, int *quoted) {
     int do_expand = 1;
     *quoted = 0;
 
-    if (**p == '>' || **p == '<') {
+    if (**p == '>' || **p == '<' || **p == '|' || **p == '&' || **p == ';') {
         buf[len++] = **p;
         (*p)++;
-        if (buf[0] == '>' && **p == '>') {
+        if ((buf[0] == '>' && **p == '>') ||
+            (buf[0] == '&' && **p == '&') ||
+            (buf[0] == '|' && **p == '|')) {
             buf[len++] = **p;
             (*p)++;
         }
@@ -61,7 +63,8 @@ static char *read_token(char **p, int *quoted) {
             (*p)++; /* skip opening quote */
         }
         int first = 1;
-        while (**p && (in_double || (**p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>'))) {
+        while (**p && (in_double || (**p != ' ' && **p != '\t' && **p != '|' &&
+                **p != '<' && **p != '>' && **p != '&' && **p != ';'))) {
             if (**p == '\\') {
                 (*p)++;
                 if (**p) {
@@ -86,58 +89,81 @@ static char *read_token(char **p, int *quoted) {
     return do_expand ? expand_var(buf) : strdup(buf);
 }
 
-PipelineSegment *parse_line(char *line, int *background) {
-    *background = 0;
-    PipelineSegment *head = calloc(1, sizeof(PipelineSegment));
-    if (!head) return NULL;
-    PipelineSegment *cur = head;
-    int argc = 0;
+Command *parse_line(char *line) {
     char *p = line;
-    while (*p && argc < MAX_TOKENS - 1) {
+    Command *head = NULL, *cur_cmd = NULL;
+
+    while (1) {
+        PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
+        PipelineSegment *seg = seg_head;
+        int argc = 0;
+        int background = 0;
+        CmdOp op = OP_NONE;
+
+        while (*p && argc < MAX_TOKENS - 1) {
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p == '\0' || *p == '#') { op = OP_NONE; break; }
+
+            if (*p == ';') { op = OP_SEMI; p++; break; }
+            if (*p == '&' && *(p+1) == '&') { op = OP_AND; p += 2; break; }
+            if (*p == '|' && *(p+1) == '|') { op = OP_OR; p += 2; break; }
+
+            if (*p == '|') {
+                seg->argv[argc] = NULL;
+                PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+                seg->next = next;
+                seg = next;
+                argc = 0;
+                p++;
+                continue;
+            }
+
+            int quoted = 0;
+            char *tok = read_token(&p, &quoted);
+
+            if (!quoted && strcmp(tok, "<") == 0) {
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p) {
+                    int q = 0;
+                    seg->in_file = read_token(&p, &q);
+                }
+                free(tok);
+                continue;
+            } else if (!quoted && (strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0)) {
+                seg->append = (tok[1] == '>');
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p) {
+                    int q = 0;
+                    seg->out_file = read_token(&p, &q);
+                }
+                free(tok);
+                continue;
+            }
+
+            seg->argv[argc++] = tok;
+        }
+
+        if (argc > 0 && strcmp(seg->argv[argc-1], "&") == 0) {
+            background = 1;
+            free(seg->argv[argc-1]);
+            seg->argv[argc-1] = NULL;
+        } else {
+            seg->argv[argc] = NULL;
+        }
+
+        Command *cmd = calloc(1, sizeof(Command));
+        cmd->pipeline = seg_head;
+        cmd->background = background;
+        cmd->op = op;
+
+        if (!head) head = cmd;
+        if (cur_cmd) cur_cmd->next = cmd;
+        cur_cmd = cmd;
+
         while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0' || *p == '#') break; /* comment */
-
-        if (*p == '|') {
-            cur->argv[argc] = NULL;
-            PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
-            cur->next = next;
-            cur = next;
-            argc = 0;
-            p++;
-            continue;
-        }
-
-        int quoted = 0;
-        char *tok = read_token(&p, &quoted);
-
-        if (!quoted && strcmp(tok, "<") == 0) {
-            while (*p == ' ' || *p == '\t') p++;
-            if (*p) {
-                int q = 0;
-                cur->in_file = read_token(&p, &q);
-            }
-            free(tok);
-            continue;
-        } else if (!quoted && (strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0)) {
-            cur->append = (tok[1] == '>');
-            while (*p == ' ' || *p == '\t') p++;
-            if (*p) {
-                int q = 0;
-                cur->out_file = read_token(&p, &q);
-            }
-            free(tok);
-            continue;
-        }
-
-        cur->argv[argc++] = tok;
-    }
-
-    if (argc > 0 && strcmp(cur->argv[argc-1], "&") == 0) {
-        *background = 1;
-        free(cur->argv[argc-1]);
-        cur->argv[argc-1] = NULL;
-    } else {
-        cur->argv[argc] = NULL;
+        if (*p == '#') break;
+        if (!*p) break;
+        if (op == OP_NONE) break;
     }
 
     return head;
@@ -152,6 +178,15 @@ void free_pipeline(PipelineSegment *p) {
         free(p->out_file);
         free(p);
         p = next;
+    }
+}
+
+void free_commands(Command *c) {
+    while (c) {
+        Command *next = c->next;
+        free_pipeline(c->pipeline);
+        free(c);
+        c = next;
     }
 }
 
