@@ -115,7 +115,7 @@ hi
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
 - `export NAME=value` - set an environment variable for the shell.
 - `unset NAME` - remove an environment variable.
-- `history` - show previously entered commands.
+- `history [-c]` - show previously entered commands or clear the history.
   Entries are read from and written to `~/.vush_history`.
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.

@@ -20,6 +20,7 @@ static HistEntry *head = NULL;
 static HistEntry *tail = NULL;
 static HistEntry *cursor = NULL;
 static int next_id = 1;
+static int skip_next = 0;
 
 static void add_history_entry(const char *cmd, int save_file) {
     HistEntry *e = malloc(sizeof(HistEntry));
@@ -52,6 +53,10 @@ static void add_history_entry(const char *cmd, int save_file) {
 }
 
 void add_history(const char *cmd) {
+    if (skip_next) {
+        skip_next = 0;
+        return;
+    }
     add_history_entry(cmd, 1);
 }
 
@@ -102,5 +107,26 @@ const char *history_next(void) {
 
 void history_reset_cursor(void) {
     cursor = NULL;
+}
+
+void clear_history(void) {
+    HistEntry *e = head;
+    while (e) {
+        HistEntry *next = e->next;
+        free(e);
+        e = next;
+    }
+    head = tail = cursor = NULL;
+    next_id = 1;
+    skip_next = 1;
+
+    const char *home = getenv("HOME");
+    if (home) {
+        char path[PATH_MAX];
+        snprintf(path, sizeof(path), "%s/.vush_history", home);
+        FILE *f = fopen(path, "w");
+        if (f)
+            fclose(f);
+    }
 }
 
