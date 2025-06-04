@@ -1,3 +1,8 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the GNU GPLv3.
+ */
+
 #define _GNU_SOURCE
 #include "parser.h"
 #include <stdlib.h>

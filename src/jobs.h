@@ -1,3 +1,8 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the GNU GPLv3.
+ */
+
 #ifndef JOBS_H
 #define JOBS_H
 
