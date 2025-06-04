@@ -86,3 +86,8 @@ make test
 ```
 
 The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.
+
+## License
+
+This project is licensed under the terms of the GNU General Public License
+version 3. See [LICENSE](LICENSE) for the full license text.

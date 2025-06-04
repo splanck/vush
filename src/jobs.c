@@ -1,3 +1,8 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the GNU GPLv3.
+ */
+
 #include "jobs.h"
 #include "parser.h"  /* for MAX_LINE */
 #include <stdio.h>

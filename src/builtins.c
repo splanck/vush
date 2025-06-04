@@ -1,3 +1,8 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the GNU GPLv3.
+ */
+
 #include "builtins.h"
 #include "jobs.h"
 #include <stdio.h>
