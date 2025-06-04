@@ -51,7 +51,9 @@ Words beginning with `$` expand to environment variables. A leading `~` is
 replaced with the value of `$HOME`.
 
 Single quotes disable all expansion. Double quotes preserve spaces while still
-expanding variables. Use a backslash to escape the next character.
+expanding variables. Use a backslash to escape the next character. A `#` that
+appears outside of quotes starts a comment and everything after it on the line
+is ignored.
 
 ```
 vush> echo '$HOME is not expanded'

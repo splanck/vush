@@ -8,7 +8,8 @@ vush \- simple UNIX shell
 vush is a lightweight UNIX shell supporting command execution,
 environment variable expansion and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
-instead of standard input.
+instead of standard input.  A `#` outside of quotes begins a comment
+and causes the rest of the line to be ignored.
 .SH OPTIONS
 None.
 .SH BUILTINS
