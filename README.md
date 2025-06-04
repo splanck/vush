@@ -15,7 +15,7 @@ and a few built-in commands.
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
-- Input and output redirection with `<`, `>` and `>>`
+- Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`
 - Persistent command history saved to `~/.vush_history`
 - Prompt string configurable via the `PS1` environment variable
 
@@ -114,6 +114,9 @@ vush> echo hello >out.txt
 vush> cat < out.txt
 hello
 vush> echo again >>out.txt
+vush> echo error 2>err.txt
+vush> ls nonexistent &>both.txt
+vush> cat both.txt
 ```
 
 ## Background Jobs Example
