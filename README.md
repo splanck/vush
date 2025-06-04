@@ -7,7 +7,7 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
-- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `source`, and `help`
+- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `kill`, `source`, and `help`
 - Environment variable expansion for tokens beginning with `$`
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
@@ -89,6 +89,7 @@ vush> echo $?
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
 - `fg ID` - wait for background job `ID`.
+- `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
 - `export NAME=value` - set an environment variable for the shell.
 - `history` - show previously entered commands.
   Entries are read from and written to `~/.vush_history`.

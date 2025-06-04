@@ -3,12 +3,15 @@
  * Licensed under the GNU GPLv3.
  */
 
+#define _GNU_SOURCE
 #include "jobs.h"
 #include "parser.h"  /* for MAX_LINE */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <unistd.h>
 
 typedef struct Job {
     int id;
@@ -75,6 +78,22 @@ int wait_job(int id) {
         curr = &((*curr)->next);
     }
     fprintf(stderr, "fg: job %d not found\n", id);
+    return -1;
+}
+
+int kill_job(int id, int sig) {
+    Job *curr = jobs;
+    while (curr) {
+        if (curr->id == id) {
+            if (kill(curr->pid, sig) != 0) {
+                perror("kill");
+                return -1;
+            }
+            return 0;
+        }
+        curr = curr->next;
+    }
+    fprintf(stderr, "kill: job %d not found\n", id);
     return -1;
 }
 
