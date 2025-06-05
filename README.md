@@ -18,6 +18,7 @@ and a few built-in commands.
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history`
+- Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
@@ -120,6 +121,7 @@ hi
 - `unset NAME` - remove an environment variable.
 - `history [-c]` - show previously entered commands or clear the history.
   Entries are read from and written to `~/.vush_history`.
+  History size is controlled by the `VUSH_HISTSIZE` environment variable (default 1000).
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
 - `source file` or `. file` - execute commands from a file.

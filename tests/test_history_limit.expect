@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+set timeout 5
+set dir [exec mktemp -d]
+set env(HOME) $dir
+set env(VUSH_HISTSIZE) 3
+spawn ../vush
+expect "vush> "
+send "echo one\r"
+expect {
+    -re "[\r\n]+one[\r\n]+vush> " {}
+    timeout { send_user "echo one failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "echo two\r"
+expect {
+    -re "[\r\n]+two[\r\n]+vush> " {}
+    timeout { send_user "echo two failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "echo three\r"
+expect {
+    -re "[\r\n]+three[\r\n]+vush> " {}
+    timeout { send_user "echo three failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "echo four\r"
+expect {
+    -re "[\r\n]+four[\r\n]+vush> " {}
+    timeout { send_user "echo four failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "history\r"
+expect {
+    -re "3 echo three[\r\n]+4 echo four[\r\n]+5 history[\r\n]+vush> " {}
+    timeout { send_user "history limit mismatch\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $dir
