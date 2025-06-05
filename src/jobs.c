@@ -97,3 +97,19 @@ int kill_job(int id, int sig) {
     return -1;
 }
 
+int bg_job(int id) {
+    Job *curr = jobs;
+    while (curr) {
+        if (curr->id == id) {
+            if (kill(curr->pid, SIGCONT) != 0) {
+                perror("bg");
+                return -1;
+            }
+            return 0;
+        }
+        curr = curr->next;
+    }
+    fprintf(stderr, "bg: job %d not found\n", id);
+    return -1;
+}
+
