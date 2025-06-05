@@ -16,8 +16,10 @@ typedef struct PipelineSegment {
     char *in_file;
     char *out_file;
     int append;
+    int dup_out;      /* > &N duplication */
     char *err_file;
     int err_append;
+    int dup_err;      /* 2>&N duplication */
     struct PipelineSegment *next;
 } PipelineSegment;
 

@@ -97,6 +97,10 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
                     close(fd);
                 }
             }
+            if (seg->dup_out != -1)
+                dup2(seg->dup_out, STDOUT_FILENO);
+            if (seg->dup_err != -1)
+                dup2(seg->dup_err, STDERR_FILENO);
             execvp(seg->argv[0], seg->argv);
             perror("exec");
             exit(1);

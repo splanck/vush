@@ -15,7 +15,8 @@ and a few built-in commands.
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
-- Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`
+- Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
+  including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history`
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
@@ -134,6 +135,8 @@ vush> echo again >>out.txt
 vush> echo error 2>err.txt
 vush> ls nonexistent &>both.txt
 vush> cat both.txt
+vush> echo dup >&dup.txt
+vush> ls nonexistent 2>&1 >>dup.txt
 ```
 
 ## Background Jobs Example

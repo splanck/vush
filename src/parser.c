@@ -111,6 +111,17 @@ static char *read_token(char **p, int *quoted) {
         return strdup(buf);
     }
 
+    if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
+        buf[len++] = '&';
+        (*p)++;
+        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
+            buf[len++] = **p;
+            (*p)++;
+        }
+        buf[len] = '\0';
+        return strdup(buf);
+    }
+
     if (**p == '>' || **p == '<' || **p == '|' || **p == '&' || **p == ';') {
         buf[len++] = **p;
         (*p)++;
@@ -227,6 +238,8 @@ Command *parse_line(char *line) {
 
     while (1) {
         PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
+        seg_head->dup_out = -1;
+        seg_head->dup_err = -1;
         PipelineSegment *seg = seg_head;
         int argc = 0;
         int background = 0;
@@ -243,6 +256,8 @@ Command *parse_line(char *line) {
             if (*p == '|') {
                 seg->argv[argc] = NULL;
                 PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+                next->dup_out = -1;
+                next->dup_err = -1;
                 seg->next = next;
                 seg = next;
                 argc = 0;
@@ -280,7 +295,19 @@ Command *parse_line(char *line) {
             } else if (!quoted && (strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0)) {
                 seg->append = (tok[1] == '>');
                 while (*p == ' ' || *p == '\t') p++;
-                if (*p) {
+                if (*p == '&') {
+                    p++;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (isdigit(*p)) {
+                        seg->dup_out = strtol(p, &p, 10);
+                    } else if (*p) {
+                        int q = 0;
+                        char *file = read_token(&p, &q);
+                        seg->out_file = file;
+                        seg->err_file = file;
+                        seg->err_append = seg->append;
+                    }
+                } else if (*p) {
                     int q = 0;
                     seg->out_file = read_token(&p, &q);
                 }
@@ -289,7 +316,13 @@ Command *parse_line(char *line) {
             } else if (!quoted && (strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0)) {
                 seg->err_append = (tok[2] == '>');
                 while (*p == ' ' || *p == '\t') p++;
-                if (*p) {
+                if (*p == '&') {
+                    p++;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (isdigit(*p)) {
+                        seg->dup_err = strtol(p, &p, 10);
+                    }
+                } else if (*p) {
                     int q = 0;
                     seg->err_file = read_token(&p, &q);
                 }
