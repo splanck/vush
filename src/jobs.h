@@ -14,5 +14,6 @@ void check_jobs(void);
 void print_jobs(void);
 int wait_job(int id);
 int kill_job(int id, int sig);
+int bg_job(int id);
 
 #endif /* JOBS_H */

@@ -113,6 +113,7 @@ hi
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
 - `fg ID` - wait for background job `ID`.
+- `bg ID` - resume a stopped background job `ID`.
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
 - `export NAME=value` - set an environment variable for the shell.
 - `unset NAME` - remove an environment variable.

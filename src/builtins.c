@@ -210,6 +210,16 @@ static int builtin_fg(char **args) {
     return 1;
 }
 
+static int builtin_bg(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: bg ID\n");
+        return 1;
+    }
+    int id = atoi(args[1]);
+    bg_job(id);
+    return 1;
+}
+
 static int builtin_kill(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: kill [-SIGNAL] ID\n");
@@ -352,6 +362,7 @@ static int builtin_help(char **args) {
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
     printf("  fg ID      Wait for job ID in foreground\n");
+    printf("  bg ID      Continue job ID in background\n");
     printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  unset NAME          Remove an environment variable\n");
@@ -376,6 +387,7 @@ static struct builtin builtins[] = {
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
     {"fg", builtin_fg},
+    {"bg", builtin_bg},
     {"kill", builtin_kill},
     {"export", builtin_export},
     {"unset", builtin_unset},
