@@ -21,8 +21,24 @@ static HistEntry *tail = NULL;
 static HistEntry *cursor = NULL;
 static int next_id = 1;
 static int skip_next = 0;
+static int history_size = 0;
+static int max_history = MAX_HISTORY;
+
+static void history_init(void) {
+    static int inited = 0;
+    if (inited)
+        return;
+    const char *env = getenv("VUSH_HISTSIZE");
+    if (env) {
+        long val = strtol(env, NULL, 10);
+        if (val > 0)
+            max_history = (int)val;
+    }
+    inited = 1;
+}
 
 static void add_history_entry(const char *cmd, int save_file) {
+    history_init();
     HistEntry *e = malloc(sizeof(HistEntry));
     if (!e) return;
     e->id = next_id++;
@@ -36,6 +52,18 @@ static void add_history_entry(const char *cmd, int save_file) {
         tail->next = e;
         e->prev = tail;
         tail = e;
+    }
+    history_size++;
+
+    if (history_size > max_history) {
+        HistEntry *old = head;
+        head = head->next;
+        if (head)
+            head->prev = NULL;
+        else
+            tail = NULL;
+        free(old);
+        history_size--;
     }
 
     if (save_file) {
@@ -67,6 +95,7 @@ void print_history(void) {
 }
 
 void load_history(void) {
+    history_init();
     const char *home = getenv("HOME");
     if (!home)
         return;
@@ -119,6 +148,7 @@ void clear_history(void) {
     head = tail = cursor = NULL;
     next_id = 1;
     skip_next = 1;
+    history_size = 0;
 
     const char *home = getenv("HOME");
     if (home) {
