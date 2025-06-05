@@ -7,7 +7,9 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
-- Built-in commands: `cd`, `exit`, `pwd`, `jobs`, `fg`, `kill`, `alias`, `unalias`, `source`, and `help`
+- Built-in commands: `cd`, `pushd`, `popd`, `exit`, `pwd`, `jobs`, `fg`,
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`,
+  `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
