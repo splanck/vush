@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo test 2>&1\r"
+expect {
+    -re "[\r\n]+test[\r\n]+vush> " {}
+    timeout { send_user "2>&1 failed\n"; exit 1 }
+}
+send "ls nonexistent >&dup.tmp\r"
+expect "vush> "
+send "grep \"No such file\" dup.tmp\r"
+expect {
+    -re "No such file" {}
+    timeout { send_user ">&file failed\n"; exit 1 }
+}
+send "rm dup.tmp\r"
+expect "vush> "
+send "exit\r"
+expect eof

@@ -83,8 +83,9 @@ Display information about built-in commands.
 .SH REDIRECTION
 Standard input can be redirected with '<'.  Standard output may be
 redirected with '>' or '>>' to append.  Likewise, file descriptor 2
-(standard error) can be redirected using '2>' or '2>>'.  The '&>'
-operator redirects both stdout and stderr to the same file.
+(standard error) can be redirected using '2>' or '2>>'.
+Both descriptors may be sent to the same file with '&>' or '>&file'.
+File descriptors can also be duplicated, e.g. '2>&1' or '>&2'.
 .SH SEE ALSO
 README.md
 .SH TESTING
