@@ -136,13 +136,19 @@ static char *read_token(char **p, int *quoted) {
     }
 
     if (**p == '\'') {
+        char quote = '\'';
         *quoted = 1;
         do_expand = 0;
         (*p)++; /* skip opening quote */
-        while (**p && **p != '\'' && len < MAX_LINE - 1) {
+        while (**p && **p != quote && len < MAX_LINE - 1) {
             buf[len++] = *(*p)++;
         }
-        if (**p == '\'') (*p)++; /* skip closing quote */
+        if (**p == quote) {
+            (*p)++; /* skip closing quote */
+        } else {
+            fprintf(stderr, "syntax error: unmatched '%c'\n", quote);
+            return NULL;
+        }
     } else {
         int in_double = 0;
         if (**p == '"') {
@@ -175,7 +181,19 @@ static char *read_token(char **p, int *quoted) {
                     cmd[clen++] = **p;
                     (*p)++;
                 }
-                if (!is_dollar && **p == '`') (*p)++; /* closing backtick */
+                if (is_dollar) {
+                    if (depth > 0) {
+                        fprintf(stderr, "syntax error: unmatched ')'\n");
+                        return NULL;
+                    }
+                } else {
+                    if (**p == '`')
+                        (*p)++; /* closing backtick */
+                    else {
+                        fprintf(stderr, "syntax error: unmatched '`'\n");
+                        return NULL;
+                    }
+                }
                 cmd[clen] = '\0';
                 char *res = command_output(cmd);
                 for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
@@ -226,6 +244,10 @@ static char *read_token(char **p, int *quoted) {
             (*p)++;
             first = 0;
         }
+        if (in_double && *(*p - 1) != '"') {
+            fprintf(stderr, "syntax error: unmatched '\"'\n");
+            return NULL;
+        }
     }
 
     buf[len] = '\0';
@@ -267,6 +289,12 @@ Command *parse_line(char *line) {
 
             int quoted = 0;
             char *tok = read_token(&p, &quoted);
+            if (!tok) {
+                free_pipeline(seg_head);
+                free_commands(head);
+                last_status = 1;
+                return NULL;
+            }
 
             if (!quoted && argc == 0) {
                 const char *alias = get_alias(tok);
@@ -289,6 +317,13 @@ Command *parse_line(char *line) {
                 if (*p) {
                     int q = 0;
                     seg->in_file = read_token(&p, &q);
+                    if (!seg->in_file) {
+                        free(tok);
+                        free_pipeline(seg_head);
+                        free_commands(head);
+                        last_status = 1;
+                        return NULL;
+                    }
                 }
                 free(tok);
                 continue;
@@ -303,6 +338,13 @@ Command *parse_line(char *line) {
                     } else if (*p) {
                         int q = 0;
                         char *file = read_token(&p, &q);
+                        if (!file) {
+                            free(tok);
+                            free_pipeline(seg_head);
+                            free_commands(head);
+                            last_status = 1;
+                            return NULL;
+                        }
                         seg->out_file = file;
                         seg->err_file = file;
                         seg->err_append = seg->append;
@@ -310,6 +352,13 @@ Command *parse_line(char *line) {
                 } else if (*p) {
                     int q = 0;
                     seg->out_file = read_token(&p, &q);
+                    if (!seg->out_file) {
+                        free(tok);
+                        free_pipeline(seg_head);
+                        free_commands(head);
+                        last_status = 1;
+                        return NULL;
+                    }
                 }
                 free(tok);
                 continue;
@@ -325,6 +374,13 @@ Command *parse_line(char *line) {
                 } else if (*p) {
                     int q = 0;
                     seg->err_file = read_token(&p, &q);
+                    if (!seg->err_file) {
+                        free(tok);
+                        free_pipeline(seg_head);
+                        free_commands(head);
+                        last_status = 1;
+                        return NULL;
+                    }
                 }
                 free(tok);
                 continue;
@@ -336,6 +392,13 @@ Command *parse_line(char *line) {
                 if (*p) {
                     int q = 0;
                     char *file = read_token(&p, &q);
+                    if (!file) {
+                        free(tok);
+                        free_pipeline(seg_head);
+                        free_commands(head);
+                        last_status = 1;
+                        return NULL;
+                    }
                     seg->out_file = file;
                     seg->err_file = file;
                 }
