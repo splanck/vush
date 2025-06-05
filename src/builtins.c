@@ -12,6 +12,7 @@
 #include "dirstack.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -168,8 +169,18 @@ static int builtin_popd(char **args) {
 }
 
 static int builtin_exit(char **args) {
-    (void)args;
-    exit(0);
+    int status = 0;
+    if (args[1]) {
+        char *end;
+        errno = 0;
+        long val = strtol(args[1], &end, 10);
+        if (*end != '\0' || errno != 0) {
+            fprintf(stderr, "usage: exit [STATUS]\n");
+            return 1;
+        }
+        status = (int)val;
+    }
+    exit(status);
 }
 
 static int builtin_pwd(char **args) {
@@ -337,7 +348,7 @@ static int builtin_help(char **args) {
     printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
     printf("  pushd DIR  Push current directory and switch to DIR\n");
     printf("  popd       Switch to directory from stack\n");
-    printf("  exit       Exit the shell\n");
+    printf("  exit [status]  Exit the shell with optional status\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
     printf("  fg ID      Wait for job ID in foreground\n");

@@ -22,6 +22,7 @@ and a few built-in commands.
   and `Ctrl-U` clears back to the start
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable
+- `exit` accepts an optional status argument
 
 ## Building
 
@@ -108,7 +109,7 @@ hi
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
-- `exit` - terminate the shell.
+- `exit [status]` - terminate the shell with an optional status code.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
 - `fg ID` - wait for background job `ID`.
