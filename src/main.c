@@ -11,10 +11,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <limits.h>
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
+#include "common.h"
 
 #include "parser.h"
 #include "jobs.h"
