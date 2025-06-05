@@ -42,6 +42,21 @@ The resulting binary will be `./vush`. Remove the binary with:
 make clean
 ```
 
+## Installation
+
+Install the binary and manual page with:
+
+```sh
+make install
+```
+
+By default files are placed under `/usr/local`. Set `PREFIX` to a different
+location if desired. Uninstall with:
+
+```sh
+make uninstall
+```
+
 ## Usage
 
 Run the `vush` binary and enter commands as you would in a normal shell.  You
