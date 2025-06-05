@@ -106,6 +106,10 @@ vush> echo $(echo hi)
 hi
 ```
 
+If the closing quote or `)` for command substitution is missing, `vush` prints
+`syntax error: unmatched '<char>'` to stderr, sets `$?` to `1` and ignores the
+line.
+
 ## Built-in Commands
 
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
