@@ -22,56 +22,72 @@ extern int last_status;
 #include <signal.h>
 #include <fcntl.h>
 
-#define MAX_ALIASES 32
-
 struct alias_entry {
     char *name;
     char *value;
+    struct alias_entry *next;
 };
 
-static struct alias_entry aliases[MAX_ALIASES];
-static int alias_count = 0;
+static struct alias_entry *aliases = NULL;
 
 const char *get_alias(const char *name) {
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].name, name) == 0)
-            return aliases[i].value;
+    for (struct alias_entry *a = aliases; a; a = a->next) {
+        if (strcmp(a->name, name) == 0)
+            return a->value;
     }
     return NULL;
 }
 
 static void set_alias(const char *name, const char *value) {
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].name, name) == 0) {
-            free(aliases[i].value);
-            aliases[i].value = strdup(value);
+    for (struct alias_entry *a = aliases; a; a = a->next) {
+        if (strcmp(a->name, name) == 0) {
+            free(a->value);
+            a->value = strdup(value);
             return;
         }
     }
-    if (alias_count >= MAX_ALIASES) {
-        fprintf(stderr, "alias table full\n");
+    struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
+    if (!new_alias) {
+        perror("malloc");
         return;
     }
-    aliases[alias_count].name = strdup(name);
-    aliases[alias_count].value = strdup(value);
-    alias_count++;
+    new_alias->name = strdup(name);
+    new_alias->value = strdup(value);
+    new_alias->next = aliases;
+    aliases = new_alias;
 }
 
 static void remove_alias(const char *name) {
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].name, name) == 0) {
-            free(aliases[i].name);
-            free(aliases[i].value);
-            aliases[i] = aliases[alias_count - 1];
-            alias_count--;
+    struct alias_entry *prev = NULL;
+    for (struct alias_entry *a = aliases; a; prev = a, a = a->next) {
+        if (strcmp(a->name, name) == 0) {
+            if (prev)
+                prev->next = a->next;
+            else
+                aliases = a->next;
+            free(a->name);
+            free(a->value);
+            free(a);
             return;
         }
     }
 }
 
 static void list_aliases(void) {
-    for (int i = 0; i < alias_count; i++)
-        printf("%s='%s'\n", aliases[i].name, aliases[i].value);
+    for (struct alias_entry *a = aliases; a; a = a->next)
+        printf("%s='%s'\n", a->name, a->value);
+}
+
+void free_aliases(void) {
+    struct alias_entry *a = aliases;
+    while (a) {
+        struct alias_entry *next = a->next;
+        free(a->name);
+        free(a->value);
+        free(a);
+        a = next;
+    }
+    aliases = NULL;
 }
 
 static int builtin_cd(char **args) {
@@ -177,6 +193,7 @@ static int builtin_exit(char **args) {
         }
         status = (int)val;
     }
+    free_aliases();
     exit(status);
 }
 

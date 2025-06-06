@@ -122,6 +122,7 @@ int main(int argc, char **argv) {
     }
     if (input != stdin)
         fclose(input);
+    free_aliases();
     return 0;
 }
 
