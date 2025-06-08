@@ -254,6 +254,23 @@ static char *read_token(char **p, int *quoted) {
     return do_expand ? expand_var(buf) : strdup(buf);
 }
 
+char *expand_prompt(const char *prompt) {
+    if (!prompt)
+        return strdup("");
+    size_t len = strlen(prompt);
+    char tmp[len + 3];
+    tmp[0] = '"';
+    memcpy(tmp + 1, prompt, len);
+    tmp[len + 1] = '"';
+    tmp[len + 2] = '\0';
+    char *p = tmp;
+    int quoted = 0;
+    char *res = read_token(&p, &quoted);
+    if (!res)
+        return strdup("");
+    return res;
+}
+
 Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;

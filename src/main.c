@@ -86,10 +86,11 @@ int main(int argc, char **argv) {
     while (1) {
         check_jobs();
         if (interactive) {
-            const char *prompt = getenv("PS1");
-            if (!prompt) prompt = "vush> ";
+            const char *ps = getenv("PS1");
+            char *prompt = expand_prompt(ps ? ps : "vush> ");
             history_reset_cursor();
             line = line_edit(prompt);
+            free(prompt);
             if (!line) break;
         } else {
             if (!fgets(linebuf, sizeof(linebuf), input)) break;
