@@ -8,6 +8,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static void redraw_line(const char *prompt, const char *buf, int prev_len,
+                        int pos);
+
+static int redraw_search(const char *search, const char *match, int prev_len) {
+    char line[MAX_LINE * 2];
+    int len = snprintf(line, sizeof(line), "(reverse-i-search)`%s`: %s", search,
+                        match ? match : "");
+    printf("\r%s", line);
+    if (prev_len > len) {
+        for (int i = len; i < prev_len; i++)
+            putchar(' ');
+        printf("\r%s", line);
+    }
+    fflush(stdout);
+    return len;
+}
+
+static int reverse_search(const char *prompt, char *buf, int *lenp, int *posp,
+                          int *disp_lenp) {
+    char search[MAX_LINE];
+    int s_len = 0;
+    search[0] = '\0';
+    char saved[MAX_LINE];
+    int saved_len = *lenp;
+    int saved_pos = *posp;
+    strncpy(saved, buf, MAX_LINE - 1);
+    saved[MAX_LINE - 1] = '\0';
+    const char *match = NULL;
+    history_reset_search();
+    int disp = 0;
+
+    while (1) {
+        disp = redraw_search(search, match, disp);
+        char c;
+        if (read(STDIN_FILENO, &c, 1) != 1)
+            return -1;
+        if (c == 0x07 || c == '\033') { /* Ctrl-G or Esc cancel */
+            strncpy(buf, saved, MAX_LINE - 1);
+            buf[MAX_LINE - 1] = '\0';
+            *lenp = saved_len;
+            *posp = saved_pos;
+            redraw_line(prompt, buf, *disp_lenp, *posp);
+            if (*lenp > *disp_lenp)
+                *disp_lenp = *lenp;
+            history_reset_search();
+            return 0;
+        } else if (c == 0x12) { /* Ctrl-R cycle */
+            const char *h = history_search_prev(search);
+            if (h)
+                match = h;
+        } else if (c == 0x7f) { /* backspace */
+            if (s_len > 0) {
+                search[--s_len] = '\0';
+                history_reset_search();
+                match = history_search_prev(search);
+            }
+        } else if (c == '\r' || c == '\n') {
+            if (match) {
+                strncpy(buf, match, MAX_LINE - 1);
+                buf[MAX_LINE - 1] = '\0';
+                *lenp = *posp = strlen(buf);
+                *disp_lenp = *lenp;
+                printf("\r%s%s\n", prompt, buf);
+            } else {
+                printf("\r\n");
+                *lenp = *posp = 0;
+                buf[0] = '\0';
+            }
+            history_reset_search();
+            return 1;
+        } else if (c >= 32 && c < 127) {
+            if (s_len < MAX_LINE - 1) {
+                search[s_len++] = c;
+                search[s_len] = '\0';
+                history_reset_search();
+                match = history_search_prev(search);
+            }
+        }
+    }
+}
+
 static void redraw_line(const char *prompt, const char *buf, int prev_len, int pos) {
     int len = strlen(buf);
     printf("\r%s%s", prompt, buf);
@@ -81,6 +162,14 @@ char *line_edit(const char *prompt) {
                 pos = 0;
                 redraw_line(prompt, buf, disp_len, pos);
                 disp_len = len;
+            }
+        } else if (c == 0x12) { /* Ctrl-R */
+            int r = reverse_search(prompt, buf, &len, &pos, &disp_len);
+            if (r < 0) {
+                len = -1;
+                break;
+            } else if (r > 0) {
+                break;
             }
         } else if (c == '\033') { /* escape sequences */
             char seq[3];

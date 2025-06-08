@@ -9,6 +9,8 @@ void load_history(void);
 const char *history_prev(void);
 const char *history_next(void);
 void history_reset_cursor(void);
+const char *history_search_prev(const char *term);
+void history_reset_search(void);
 void clear_history(void);
 
 #endif /* HISTORY_H */
