@@ -148,6 +148,19 @@ const char *history_search_prev(const char *term) {
     return NULL;
 }
 
+const char *history_search_next(const char *term) {
+    if (!term || !*term || !head)
+        return NULL;
+    HistEntry *start = search_cursor ? search_cursor->next : head;
+    for (HistEntry *e = start; e; e = e->next) {
+        if (strstr(e->cmd, term)) {
+            search_cursor = e;
+            return e->cmd;
+        }
+    }
+    return NULL;
+}
+
 void history_reset_search(void) {
     search_cursor = NULL;
 }
