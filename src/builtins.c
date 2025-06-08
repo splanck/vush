@@ -450,6 +450,7 @@ static struct builtin builtins[] = {
     {"history", builtin_history},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
+    {"type", builtin_type},
     {"source", builtin_source},
     {".", builtin_source},
     {"help", builtin_help},
@@ -472,5 +473,52 @@ const char **get_builtin_names(void) {
         names[i] = builtins[i].name;
     names[i] = NULL;
     return names;
+}
+
+int builtin_type(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: type name...\n");
+        return 1;
+    }
+    for (int i = 1; args[i]; i++) {
+        const char *alias = get_alias(args[i]);
+        if (alias) {
+            printf("%s is an alias for '%s'\n", args[i], alias);
+            continue;
+        }
+        int is_builtin = 0;
+        for (int j = 0; builtins[j].name; j++) {
+            if (strcmp(args[i], builtins[j].name) == 0) {
+                printf("%s is a builtin\n", args[i]);
+                is_builtin = 1;
+                break;
+            }
+        }
+        if (is_builtin)
+            continue;
+        const char *pathenv = getenv("PATH");
+        if (!pathenv)
+            pathenv = "/bin:/usr/bin";
+        char *paths = strdup(pathenv);
+        if (!paths)
+            continue;
+        char *saveptr = NULL;
+        char *dir = strtok_r(paths, ":", &saveptr);
+        int found = 0;
+        while (dir) {
+            char full[PATH_MAX];
+            snprintf(full, sizeof(full), "%s/%s", dir, args[i]);
+            if (access(full, X_OK) == 0) {
+                printf("%s is %s\n", args[i], full);
+                found = 1;
+                break;
+            }
+            dir = strtok_r(NULL, ":", &saveptr);
+        }
+        free(paths);
+        if (!found)
+            printf("%s not found\n", args[i]);
+    }
+    return 1;
 }
 

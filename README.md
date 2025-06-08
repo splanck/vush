@@ -8,7 +8,7 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
 - Built-in commands: `cd`, `pushd`, `popd`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`,
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `type`,
   `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
@@ -148,6 +148,7 @@ line.
 - `unalias NAME` - remove an alias.
 - Aliases are stored in `~/.vush_aliases`.
   The file contains one `name=value` pair per line without quotes.
+- `type NAME...` - display how each NAME would be interpreted.
 - `source file` or `. file` - execute commands from a file.
 - `help` - display information about built-in commands.
 
@@ -181,6 +182,17 @@ vush> # continue using the shell
 vush> pushd /tmp
 /path/to/dir
 vush> popd
+```
+
+## Type Example
+
+```
+vush> alias ll='ls -l'
+vush> type ll cd ls unknown
+ll is an alias for 'ls -l'
+cd is a builtin
+ls is /bin/ls
+unknown not found
 ```
 
 ## Documentation
