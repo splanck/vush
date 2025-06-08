@@ -7,9 +7,17 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include "builtins.h"
 
 static void redraw_line(const char *prompt, const char *buf, int prev_len,
                         int pos);
+
+static int cmpstr(const void *a, const void *b) {
+    const char *aa = *(const char **)a;
+    const char *bb = *(const char **)b;
+    return strcmp(aa, bb);
+}
 
 static int redraw_search(const char *search, const char *match, int prev_len) {
     char line[MAX_LINE * 2];
@@ -162,6 +170,74 @@ char *line_edit(const char *prompt) {
                 pos = 0;
                 redraw_line(prompt, buf, disp_len, pos);
                 disp_len = len;
+            }
+        } else if (c == '\t') { /* Tab completion */
+            int start = pos;
+            while (start > 0 && buf[start-1] != ' ' && buf[start-1] != '\t')
+                start--;
+            char prefix[MAX_LINE];
+            memcpy(prefix, &buf[start], pos - start);
+            prefix[pos - start] = '\0';
+
+            int mcount = 0;
+            int mcap = 16;
+            char **matches = malloc(mcap * sizeof(char *));
+            if (!matches)
+                matches = NULL;
+            const char **bn = get_builtin_names();
+            if (matches)
+            for (int i = 0; bn[i]; i++) {
+                if (strncmp(bn[i], prefix, pos - start) == 0) {
+                    if (mcount == mcap) {
+                        mcap *= 2;
+                        matches = realloc(matches, mcap * sizeof(char *));
+                        if (!matches) break;
+                    }
+                    matches[mcount++] = strdup(bn[i]);
+                }
+            }
+            DIR *d = opendir(".");
+            if (d && matches) {
+                struct dirent *de;
+                while ((de = readdir(d))) {
+                    if (strncmp(de->d_name, prefix, pos - start) == 0) {
+                        if (mcount == mcap) {
+                            mcap *= 2;
+                            matches = realloc(matches, mcap * sizeof(char *));
+                            if (!matches) break;
+                        }
+                        matches[mcount++] = strdup(de->d_name);
+                    }
+                }
+                closedir(d);
+            }
+            if (matches) {
+                if (mcount == 1) {
+                    const char *match = matches[0];
+                    int mlen = strlen(match);
+                    if (len + mlen - (pos - start) < MAX_LINE - 1) {
+                        memmove(&buf[start + mlen], &buf[pos], len - pos);
+                        memcpy(&buf[start], match, mlen);
+                        len += mlen - (pos - start);
+                        pos = start + mlen;
+                        buf[len] = '\0';
+                        redraw_line(prompt, buf, disp_len, pos);
+                        if (len > disp_len)
+                            disp_len = len;
+                    }
+                } else if (mcount > 1) {
+                    qsort(matches, mcount, sizeof(char *), cmpstr);
+                    printf("\r\n");
+                    for (int i = 0; i < mcount; i++)
+                        printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
+                    printf("\r\n");
+                    redraw_line(prompt, buf, disp_len, pos);
+                    if (len > disp_len)
+                        disp_len = len;
+                }
+                for (int i = 0; i < mcount; i++)
+                    free(matches[i]);
+                free(matches);
             }
         } else if (c == 0x12) { /* Ctrl-R */
             int r = reverse_search(prompt, buf, &len, &pos, &disp_len);

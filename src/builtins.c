@@ -465,3 +465,12 @@ int run_builtin(char **args) {
     return 0;
 }
 
+const char **get_builtin_names(void) {
+    static const char *names[sizeof(builtins) / sizeof(builtins[0])];
+    int i = 0;
+    for (; builtins[i].name; i++)
+        names[i] = builtins[i].name;
+    names[i] = NULL;
+    return names;
+}
+
