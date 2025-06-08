@@ -17,7 +17,9 @@ and causes the rest of the line to be ignored.
 When run interactively, arrow keys allow editing the current line and
 recalling previous commands from history.  `Ctrl-A` or the Home key moves
 the cursor to the start of the line, `Ctrl-E` or End moves to the end and
-`Ctrl-U` clears from the cursor back to the beginning.
+`Ctrl-U` clears from the cursor back to the beginning.  `Ctrl-W` deletes
+the word before the cursor, `Ctrl-K` deletes from the cursor to the end
+of the line and `Ctrl-L` clears the screen and redraws the current line.
 If \fB~/.vushrc\fP exists, commands from this file are executed before
 the first prompt is shown.
 .SH OPTIONS
