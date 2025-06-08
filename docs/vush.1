@@ -77,6 +77,10 @@ Remove an alias.
 .TP
 Aliases are saved to \fB~/.vush_aliases\fP, one \fIname\fP=\fIvalue\fP per line.
 .TP
+.B type \fIname\fP...
+For each argument, print whether it is an alias, builtin or the full path of an
+executable found in \fB$PATH\fP.
+.TP
 .B source \fIfile\fP
 Read commands from \fIfile\fP.
 .TP
