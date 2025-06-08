@@ -83,6 +83,13 @@ Alias for \fBsource\fP.
 .TP
 .B help
 Display information about built-in commands.
+.SH ENVIRONMENT
+.TP
+.B PS1
+Controls the interactive shell prompt. The contents of this variable are
+printed before each command and undergo normal variable and command
+substitution. The default prompt is \"vush> \" but users may set \fBPS1\fP to any
+string to include information such as the current directory.
 .SH REDIRECTION
 Standard input can be redirected with '<'.  Standard output may be
 redirected with '>' or '>>' to append.  Likewise, file descriptor 2
