@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <string.h>
+#include <errno.h>
 
 #include "execute.h"
 #include "jobs.h"
@@ -102,8 +103,11 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
             if (seg->dup_err != -1)
                 dup2(seg->dup_err, STDERR_FILENO);
             execvp(seg->argv[0], seg->argv);
-            perror("exec");
-            exit(1);
+            if (errno == ENOENT)
+                fprintf(stderr, "%s: command not found\n", seg->argv[0]);
+            else
+                fprintf(stderr, "%s: %s\n", seg->argv[0], strerror(errno));
+            exit(127);
         } else if (pid < 0) {
             perror("fork");
         } else {
