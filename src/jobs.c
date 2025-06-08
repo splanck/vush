@@ -51,7 +51,13 @@ void check_jobs(void) {
     int status;
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        printf("[vush] job %d finished\n", pid);
+        Job *curr = jobs;
+        while (curr && curr->pid != pid)
+            curr = curr->next;
+        if (curr)
+            printf("[vush] job %d (%s) finished\n", curr->id, curr->cmd);
+        else
+            printf("[vush] job %d finished\n", pid);
         remove_job(pid);
     }
 }
