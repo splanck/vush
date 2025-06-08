@@ -7,7 +7,7 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
-- Built-in commands: `cd`, `pushd`, `popd`, `exit`, `pwd`, `jobs`, `fg`,
+ - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
   `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `type`,
   `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
@@ -133,6 +133,7 @@ line.
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
+- `dirs` - display the directory stack.
 - `exit [status]` - terminate the shell with an optional status code.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
