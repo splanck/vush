@@ -21,6 +21,7 @@ and a few built-in commands.
   including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history`
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
+- Alias definitions persisted in `~/.vush_aliases`
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
@@ -145,6 +146,8 @@ line.
   History size is controlled by the `VUSH_HISTSIZE` environment variable (default 1000).
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
+- Aliases are stored in `~/.vush_aliases`.
+  The file contains one `name=value` pair per line without quotes.
 - `source file` or `. file` - execute commands from a file.
 - `help` - display information about built-in commands.
 
