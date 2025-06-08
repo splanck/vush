@@ -221,6 +221,15 @@ static int builtin_popd(char **args) {
     return 1;
 }
 
+int builtin_dirs(char **args) {
+    if (args[1]) {
+        fprintf(stderr, "usage: dirs\n");
+        return 1;
+    }
+    dirstack_print();
+    return 1;
+}
+
 static int builtin_exit(char **args) {
     int status = 0;
     if (args[1]) {
@@ -414,6 +423,7 @@ static int builtin_help(char **args) {
     printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
     printf("  pushd DIR  Push current directory and switch to DIR\n");
     printf("  popd       Switch to directory from stack\n");
+    printf("  dirs       Display the directory stack\n");
     printf("  exit [status]  Exit the shell with optional status\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
@@ -439,6 +449,7 @@ static struct builtin builtins[] = {
     {"cd", builtin_cd},
     {"pushd", builtin_pushd},
     {"popd", builtin_popd},
+    {"dirs", builtin_dirs},
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
