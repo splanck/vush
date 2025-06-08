@@ -171,6 +171,30 @@ char *line_edit(const char *prompt) {
                 redraw_line(prompt, buf, disp_len, pos);
                 disp_len = len;
             }
+        } else if (c == 0x17) { /* Ctrl-W */
+            if (pos > 0) {
+                int end = pos;
+                while (pos > 0 && (buf[pos-1] == ' ' || buf[pos-1] == '\t'))
+                    pos--;
+                while (pos > 0 && buf[pos-1] != ' ' && buf[pos-1] != '\t')
+                    pos--;
+                memmove(&buf[pos], &buf[end], len - end);
+                len -= end - pos;
+                redraw_line(prompt, buf, disp_len, pos);
+                if (len > disp_len)
+                    disp_len = len;
+            }
+        } else if (c == 0x0b) { /* Ctrl-K */
+            if (pos < len) {
+                buf[pos] = '\0';
+                len = pos;
+                redraw_line(prompt, buf, disp_len, pos);
+                disp_len = len;
+            }
+        } else if (c == 0x0c) { /* Ctrl-L */
+            printf("\x1b[H\x1b[2J");
+            redraw_line(prompt, buf, disp_len, pos);
+            fflush(stdout);
         } else if (c == '\t') { /* Tab completion */
             int start = pos;
             while (start > 0 && buf[start-1] != ' ' && buf[start-1] != '\t')
