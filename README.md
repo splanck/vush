@@ -26,7 +26,7 @@ and a few built-in commands.
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
 - Startup commands read from `~/.vushrc` if the file exists
-- Prompt string configurable via the `PS1` environment variable
+- Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
 
 ## Building
