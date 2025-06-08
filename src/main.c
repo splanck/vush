@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     signal(SIGINT, SIG_IGN);
 
     load_history();
+    load_aliases();
 
     /* Execute commands from ~/.vushrc if present */
     const char *home = getenv("HOME");

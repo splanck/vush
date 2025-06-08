@@ -30,6 +30,45 @@ struct alias_entry {
 
 static struct alias_entry *aliases = NULL;
 
+static void set_alias(const char *name, const char *value);
+
+static void save_aliases(void) {
+    const char *home = getenv("HOME");
+    if (!home)
+        return;
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.vush_aliases", home);
+    FILE *f = fopen(path, "w");
+    if (!f)
+        return;
+    for (struct alias_entry *a = aliases; a; a = a->next)
+        fprintf(f, "%s=%s\n", a->name, a->value);
+    fclose(f);
+}
+
+void load_aliases(void) {
+    const char *home = getenv("HOME");
+    if (!home)
+        return;
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.vush_aliases", home);
+    FILE *f = fopen(path, "r");
+    if (!f)
+        return;
+    char line[MAX_LINE];
+    while (fgets(line, sizeof(line), f)) {
+        size_t len = strlen(line);
+        if (len && line[len - 1] == '\n')
+            line[len - 1] = '\0';
+        char *eq = strchr(line, '=');
+        if (!eq)
+            continue;
+        *eq = '\0';
+        set_alias(line, eq + 1);
+    }
+    fclose(f);
+}
+
 const char *get_alias(const char *name) {
     for (struct alias_entry *a = aliases; a; a = a->next) {
         if (strcmp(a->name, name) == 0)
@@ -79,6 +118,7 @@ static void list_aliases(void) {
 }
 
 void free_aliases(void) {
+    save_aliases();
     struct alias_entry *a = aliases;
     while (a) {
         struct alias_entry *next = a->next;
@@ -283,6 +323,7 @@ static int builtin_alias(char **args) {
         set_alias(args[i], eq + 1);
         *eq = '=';
     }
+    save_aliases();
     return 1;
 }
 
@@ -293,6 +334,7 @@ static int builtin_unalias(char **args) {
     }
     for (int i = 1; args[i]; i++)
         remove_alias(args[i]);
+    save_aliases();
     return 1;
 }
 
