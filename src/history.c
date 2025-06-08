@@ -15,6 +15,7 @@ typedef struct HistEntry {
 static HistEntry *head = NULL;
 static HistEntry *tail = NULL;
 static HistEntry *cursor = NULL;
+static HistEntry *search_cursor = NULL;
 static int next_id = 1;
 static int skip_next = 0;
 static int history_size = 0;
@@ -134,6 +135,23 @@ void history_reset_cursor(void) {
     cursor = NULL;
 }
 
+const char *history_search_prev(const char *term) {
+    if (!term || !*term || !tail)
+        return NULL;
+    HistEntry *start = search_cursor ? search_cursor->prev : tail;
+    for (HistEntry *e = start; e; e = e->prev) {
+        if (strstr(e->cmd, term)) {
+            search_cursor = e;
+            return e->cmd;
+        }
+    }
+    return NULL;
+}
+
+void history_reset_search(void) {
+    search_cursor = NULL;
+}
+
 void clear_history(void) {
     HistEntry *e = head;
     while (e) {
@@ -141,7 +159,7 @@ void clear_history(void) {
         free(e);
         e = next;
     }
-    head = tail = cursor = NULL;
+    head = tail = cursor = search_cursor = NULL;
     next_id = 1;
     skip_next = 1;
     history_size = 0;
