@@ -13,5 +13,6 @@ const char *history_search_prev(const char *term);
 const char *history_search_next(const char *term);
 void history_reset_search(void);
 void clear_history(void);
+void delete_history_entry(int id);
 
 #endif /* HISTORY_H */

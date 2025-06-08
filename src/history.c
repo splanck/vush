@@ -187,3 +187,42 @@ void clear_history(void) {
     }
 }
 
+void delete_history_entry(int id) {
+    history_init();
+    HistEntry *e = head;
+    while (e && e->id != id)
+        e = e->next;
+    if (!e)
+        return;
+
+    if (e->prev)
+        e->prev->next = e->next;
+    else
+        head = e->next;
+
+    if (e->next)
+        e->next->prev = e->prev;
+    else
+        tail = e->prev;
+
+    if (cursor == e)
+        cursor = e->next;
+    if (search_cursor == e)
+        search_cursor = e->next;
+
+    free(e);
+    history_size--;
+
+    const char *home = getenv("HOME");
+    if (!home)
+        return;
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.vush_history", home);
+    FILE *f = fopen(path, "w");
+    if (!f)
+        return;
+    for (HistEntry *h = head; h; h = h->next)
+        fprintf(f, "%s\n", h->cmd);
+    fclose(f);
+}
+
