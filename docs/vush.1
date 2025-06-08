@@ -68,8 +68,8 @@ Set an environment variable for the shell.
 .B unset \fIname\fP
 Remove an environment variable.
 .TP
-.B history [-c]
-Show command history or clear it with \fB-c\fP.
+.B history [-c | -d \fInum\fP]
+Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB-d\fP.
 The number of entries kept is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
 .TP
 .B alias \fIname\fP=\fIvalue\fP
