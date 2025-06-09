@@ -515,7 +515,7 @@ static int builtin_source(char **args) {
                     run = (last_status != 0);
             }
             if (run)
-                run_pipeline(c->pipeline, c->background, line);
+                run_pipeline(c, line);
             prev = c->op;
         }
         free_commands(cmds);
@@ -550,6 +550,52 @@ static int builtin_help(char **args) {
     return 1;
 }
 
+static int builtin_test(char **args) {
+    int count = 0;
+    while (args[count]) count++;
+    if (strcmp(args[0], "[") == 0) {
+        if (count < 2 || strcmp(args[count-1], "]") != 0) {
+            fprintf(stderr, "[: missing ]\n");
+            last_status = 1;
+            return 1;
+        }
+        args[count-1] = NULL;
+        count--;
+    }
+    char **av = args + 1;
+    count--;
+    int res = 1;
+    if (count == 0) {
+        res = 1;
+    } else if (count == 1) {
+        res = av[0][0] ? 0 : 1;
+    } else if (count == 2) {
+        if (strcmp(av[0], "-n") == 0)
+            res = av[1][0] ? 0 : 1;
+        else if (strcmp(av[0], "-z") == 0)
+            res = av[1][0] ? 1 : 0;
+    } else if (count == 3) {
+        if (strcmp(av[1], "=") == 0)
+            res = strcmp(av[0], av[2]) == 0 ? 0 : 1;
+        else if (strcmp(av[1], "!=") == 0)
+            res = strcmp(av[0], av[2]) != 0 ? 0 : 1;
+        else if (strcmp(av[1], "-eq") == 0)
+            res = (atoi(av[0]) == atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-ne") == 0)
+            res = (atoi(av[0]) != atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-gt") == 0)
+            res = (atoi(av[0]) > atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-lt") == 0)
+            res = (atoi(av[0]) < atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-ge") == 0)
+            res = (atoi(av[0]) >= atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-le") == 0)
+            res = (atoi(av[0]) <= atoi(av[2])) ? 0 : 1;
+    }
+    last_status = res;
+    return 1;
+}
+
 struct builtin {
     const char *name;
     int (*func)(char **);
@@ -573,6 +619,8 @@ static struct builtin builtins[] = {
     {"unalias", builtin_unalias},
     {"shift", builtin_shift},
     {"set", builtin_set},
+    {"test", builtin_test},
+    {"[", builtin_test},
     {"type", builtin_type},
     {"source", builtin_source},
     {".", builtin_source},

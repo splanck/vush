@@ -394,11 +394,165 @@ char *expand_prompt(const char *prompt) {
     return res;
 }
 
+static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
+    char *res = NULL;
+    if (idx) *idx = -1;
+    while (**p) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '\0') break;
+        int quoted = 0;
+        char *tok = read_token(p, &quoted);
+        if (!tok) {
+            free(res); return NULL;
+        }
+        if (!quoted) {
+            for (int i = 0; i < nstops; i++) {
+                if (strcmp(tok, stops[i]) == 0) {
+                    if (idx) *idx = i;
+                    free(tok);
+                    return res ? res : strdup("");
+                }
+            }
+        }
+        if (res) {
+            char *tmp;
+            asprintf(&tmp, "%s %s", res, tok);
+            free(res);
+            res = tmp;
+        } else {
+            res = strdup(tok);
+        }
+        free(tok);
+    }
+    return res ? res : strdup("");
+}
+
+static Command *parse_if_clause(char **p) {
+    const char *stop1[] = {"then"};
+    char *cond = gather_until(p, stop1, 1, NULL);
+    if (!cond) return NULL;
+    Command *cond_cmd = parse_line(cond);
+    free(cond);
+    int idx = -1;
+    const char *stop2[] = {"else", "elif", "fi"};
+    char *body = gather_until(p, stop2, 3, &idx);
+    if (!body) { free_commands(cond_cmd); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *else_cmd = NULL;
+    if (idx == 0) {
+        const char *stop3[] = {"fi"};
+        char *els = gather_until(p, stop3, 1, NULL);
+        if (!els) { free_commands(cond_cmd); free_commands(body_cmd); return NULL; }
+        else_cmd = parse_line(els); free(els);
+    } else if (idx == 1) {
+        else_cmd = parse_if_clause(p);
+    }
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_IF;
+    cmd->cond = cond_cmd;
+    cmd->body = body_cmd;
+    cmd->else_part = else_cmd;
+    return cmd;
+}
+
+static Command *parse_while_clause(char **p) {
+    const char *stop1[] = {"do"};
+    char *cond = gather_until(p, stop1, 1, NULL);
+    if (!cond) return NULL;
+    Command *cond_cmd = parse_line(cond); free(cond);
+    const char *stop2[] = {"done"};
+    char *body = gather_until(p, stop2, 1, NULL);
+    if (!body) { free_commands(cond_cmd); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_WHILE;
+    cmd->cond = cond_cmd;
+    cmd->body = body_cmd;
+    return cmd;
+}
+
+static Command *parse_for_clause(char **p) {
+    while (**p == ' ' || **p == '\t') (*p)++;
+    int q = 0;
+    char *var = read_token(p, &q);
+    if (!var || q) { free(var); return NULL; }
+    while (**p == ' ' || **p == '\t') (*p)++;
+    q = 0;
+    char *tok = read_token(p, &q);
+    if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
+    free(tok);
+    char **words = NULL; int count = 0;
+    const char *stop[] = {"do"};
+    while (1) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '\0') { free(var); free(words); return NULL; }
+        q = 0;
+        char *w = read_token(p, &q);
+        if (!w) { free(var); free(words); return NULL; }
+        if (!q && strcmp(w, "do") == 0) { free(w); break; }
+        words = realloc(words, sizeof(char *) * (count + 1));
+        words[count++] = w;
+    }
+    const char *stop2[] = {"done"};
+    char *body = gather_until(p, stop2, 1, NULL);
+    if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_FOR;
+    cmd->var = var;
+    cmd->words = words;
+    cmd->word_count = count;
+    cmd->body = body_cmd;
+    return cmd;
+}
+
 Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;
 
     while (1) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0' || *p == '#')
+            break;
+
+        if (strncmp(p, "if", 2) == 0 && isspace((unsigned char)p[2])) {
+            p += 2;
+            Command *cmd = parse_if_clause(&p);
+            if (!cmd) { free_commands(head); last_status = 1; return NULL; }
+            while (*p == ' ' || *p == '\t') p++;
+            CmdOp op = OP_NONE;
+            if (*p == ';') { op = OP_SEMI; p++; }
+            else if (*p == '&' && *(p+1) == '&') { op = OP_AND; p += 2; }
+            else if (*p == '|' && *(p+1) == '|') { op = OP_OR; p += 2; }
+            cmd->op = op;
+            if (!head) head = cmd; if (cur_cmd) cur_cmd->next = cmd; cur_cmd = cmd;
+            if (op == OP_NONE) break; else continue;
+        } else if (strncmp(p, "while", 5) == 0 && isspace((unsigned char)p[5])) {
+            p += 5;
+            Command *cmd = parse_while_clause(&p);
+            if (!cmd) { free_commands(head); last_status = 1; return NULL; }
+            while (*p == ' ' || *p == '\t') p++;
+            CmdOp op = OP_NONE;
+            if (*p == ';') { op = OP_SEMI; p++; }
+            else if (*p == '&' && *(p+1) == '&') { op = OP_AND; p += 2; }
+            else if (*p == '|' && *(p+1) == '|') { op = OP_OR; p += 2; }
+            cmd->op = op;
+            if (!head) head = cmd; if (cur_cmd) cur_cmd->next = cmd; cur_cmd = cmd;
+            if (op == OP_NONE) break; else continue;
+        } else if (strncmp(p, "for", 3) == 0 && isspace((unsigned char)p[3])) {
+            p += 3;
+            Command *cmd = parse_for_clause(&p);
+            if (!cmd) { free_commands(head); last_status = 1; return NULL; }
+            while (*p == ' ' || *p == '\t') p++;
+            CmdOp op = OP_NONE;
+            if (*p == ';') { op = OP_SEMI; p++; }
+            else if (*p == '&' && *(p+1) == '&') { op = OP_AND; p += 2; }
+            else if (*p == '|' && *(p+1) == '|') { op = OP_OR; p += 2; }
+            cmd->op = op;
+            if (!head) head = cmd; if (cur_cmd) cur_cmd->next = cmd; cur_cmd = cmd;
+            if (op == OP_NONE) break; else continue;
+        }
+
         PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
         seg_head->dup_out = -1;
         seg_head->dup_err = -1;
@@ -660,7 +814,22 @@ void free_pipeline(PipelineSegment *p) {
 void free_commands(Command *c) {
     while (c) {
         Command *next = c->next;
-        free_pipeline(c->pipeline);
+        if (c->type == CMD_PIPELINE) {
+            free_pipeline(c->pipeline);
+        } else if (c->type == CMD_IF) {
+            free_commands(c->cond);
+            free_commands(c->body);
+            free_commands(c->else_part);
+        } else if (c->type == CMD_WHILE) {
+            free_commands(c->cond);
+            free_commands(c->body);
+        } else if (c->type == CMD_FOR) {
+            free(c->var);
+            for (int i = 0; i < c->word_count; i++)
+                free(c->words[i]);
+            free(c->words);
+            free_commands(c->body);
+        }
         free(c);
         c = next;
     }
