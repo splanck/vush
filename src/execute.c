@@ -1,3 +1,6 @@
+/*
+ * Execution engine handling pipelines and control flow.
+ */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +27,11 @@ static int apply_temp_assignments(PipelineSegment *pipeline);
 void setup_redirections(PipelineSegment *seg);
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);
+/*
+ * Apply temporary variable assignments before running a pipeline.
+ * Builtins and functions are executed directly while environment
+ * variables are preserved and restored around the call.
+ */
 
 static int apply_temp_assignments(PipelineSegment *pipeline) {
     if (pipeline->next)
@@ -156,6 +164,10 @@ void setup_redirections(PipelineSegment *seg) {
 }
 
 
+/*
+ * Fork and execute each segment of a pipeline, wiring up pipes
+ * between processes and waiting as needed.
+ */
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line) {
     int seg_count = 0;

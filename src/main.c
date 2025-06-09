@@ -1,7 +1,9 @@
 /*
  * vush - a simple UNIX shell
  * Licensed under the GNU GPLv3.
+ * Main entry point and REPL loop.
  */
+
 
 #define _GNU_SOURCE
 #include <stdio.h>

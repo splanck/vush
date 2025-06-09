@@ -1,3 +1,6 @@
+/*
+ * Builtin command table and dispatch helpers.
+ */
 #include "builtins.h"
 #include <string.h>
 

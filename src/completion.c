@@ -1,3 +1,6 @@
+/*
+ * Simple filename and command completion utilities.
+ */
 #define _GNU_SOURCE
 #include "completion.h"
 #include "builtins.h"

@@ -1,3 +1,6 @@
+/*
+ * Helpers for executing shell functions.
+ */
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
