@@ -62,6 +62,8 @@ Example:
 if test "$USER" = root; then echo admin; else echo user; fi
 for x in a b c; do echo $x; done
 export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
+for x in a b c; do if test $x = b; then continue; fi; echo $x; done
+while true; do echo done; break; done
 case 1 in 1) echo one ;& 2) echo two ;; esac
 .EE
 .SH BUILTINS
@@ -134,6 +136,12 @@ Return from a shell function with the given status (default 0).
 .TP
 .B shift
 Shift positional parameters down by one.
+.TP
+.B break
+Exit the innermost loop.
+.TP
+.B continue
+Skip to the next iteration of the innermost loop.
 .TP
 .B getopts optstring var
 Parse positional parameters according to \fIoptstring\fP. The next option

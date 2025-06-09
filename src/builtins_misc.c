@@ -146,6 +146,8 @@ int builtin_help(char **args) {
     printf("  unalias NAME        Remove an alias\n");
     printf("  read [-r] VAR...    Read a line into variables\n");
     printf("  return [status]     Return from a function\n");
+    printf("  break      Exit the nearest loop\n");
+    printf("  continue   Start next iteration of loop\n");
     printf("  shift      Shift positional parameters\n");
     printf("  getopts OPTSTRING VAR   Parse options from positional params\n");
     printf("  let EXPR  Evaluate arithmetic expression\n");
@@ -322,7 +324,21 @@ int builtin_trap(char **args)
         sa.sa_flags = 0;
         sa.sa_handler = cmd ? trap_handler : SIG_DFL;
         sigaction(sig, &sa, NULL);
-    }
+    } 
+    return 1;
+}
+
+int builtin_break(char **args)
+{
+    (void)args;
+    loop_break = 1;
+    return 1;
+}
+
+int builtin_continue(char **args)
+{
+    (void)args;
+    loop_continue = 1;
     return 1;
 }
 

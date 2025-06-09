@@ -22,6 +22,9 @@
 
 extern int last_status;
 
+int loop_break = 0;
+int loop_continue = 0;
+
 int run_command_list(Command *cmds, const char *line);
 static int apply_temp_assignments(PipelineSegment *pipeline);
 void setup_redirections(PipelineSegment *seg);
@@ -223,7 +226,7 @@ int run_command_list(Command *cmds, const char *line) {
         if (run)
             run_pipeline(c, line);
         prev = c->op;
-        if (func_return)
+        if (func_return || loop_break || loop_continue)
             break;
     }
     return last_status;
@@ -250,9 +253,13 @@ int run_pipeline(Command *cmd, const char *line) {
     case CMD_WHILE:
         while (1) {
             run_command_list(cmd->cond, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
             if (last_status != 0)
                 break;
             run_command_list(cmd->body, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
         }
         return last_status;
     case CMD_FOR:
@@ -260,6 +267,8 @@ int run_pipeline(Command *cmd, const char *line) {
             if (cmd->var)
                 setenv(cmd->var, cmd->words[i], 1);
             run_command_list(cmd->body, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
         }
         return last_status;
     case CMD_CASE:

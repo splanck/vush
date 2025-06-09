@@ -7,10 +7,10 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
- - Built-in commands: `alias`, `bg`, `cd`, `dirs`, `eval`, `exit`, `export`, `fg`,
-  `getopts`, `help`, `history`, `jobs`, `kill`, `let`, `popd`, `pushd`,
-  `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`), `trap`, `type`,
-  `unalias`, and `unset`
+ - Built-in commands: `alias`, `bg`, `break`, `cd`, `continue`, `dirs`, `eval`,
+  `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
+  `popd`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
+  `trap`, `type`, `unalias`, and `unset`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
@@ -203,6 +203,8 @@ baz
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
 - `shift` - drop the first positional parameter.
+- `break` - exit the nearest loop.
+- `continue` - start the next iteration of the nearest loop.
 - `getopts OPTSTRING VAR` - parse positional parameters, storing the
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
   `OPTIND`.
@@ -266,6 +268,11 @@ c
 vush> export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 0
 1
+vush> for x in a b c; do if test $x = b; then continue; fi; echo $x; done
+a
+c
+vush> i=0; while true; do echo $i; break; done
+0
 vush> case 1 in 1) echo one ;& 2) echo two ;; esac
 one
 two
