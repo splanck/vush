@@ -18,6 +18,7 @@
 
 extern int last_status;
 #include "common.h"
+#include "scriptargs.h"
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -391,6 +392,17 @@ static int builtin_unalias(char **args) {
     return 1;
 }
 
+static int builtin_shift(char **args) {
+    (void)args;
+    if (script_argc > 0) {
+        for (int i = 1; i < script_argc; i++)
+            script_argv[i] = script_argv[i + 1];
+        script_argc--;
+        script_argv[script_argc + 1] = NULL;
+    }
+    return 1;
+}
+
 static int builtin_unset(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: unset NAME...\n");
@@ -479,6 +491,7 @@ static int builtin_help(char **args) {
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
+    printf("  shift      Shift positional parameters\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
     return 1;
@@ -505,6 +518,7 @@ static struct builtin builtins[] = {
     {"history", builtin_history},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
+    {"shift", builtin_shift},
     {"type", builtin_type},
     {"source", builtin_source},
     {".", builtin_source},

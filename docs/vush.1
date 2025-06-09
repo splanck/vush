@@ -26,6 +26,12 @@ If \fB~/.vushrc\fP exists, commands from this file are executed before
 the first prompt is shown.
 .SH OPTIONS
 None.
+.SH POSITIONAL PARAMETERS
+When executing a script file, the remaining command line words become
+positional parameters.  \$0 expands to the script path, \$1 through \$9
+refer to subsequent parameters, \$@ expands to all parameters separated
+by spaces and \$# expands to the number of parameters.  The
+\fBshift\fP builtin discards the first parameter and moves the rest down.
 .SH BUILTINS
 .TP
 .B cd [dir]
@@ -82,6 +88,9 @@ Set an alias or list aliases when used without arguments.
 .TP
 .B unalias \fIname\fP
 Remove an alias.
+.TP
+.B shift
+Shift positional parameters down by one.
 .TP
 Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
 .TP

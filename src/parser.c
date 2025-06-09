@@ -15,6 +15,8 @@
 #include <ctype.h>
 #include <ctype.h>
 
+#include "scriptargs.h"
+
 extern int last_status;
 
 char *expand_var(const char *token) {
@@ -59,6 +61,41 @@ char *expand_var(const char *token) {
             free(name);
             return strdup(val ? val : "");
         }
+    }
+
+    if (strcmp(token, "$#") == 0) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%d", script_argc);
+        return strdup(buf);
+    }
+
+    if (strcmp(token, "$@") == 0) {
+        if (!script_argv || script_argc == 0)
+            return strdup("");
+        size_t len = 0;
+        for (int i = 1; i <= script_argc; i++)
+            len += strlen(script_argv[i]) + 1;
+        char *res = malloc(len);
+        if (!res) return NULL;
+        res[0] = '\0';
+        for (int i = 1; i <= script_argc; i++) {
+            strcat(res, script_argv[i]);
+            if (i < script_argc)
+                strcat(res, " ");
+        }
+        return res;
+    }
+
+    if (token[1] >= '0' && token[1] <= '9' && token[2] == '\0') {
+        int idx = token[1] - '0';
+        const char *val = "";
+        if (script_argv) {
+            if (idx == 0)
+                val = script_argv[0];
+            else if (idx <= script_argc)
+                val = script_argv[idx];
+        }
+        return strdup(val ? val : "");
     }
 
     const char *val = getenv(token + 1);
