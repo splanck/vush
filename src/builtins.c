@@ -10,6 +10,7 @@
 #include "parser.h"
 #include "execute.h"
 #include "dirstack.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -725,7 +726,7 @@ static int builtin_source(char **args) {
     }
 
     char line[MAX_LINE];
-    while (read_continuation_lines(input, line, sizeof(line))) {
+    while (read_logical_line(input, line, sizeof(line))) {
 
         parse_input = input;
         Command *cmds = parse_line(line);
