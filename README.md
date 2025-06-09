@@ -8,7 +8,7 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `type`,
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `shift`, `type`,
   `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
@@ -131,6 +131,14 @@ If the closing quote or `)` for command substitution is missing, `vush` prints
 `syntax error: unmatched '<char>'` to stderr, sets `$?` to `1` and ignores the
 line.
 
+### Positional Parameters
+
+When a script file is executed, the remaining command line arguments are stored
+as positional parameters.  `$0` expands to the script path while `$1` through
+`$9` contain subsequent arguments.  `$@` expands to all parameters separated by
+spaces and `$#` gives the count of arguments.  The `shift` builtin discards the
+first parameter and shifts the rest down.
+
 ## Built-in Commands
 
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.
@@ -151,6 +159,7 @@ line.
   `VUSH_HISTSIZE` environment variable (default 1000).
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
+- `shift` - drop the first positional parameter.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.

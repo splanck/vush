@@ -19,8 +19,11 @@
 #include "execute.h"
 #include "history.h"
 #include "lineedit.h"
+#include "scriptargs.h"
 
 int last_status = 0;
+int script_argc = 0;
+char **script_argv = NULL;
 
 int main(int argc, char **argv) {
     char linebuf[MAX_LINE];
@@ -33,6 +36,17 @@ int main(int argc, char **argv) {
             perror(argv[1]);
             return 1;
         }
+
+        script_argc = argc - 2;
+        script_argv = calloc(argc, sizeof(char *));
+        if (!script_argv) {
+            perror("calloc");
+            return 1;
+        }
+        script_argv[0] = argv[1];
+        for (int i = 0; i < script_argc; i++)
+            script_argv[i + 1] = argv[i + 2];
+        script_argv[script_argc + 1] = NULL;
     }
 
     int interactive = (input == stdin);
@@ -141,6 +155,7 @@ int main(int argc, char **argv) {
     }
     if (input != stdin)
         fclose(input);
+    free(script_argv);
     free_aliases();
     return 0;
 }

@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout 5
+set script [exec mktemp]
+set f [open $script "w"]
+puts $f "echo \"$0,$1,$2,$#,$@\""
+puts $f "shift"
+puts $f "echo \"$0,$1,$2,$#,$@\""
+close $f
+spawn ../vush $script foo bar
+expect {
+    -re "$script,foo,bar,2,foo bar\r?\n" {}
+    timeout { send_user "arg expansion failed\n"; exec rm $script; exit 1 }
+}
+expect {
+    -re "$script,bar,,1,bar\r?\n" {}
+    timeout { send_user "shift failed\n"; exec rm $script; exit 1 }
+}
+expect eof
+exec rm $script
