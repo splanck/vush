@@ -147,6 +147,7 @@ int builtin_help(char **args) {
     printf("  read [-r] VAR...    Read a line into variables\n");
     printf("  return [status]     Return from a function\n");
     printf("  shift      Shift positional parameters\n");
+    printf("  getopts OPTSTRING VAR   Parse options from positional params\n");
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");

@@ -18,6 +18,7 @@ extern int builtin_history(char **);
 extern int builtin_alias(char **);
 extern int builtin_unalias(char **);
 extern int builtin_read(char **);
+extern int builtin_getopts(char **);
 extern int builtin_eval(char **);
 extern int builtin_return(char **);
 extern int builtin_shift(char **);
@@ -48,6 +49,7 @@ const struct builtin builtin_table[] = {
     {"read", builtin_read},
     {"return", builtin_return},
     {"shift", builtin_shift},
+    {"getopts", builtin_getopts},
     {"let", builtin_let},
     {"set", builtin_set},
     {"trap", builtin_trap},
