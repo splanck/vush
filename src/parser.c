@@ -1005,11 +1005,20 @@ static int collect_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     FILE *tf = fdopen(fd, "w");
     if (!tf) { perror("fdopen"); close(fd); unlink(template); free(delim); free(tok); return -1; }
     char buf[MAX_LINE];
+    int found = 0;
     while (fgets(buf, sizeof(buf), parse_input ? parse_input : stdin)) {
         size_t len = strlen(buf);
         if (len && buf[len-1] == '\n') buf[len-1] = '\0';
-        if (strcmp(buf, delim) == 0) break;
+        if (strcmp(buf, delim) == 0) { found = 1; break; }
         fprintf(tf, "%s\n", buf);
+    }
+    if (!found) {
+        fclose(tf);
+        unlink(template);
+        free(delim);
+        free(tok);
+        fprintf(stderr, "syntax error: here-document delimited by end-of-file\n");
+        return -1;
     }
     fclose(tf);
     seg->in_file = strdup(template);
