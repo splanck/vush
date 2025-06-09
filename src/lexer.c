@@ -320,7 +320,10 @@ char *read_token(char **p, int *quoted) {
         first = 0;
     }
     buf[len] = '\0';
-    return do_expand ? expand_var(buf) : strdup(buf);
+    char *res = do_expand ? expand_var(buf) : strdup(buf);
+    if (getenv("VUSH_DEBUG"))
+        fprintf(stderr, "read_token: '%s'\n", res);
+    return res;
 }
 
 char *expand_var(const char *token) {

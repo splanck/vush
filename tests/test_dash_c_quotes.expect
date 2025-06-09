@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush -c "echo hi"
+expect {
+    -re "hi\r?\n" {}
+    timeout { send_user "-c quoted output mismatch\n"; exit 1 }
+}
+expect eof

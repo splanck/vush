@@ -385,8 +385,8 @@ static Command *parse_function_def(char **p, CmdOp *op_out) {
             if (op_out) *op_out = op;
             return cmd;
         }
-        *p = savep;
     }
+    *p = savep;
     if (fname) free(fname);
     return NULL;
 }
@@ -694,6 +694,8 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
 
         int quoted = 0;
         char *tok = read_token(p, &quoted);
+        if (getenv("VUSH_DEBUG"))
+            fprintf(stderr, "parse_pipeline token: '%s'\n", tok ? tok : "(null)");
         if (!tok) { free_pipeline(seg_head); return NULL; }
 
         if (!quoted && argc == 0 && is_assignment(tok)) {
