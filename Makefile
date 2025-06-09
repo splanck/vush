@@ -4,7 +4,8 @@ PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
 
 SRCS := src/builtins.c src/builtins_fs.c src/builtins_jobs.c \
-       src/builtins_vars.c src/builtins_misc.c src/execute.c src/history.c \
+       src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
+       src/builtins_misc.c src/execute.c src/history.c \
        src/jobs.c src/lineedit.c src/parser.c src/dirstack.c src/util.c \
        src/main.c
 
