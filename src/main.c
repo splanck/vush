@@ -17,6 +17,7 @@
 #include "jobs.h"
 #include "builtins.h"
 #include "execute.h"
+#include "lexer.h"
 #include "history.h"
 #include "lineedit.h"
 #include "scriptargs.h"
