@@ -7,8 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include "builtins.h"
+#include "completion.h"
+#include "history_search.h"
 
 static void redraw_line(const char *prompt, const char *buf, int prev_len,
                         int pos);
@@ -22,162 +22,11 @@ static void handle_line_start_erase(const char *prompt, char *buf, int *lenp,
                                     int *posp, int *disp_lenp);
 static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
                                   int *posp, int *disp_lenp);
-static void handle_completion(const char *prompt, char *buf, int *lenp,
-                              int *posp, int *disp_lenp);
 static int handle_ctrl_commands(char c, const char *prompt, char *buf,
                                 int *lenp, int *posp, int *disp_lenp);
 static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
                               int *posp, int *disp_lenp);
-static int handle_history_search(char c, const char *prompt, char *buf,
-                                 int *lenp, int *posp, int *disp_lenp);
 
-static int cmpstr(const void *a, const void *b) {
-    const char *aa = *(const char **)a;
-    const char *bb = *(const char **)b;
-    return strcmp(aa, bb);
-}
-
-static int redraw_search(const char *label, const char *search, const char *match, int prev_len) {
-    char line[MAX_LINE * 2];
-    int len = snprintf(line, sizeof(line), "(%s)`%s`: %s", label, search,
-                        match ? match : "");
-    printf("\r%s", line);
-    if (prev_len > len) {
-        for (int i = len; i < prev_len; i++)
-            putchar(' ');
-        printf("\r%s", line);
-    }
-    fflush(stdout);
-    return len;
-}
-
-static int reverse_search(const char *prompt, char *buf, int *lenp, int *posp,
-                          int *disp_lenp) {
-    char search[MAX_LINE];
-    int s_len = 0;
-    search[0] = '\0';
-    char saved[MAX_LINE];
-    int saved_len = *lenp;
-    int saved_pos = *posp;
-    strncpy(saved, buf, MAX_LINE - 1);
-    saved[MAX_LINE - 1] = '\0';
-    const char *match = NULL;
-    history_reset_search();
-    int disp = 0;
-
-    while (1) {
-        disp = redraw_search("reverse-i-search", search, match, disp);
-        char c;
-        if (read(STDIN_FILENO, &c, 1) != 1)
-            return -1;
-        if (c == 0x07 || c == '\033') { /* Ctrl-G or Esc cancel */
-            strncpy(buf, saved, MAX_LINE - 1);
-            buf[MAX_LINE - 1] = '\0';
-            *lenp = saved_len;
-            *posp = saved_pos;
-            redraw_line(prompt, buf, *disp_lenp, *posp);
-            if (*lenp > *disp_lenp)
-                *disp_lenp = *lenp;
-            history_reset_search();
-            return 0;
-        } else if (c == 0x12) { /* Ctrl-R cycle */
-            const char *h = history_search_prev(search);
-            if (h)
-                match = h;
-        } else if (c == 0x7f) { /* backspace */
-            if (s_len > 0) {
-                search[--s_len] = '\0';
-                history_reset_search();
-                match = history_search_prev(search);
-            }
-        } else if (c == '\r' || c == '\n') {
-            if (match) {
-                strncpy(buf, match, MAX_LINE - 1);
-                buf[MAX_LINE - 1] = '\0';
-                *lenp = *posp = strlen(buf);
-                *disp_lenp = *lenp;
-                printf("\r%s%s\n", prompt, buf);
-            } else {
-                printf("\r\n");
-                *lenp = *posp = 0;
-                buf[0] = '\0';
-            }
-            history_reset_search();
-            return 1;
-        } else if (c >= 32 && c < 127) {
-            if (s_len < MAX_LINE - 1) {
-                search[s_len++] = c;
-                search[s_len] = '\0';
-                history_reset_search();
-                match = history_search_prev(search);
-            }
-        }
-    }
-}
-
-static int forward_search(const char *prompt, char *buf, int *lenp, int *posp,
-                          int *disp_lenp) {
-    char search[MAX_LINE];
-    int s_len = 0;
-    search[0] = '\0';
-    char saved[MAX_LINE];
-    int saved_len = *lenp;
-    int saved_pos = *posp;
-    strncpy(saved, buf, MAX_LINE - 1);
-    saved[MAX_LINE - 1] = '\0';
-    const char *match = NULL;
-    history_reset_search();
-    int disp = 0;
-
-    while (1) {
-        disp = redraw_search("forward-i-search", search, match, disp);
-        char c;
-        if (read(STDIN_FILENO, &c, 1) != 1)
-            return -1;
-        if (c == 0x07 || c == '\033') {
-            strncpy(buf, saved, MAX_LINE - 1);
-            buf[MAX_LINE - 1] = '\0';
-            *lenp = saved_len;
-            *posp = saved_pos;
-            redraw_line(prompt, buf, *disp_lenp, *posp);
-            if (*lenp > *disp_lenp)
-                *disp_lenp = *lenp;
-            history_reset_search();
-            return 0;
-        } else if (c == 0x13) { /* Ctrl-S cycle */
-            const char *h = history_search_next(search);
-            if (h)
-                match = h;
-        } else if (c == 0x7f) {
-            if (s_len > 0) {
-                search[--s_len] = '\0';
-                history_reset_search();
-                match = history_search_next(search);
-            }
-        } else if (c == '\r' || c == '\n') {
-            if (match) {
-                strncpy(buf, match, MAX_LINE - 1);
-                buf[MAX_LINE - 1] = '\0';
-                *lenp = *posp = strlen(buf);
-                *disp_lenp = *lenp;
-                printf("\r%s%s\n", prompt, buf);
-            } else {
-                printf("\r\n");
-                *lenp = *posp = 0;
-                buf[0] = '\0';
-            }
-            history_reset_search();
-            return 1;
-        } else if (c >= 32 && c < 127) {
-            if (s_len < MAX_LINE - 1) {
-                search[s_len++] = c;
-                search[s_len] = '\0';
-                history_reset_search();
-                match = history_search_next(search);
-            }
-        }
-    }
-}
 
 static void redraw_line(const char *prompt, const char *buf, int prev_len, int pos) {
     int len = strlen(buf);
@@ -243,77 +92,6 @@ static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
     }
 }
 
-static void handle_completion(const char *prompt, char *buf, int *lenp,
-                              int *posp, int *disp_lenp) {
-    int start = *posp;
-    while (start > 0 && buf[start - 1] != ' ' && buf[start - 1] != '\t')
-        start--;
-
-    char prefix[MAX_LINE];
-    memcpy(prefix, &buf[start], *posp - start);
-    prefix[*posp - start] = '\0';
-
-    int mcount = 0;
-    int mcap = 16;
-    char **matches = malloc(mcap * sizeof(char *));
-    if (!matches)
-        matches = NULL;
-    const char **bn = get_builtin_names();
-    if (matches)
-    for (int i = 0; bn[i]; i++) {
-        if (strncmp(bn[i], prefix, *posp - start) == 0) {
-            if (mcount == mcap) {
-                mcap *= 2;
-                matches = realloc(matches, mcap * sizeof(char *));
-                if (!matches) break;
-            }
-            matches[mcount++] = strdup(bn[i]);
-        }
-    }
-    DIR *d = opendir(".");
-    if (d && matches) {
-        struct dirent *de;
-        while ((de = readdir(d))) {
-            if (strncmp(de->d_name, prefix, *posp - start) == 0) {
-                if (mcount == mcap) {
-                    mcap *= 2;
-                    matches = realloc(matches, mcap * sizeof(char *));
-                    if (!matches) break;
-                }
-                matches[mcount++] = strdup(de->d_name);
-            }
-        }
-        closedir(d);
-    }
-    if (matches) {
-        if (mcount == 1) {
-            const char *match = matches[0];
-            int mlen = strlen(match);
-            if (*lenp + mlen - (*posp - start) < MAX_LINE - 1) {
-                memmove(&buf[start + mlen], &buf[*posp], *lenp - *posp);
-                memcpy(&buf[start], match, mlen);
-                *lenp += mlen - (*posp - start);
-                *posp = start + mlen;
-                buf[*lenp] = '\0';
-                redraw_line(prompt, buf, *disp_lenp, *posp);
-                if (*lenp > *disp_lenp)
-                    *disp_lenp = *lenp;
-            }
-        } else if (mcount > 1) {
-            qsort(matches, mcount, sizeof(char *), cmpstr);
-            printf("\r\n");
-            for (int i = 0; i < mcount; i++)
-                printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
-            printf("\r\n");
-            redraw_line(prompt, buf, *disp_lenp, *posp);
-            if (*lenp > *disp_lenp)
-                *disp_lenp = *lenp;
-        }
-        for (int i = 0; i < mcount; i++)
-            free(matches[i]);
-        free(matches);
-    }
-}
 
 static void handle_insert(char *buf, int *lenp, int *posp, char c,
                           int *disp_lenp) {
@@ -429,17 +207,6 @@ static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
     }
 }
 
-static int handle_history_search(char c, const char *prompt, char *buf,
-                                 int *lenp, int *posp, int *disp_lenp) {
-    if (c == 0x12) { /* Ctrl-R */
-        int r = reverse_search(prompt, buf, lenp, posp, disp_lenp);
-        return r;
-    } else if (c == 0x13) { /* Ctrl-S */
-        int r = forward_search(prompt, buf, lenp, posp, disp_lenp);
-        return r;
-    }
-    return 0;
-}
 
 char *line_edit(const char *prompt) {
     struct termios orig, raw;
