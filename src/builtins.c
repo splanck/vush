@@ -725,35 +725,7 @@ static int builtin_source(char **args) {
     }
 
     char line[MAX_LINE];
-    while (fgets(line, sizeof(line), input)) {
-        size_t len = strlen(line);
-        if (len && line[len-1] == '\n') {
-            line[--len] = '\0';
-        }
-        while (len > 0) {
-            size_t bs = 0;
-            while (bs < len && line[len-1-bs] == '\\')
-                bs++;
-            if (bs % 2 == 1) {
-                line[--len] = '\0';
-                char cont[MAX_LINE];
-                if (!fgets(cont, sizeof(cont), input))
-                    break;
-                size_t nlen = strlen(cont);
-                if (nlen && cont[nlen-1] == '\n')
-                    cont[--nlen] = '\0';
-                if (len + nlen < sizeof(line)) {
-                    memcpy(line + len, cont, nlen + 1);
-                    len += nlen;
-                } else {
-                    memcpy(line + len, cont, sizeof(line) - len - 1);
-                    line[sizeof(line) - 1] = '\0';
-                    len = strlen(line);
-                }
-            } else {
-                break;
-            }
-        }
+    while (read_continuation_lines(input, line, sizeof(line))) {
 
         parse_input = input;
         Command *cmds = parse_line(line);
