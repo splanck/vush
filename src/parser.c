@@ -411,6 +411,26 @@ static Command *parse_subshell(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Parse a brace grouped command list executed in the current shell. */
+static Command *parse_brace_group(char **p, CmdOp *op_out) {
+    char *bodytxt = gather_braced(p);
+    if (!bodytxt)
+        return NULL;
+    Command *body_cmd = parse_line(bodytxt);
+    free(bodytxt);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_GROUP;
+    cmd->group = body_cmd;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    CmdOp op = OP_NONE;
+    if (**p == ';') { op = OP_SEMI; (*p)++; }
+    else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
+    else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
+    cmd->op = op;
+    if (op_out) *op_out = op;
+    return cmd;
+}
+
 /* Parse top-level control clauses such as if, while, for and case. */
 static Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
@@ -637,6 +657,8 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p == '(')
         return parse_subshell(p, op_out);
+    if (**p == '{')
+        return parse_brace_group(p, op_out);
 
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;
@@ -821,7 +843,7 @@ void free_commands(Command *c) {
         free(c->var);
         free(c->text);
         free_commands(c->body);
-    } else if (c->type == CMD_SUBSHELL) {
+    } else if (c->type == CMD_SUBSHELL || c->type == CMD_GROUP) {
         free_commands(c->group);
     }
         free(c);

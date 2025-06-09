@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "{ cd /tmp; pwd; }\r"
+expect {
+    -re "[\r\n]+/tmp[\r\n]+vush> " {}
+    timeout { send_user "brace group output mismatch\n"; exit 1 }
+}
+send "pwd\r"
+expect {
+    -re "[\r\n]+/tmp[\r\n]+vush> " {}
+    timeout { send_user "brace group didn't change directory\n"; exit 1 }
+}
+send "exit\r"
+expect eof

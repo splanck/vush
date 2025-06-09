@@ -319,6 +319,9 @@ int run_pipeline(Command *cmd, const char *line) {
             return 1;
         }
     }
+    case CMD_GROUP:
+        run_command_list(cmd->group, line);
+        return last_status;
     default:
         return 0;
     }
