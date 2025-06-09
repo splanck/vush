@@ -6,7 +6,7 @@ vush \- simple UNIX shell
 .RI [ scriptfile ]
 .SH DESCRIPTION
 vush is a lightweight UNIX shell supporting command execution,
-pipelines, command chaining with ';', '&&' and '||',
+pipelines and subshells using '(...)', command chaining with ';', '&&' and '||',
 environment variable expansion using \fB$VAR\fP or \fB${VAR}\fP (with "$?" storing the last exit status),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
