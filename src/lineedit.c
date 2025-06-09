@@ -24,6 +24,12 @@ static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
                                   int *posp, int *disp_lenp);
 static void handle_completion(const char *prompt, char *buf, int *lenp,
                               int *posp, int *disp_lenp);
+static int handle_ctrl_commands(char c, const char *prompt, char *buf,
+                                int *lenp, int *posp, int *disp_lenp);
+static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
+                              int *posp, int *disp_lenp);
+static int handle_history_search(char c, const char *prompt, char *buf,
+                                 int *lenp, int *posp, int *disp_lenp);
 
 static int cmpstr(const void *a, const void *b) {
     const char *aa = *(const char **)a;
@@ -325,6 +331,116 @@ static void handle_insert(char *buf, int *lenp, int *posp, char c,
     }
 }
 
+static int handle_ctrl_commands(char c, const char *prompt, char *buf,
+                                int *lenp, int *posp, int *disp_lenp) {
+    switch (c) {
+    case 0x7f: /* backspace */
+        handle_backspace(buf, lenp, posp);
+        return 1;
+    case 0x01: /* Ctrl-A */
+        while (*posp > 0) {
+            printf("\b");
+            (*posp)--;
+        }
+        fflush(stdout);
+        return 1;
+    case 0x05: /* Ctrl-E */
+        while (*posp < *lenp) {
+            printf("\x1b[C");
+            (*posp)++;
+        }
+        fflush(stdout);
+        return 1;
+    case 0x15: /* Ctrl-U */
+        handle_line_start_erase(prompt, buf, lenp, posp, disp_lenp);
+        return 1;
+    case 0x17: /* Ctrl-W */
+        handle_word_erase(prompt, buf, lenp, posp, disp_lenp);
+        return 1;
+    case 0x0b: /* Ctrl-K */
+        handle_line_end_erase(prompt, buf, lenp, posp, disp_lenp);
+        return 1;
+    case 0x0c: /* Ctrl-L */
+        printf("\x1b[H\x1b[2J");
+        redraw_line(prompt, buf, *disp_lenp, *posp);
+        fflush(stdout);
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
+                              int *posp, int *disp_lenp) {
+    char seq[3];
+    if (read(STDIN_FILENO, seq, 2) != 2)
+        return;
+    if (seq[0] != '[')
+        return;
+    if (seq[1] == 'D') { /* left */
+        if (*posp > 0) {
+            printf("\b");
+            (*posp)--;
+            fflush(stdout);
+        }
+    } else if (seq[1] == 'C') { /* right */
+        if (*posp < *lenp) {
+            printf("\x1b[C");
+            (*posp)++;
+            fflush(stdout);
+        }
+    } else if (seq[1] == 'A') { /* up */
+        const char *h = history_prev();
+        if (h) {
+            strncpy(buf, h, MAX_LINE - 1);
+            buf[MAX_LINE - 1] = '\0';
+            *lenp = *posp = strlen(buf);
+            redraw_line(prompt, buf, *disp_lenp, *posp);
+            *disp_lenp = *lenp;
+        }
+    } else if (seq[1] == 'B') { /* down */
+        const char *h = history_next();
+        if (h) {
+            strncpy(buf, h, MAX_LINE - 1);
+            buf[MAX_LINE - 1] = '\0';
+            *lenp = *posp = strlen(buf);
+        } else {
+            buf[0] = '\0';
+            *lenp = *posp = 0;
+        }
+        redraw_line(prompt, buf, *disp_lenp, *posp);
+        *disp_lenp = *lenp;
+    } else if (seq[1] >= '0' && seq[1] <= '9') {
+        if (read(STDIN_FILENO, &seq[2], 1) != 1)
+            return;
+        if (seq[1] == '1' && seq[2] == '~') { /* Home */
+            while (*posp > 0) {
+                printf("\b");
+                (*posp)--;
+            }
+            fflush(stdout);
+        } else if (seq[1] == '4' && seq[2] == '~') { /* End */
+            while (*posp < *lenp) {
+                printf("\x1b[C");
+                (*posp)++;
+            }
+            fflush(stdout);
+        }
+    }
+}
+
+static int handle_history_search(char c, const char *prompt, char *buf,
+                                 int *lenp, int *posp, int *disp_lenp) {
+    if (c == 0x12) { /* Ctrl-R */
+        int r = reverse_search(prompt, buf, lenp, posp, disp_lenp);
+        return r;
+    } else if (c == 0x13) { /* Ctrl-S */
+        int r = forward_search(prompt, buf, lenp, posp, disp_lenp);
+        return r;
+    }
+    return 0;
+}
+
 char *line_edit(const char *prompt) {
     struct termios orig, raw;
     if (tcgetattr(STDIN_FILENO, &orig) == -1)
@@ -348,111 +464,31 @@ char *line_edit(const char *prompt) {
             len = -1;
             break;
         }
+
         if (c == '\r' || c == '\n') {
             write(STDOUT_FILENO, "\r\n", 2);
             break;
-        } else if (c == 0x04 && len == 0) { /* Ctrl-D */
+        }
+
+        if (c == 0x04 && len == 0) { /* Ctrl-D */
             len = -1;
             break;
-        } else if (c == 0x7f) { /* backspace */
-            handle_backspace(buf, &len, &pos);
-        } else if (c == 0x01) { /* Ctrl-A */
-            while (pos > 0) {
-                printf("\b");
-                pos--;
-            }
-            fflush(stdout);
-        } else if (c == 0x05) { /* Ctrl-E */
-            while (pos < len) {
-                printf("\x1b[C");
-                pos++;
-            }
-            fflush(stdout);
-        } else if (c == 0x15) { /* Ctrl-U */
-            handle_line_start_erase(prompt, buf, &len, &pos, &disp_len);
-        } else if (c == 0x17) { /* Ctrl-W */
-            handle_word_erase(prompt, buf, &len, &pos, &disp_len);
-        } else if (c == 0x0b) { /* Ctrl-K */
-            handle_line_end_erase(prompt, buf, &len, &pos, &disp_len);
-        } else if (c == 0x0c) { /* Ctrl-L */
-            printf("\x1b[H\x1b[2J");
-            redraw_line(prompt, buf, disp_len, pos);
-            fflush(stdout);
-        } else if (c == '\t') { /* Tab completion */
+        }
+
+        if (handle_ctrl_commands(c, prompt, buf, &len, &pos, &disp_len))
+            continue;
+
+        int hs = handle_history_search(c, prompt, buf, &len, &pos, &disp_len);
+        if (hs < 0) {
+            len = -1;
+            break;
+        } else if (hs > 0) {
+            break;
+        } else if (c == '\t') {
             handle_completion(prompt, buf, &len, &pos, &disp_len);
-        } else if (c == 0x12) { /* Ctrl-R */
-            int r = reverse_search(prompt, buf, &len, &pos, &disp_len);
-            if (r < 0) {
-                len = -1;
-                break;
-            } else if (r > 0) {
-                break;
-            }
-        } else if (c == 0x13) { /* Ctrl-S */
-            int r = forward_search(prompt, buf, &len, &pos, &disp_len);
-            if (r < 0) {
-                len = -1;
-                break;
-            } else if (r > 0) {
-                break;
-            }
-        } else if (c == '\033') { /* escape sequences */
-            char seq[3];
-            if (read(STDIN_FILENO, seq, 2) != 2)
-                continue;
-            if (seq[0] == '[') {
-                if (seq[1] == 'D') { /* left */
-                    if (pos > 0) {
-                        printf("\b");
-                        pos--;
-                        fflush(stdout);
-                    }
-                } else if (seq[1] == 'C') { /* right */
-                    if (pos < len) {
-                        printf("\x1b[C");
-                        pos++;
-                        fflush(stdout);
-                    }
-                } else if (seq[1] == 'A') { /* up */
-                    const char *h = history_prev();
-                    if (h) {
-                        strncpy(buf, h, MAX_LINE - 1);
-                        buf[MAX_LINE - 1] = '\0';
-                        len = pos = strlen(buf);
-                        redraw_line(prompt, buf, disp_len, pos);
-                        disp_len = len;
-                    }
-                } else if (seq[1] == 'B') { /* down */
-                    const char *h = history_next();
-                    if (h) {
-                        strncpy(buf, h, MAX_LINE - 1);
-                        buf[MAX_LINE - 1] = '\0';
-                        len = pos = strlen(buf);
-                    } else {
-                        buf[0] = '\0';
-                        len = pos = 0;
-                    }
-                    redraw_line(prompt, buf, disp_len, pos);
-                    disp_len = len;
-                } else if (seq[1] >= '0' && seq[1] <= '9') {
-                    if (read(STDIN_FILENO, &seq[2], 1) != 1)
-                        continue;
-                    if (seq[1] == '1' && seq[2] == '~') { /* Home */
-                        while (pos > 0) {
-                            printf("\b");
-                            pos--;
-                        }
-                        fflush(stdout);
-                    } else if (seq[1] == '4' && seq[2] == '~') { /* End */
-                        while (pos < len) {
-                            printf("\x1b[C");
-                            pos++;
-                        }
-                        fflush(stdout);
-                    }
-                }
-            }
-        } else if (c >= 32 && c < 127) { /* printable */
+        } else if (c == '\033') {
+            handle_arrow_keys(prompt, buf, &len, &pos, &disp_len);
+        } else if (c >= 32 && c < 127) {
             handle_insert(buf, &len, &pos, c, &disp_len);
         }
     }
