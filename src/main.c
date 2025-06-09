@@ -83,7 +83,31 @@ int main(int argc, char **argv) {
             while (fgets(rcline, sizeof(rcline), rc)) {
                 size_t len = strlen(rcline);
                 if (len && rcline[len-1] == '\n')
-                    rcline[len-1] = '\0';
+                    rcline[--len] = '\0';
+                while (len > 0) {
+                    size_t bs = 0;
+                    while (bs < len && rcline[len-1-bs] == '\\')
+                        bs++;
+                    if (bs % 2 == 1) {
+                        rcline[--len] = '\0';
+                        char cont[MAX_LINE];
+                        if (!fgets(cont, sizeof(cont), rc))
+                            break;
+                        size_t nlen = strlen(cont);
+                        if (nlen && cont[nlen-1] == '\n')
+                            cont[--nlen] = '\0';
+                        if (len + nlen < sizeof(rcline)) {
+                            memcpy(rcline + len, cont, nlen + 1);
+                            len += nlen;
+                        } else {
+                            memcpy(rcline + len, cont, sizeof(rcline) - len - 1);
+                            rcline[sizeof(rcline) - 1] = '\0';
+                            len = strlen(rcline);
+                        }
+                    } else {
+                        break;
+                    }
+                }
 
                 char *exp = expand_history(rcline);
                 if (!exp)
@@ -163,7 +187,32 @@ int main(int argc, char **argv) {
         } else {
             if (!fgets(linebuf, sizeof(linebuf), input)) break;
             size_t len = strlen(linebuf);
-            if (len && linebuf[len-1] == '\n') linebuf[len-1] = '\0';
+            if (len && linebuf[len-1] == '\n')
+                linebuf[--len] = '\0';
+            while (len > 0) {
+                size_t bs = 0;
+                while (bs < len && linebuf[len-1-bs] == '\\')
+                    bs++;
+                if (bs % 2 == 1) {
+                    linebuf[--len] = '\0';
+                    char cont[MAX_LINE];
+                    if (!fgets(cont, sizeof(cont), input))
+                        break;
+                    size_t nlen = strlen(cont);
+                    if (nlen && cont[nlen-1] == '\n')
+                        cont[--nlen] = '\0';
+                    if (len + nlen < sizeof(linebuf)) {
+                        memcpy(linebuf + len, cont, nlen + 1);
+                        len += nlen;
+                    } else {
+                        memcpy(linebuf + len, cont, sizeof(linebuf) - len - 1);
+                        linebuf[sizeof(linebuf) - 1] = '\0';
+                        len = strlen(linebuf);
+                    }
+                } else {
+                    break;
+                }
+            }
             line = linebuf;
         }
         char *expanded = expand_history(line);
