@@ -183,6 +183,15 @@ vush> echo dup >&dup.txt
 vush> ls nonexistent 2>&1 >>dup.txt
 ```
 
+Here-documents feed inline text to a command:
+
+```
+vush> cat <<EOF
+hello
+EOF
+hello
+```
+
 ## Background Jobs Example
 
 ```

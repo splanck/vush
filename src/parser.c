@@ -13,12 +13,15 @@
 #include <glob.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <ctype.h>
 
 #include "scriptargs.h"
 #include "options.h"
 
 extern int last_status;
+FILE *parse_input = NULL;
 
 char *expand_var(const char *token) {
     if (strcmp(token, "$?") == 0) {
@@ -220,6 +223,19 @@ static char *read_token(char **p, int *quoted) {
 
     if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
         buf[len++] = '&';
+        (*p)++;
+        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
+            buf[len++] = **p;
+            (*p)++;
+        }
+        buf[len] = '\0';
+        return strdup(buf);
+    }
+
+    if (**p == '<' && *(*p + 1) == '<') {
+        buf[len++] = '<';
+        (*p)++;
+        buf[len++] = '<';
         (*p)++;
         while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
             buf[len++] = **p;
@@ -436,7 +452,61 @@ Command *parse_line(char *line) {
                 }
             }
 
-            if (!quoted && strcmp(tok, "<") == 0) {
+            if (!quoted && strncmp(tok, "<<", 2) == 0) {
+                char *delim;
+                if (tok[2]) {
+                    delim = strdup(tok + 2);
+                } else {
+                    while (*p == ' ' || *p == '\t') p++;
+                    int q = 0;
+                    delim = read_token(&p, &q);
+                    if (!delim) {
+                        free(tok);
+                        free_pipeline(seg_head);
+                        free_commands(head);
+                        last_status = 1;
+                        return NULL;
+                    }
+                }
+                char template[] = "/tmp/vushXXXXXX";
+                int fd = mkstemp(template);
+                if (fd < 0) {
+                    perror("mkstemp");
+                    free(delim);
+                    free(tok);
+                    free_pipeline(seg_head);
+                    free_commands(head);
+                    last_status = 1;
+                    return NULL;
+                }
+                FILE *tf = fdopen(fd, "w");
+                if (!tf) {
+                    perror("fdopen");
+                    close(fd);
+                    unlink(template);
+                    free(delim);
+                    free(tok);
+                    free_pipeline(seg_head);
+                    free_commands(head);
+                    last_status = 1;
+                    return NULL;
+                }
+                char buf[MAX_LINE];
+                while (fgets(buf, sizeof(buf), parse_input ? parse_input : stdin)) {
+                    size_t len = strlen(buf);
+                    if (len && buf[len-1] == '\n')
+                        buf[len-1] = '\0';
+                    if (strcmp(buf, delim) == 0)
+                        break;
+                    fprintf(tf, "%s\n", buf);
+                }
+                fclose(tf);
+                seg->in_file = strdup(template);
+                seg->here_doc = 1;
+                free(delim);
+                free(tok);
+                continue;
+            } else if (!quoted && strcmp(tok, "<") == 0) {
                 while (*p == ' ' || *p == '\t') p++;
                 if (*p) {
                     int q = 0;
