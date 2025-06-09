@@ -373,6 +373,23 @@ make test
 
 The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.
 
+## Debugging
+
+Compile with debugging information so that stack traces are produced:
+
+```sh
+make clean
+make CFLAGS="-g -Wall -Wextra -std=c99"
+```
+
+Run the shell under `gdb` or `valgrind` to catch crashes. Using
+
+```sh
+valgrind ./vush
+```
+
+will record a backtrace on failure, making it easier to locate memory errors.
+
 ## License
 
 This project is licensed under the terms of the GNU General Public License
