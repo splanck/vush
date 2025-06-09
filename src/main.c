@@ -21,6 +21,7 @@
 #include "lineedit.h"
 #include "scriptargs.h"
 #include "options.h"
+#include "util.h"
 
 extern FILE *parse_input;
 int last_status = 0;
@@ -81,7 +82,7 @@ int main(int argc, char **argv) {
         FILE *rc = fopen(rcpath, "r");
         if (rc) {
             char rcline[MAX_LINE];
-            while (read_continuation_lines(rc, rcline, sizeof(rcline))) {
+            while (read_logical_line(rc, rcline, sizeof(rcline))) {
 
                 char *exp = expand_history(rcline);
                 if (!exp)
@@ -159,7 +160,7 @@ int main(int argc, char **argv) {
             free(prompt);
             if (!line) break;
         } else {
-            if (!read_continuation_lines(input, linebuf, sizeof(linebuf))) break;
+            if (!read_logical_line(input, linebuf, sizeof(linebuf))) break;
             line = linebuf;
         }
         char *expanded = expand_history(line);
