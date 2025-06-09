@@ -9,7 +9,7 @@ and a few built-in commands.
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
   `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `let`, `set`,
-  `type`, `source` (or `.`), and `help`
+  `trap`, `type`, `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
@@ -191,6 +191,7 @@ baz
 - `fg ID` - wait for background job `ID`.
 - `bg ID` - resume a stopped background job `ID`.
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
+- `trap 'cmd' SIGNAL` - execute `cmd` when `SIGNAL` is received. Use `trap SIGNAL` to clear.
 - `export NAME=value` - set an environment variable for the shell.
 - `unset NAME` - remove an environment variable.
 - `history [-c|-d NUMBER]` - show command history, clear it with `-c`, or delete a specific entry with `-d`.
@@ -302,6 +303,14 @@ ll is an alias for 'ls -l'
 cd is a builtin
 ls is /bin/ls
 unknown not found
+```
+
+## Trap Example
+
+```
+vush> trap 'echo INT received' INT
+vush> # press Ctrl-C to test
+INT received
 ```
 
 ## Documentation

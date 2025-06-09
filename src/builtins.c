@@ -22,6 +22,7 @@ extern int builtin_return(char **);
 extern int builtin_shift(char **);
 extern int builtin_let(char **);
 extern int builtin_set(char **);
+extern int builtin_trap(char **);
 extern int builtin_test(char **);
 extern int builtin_type(char **);
 extern int builtin_source(char **);
@@ -48,6 +49,7 @@ const struct builtin builtin_table[] = {
     {"shift", builtin_shift},
     {"let", builtin_let},
     {"set", builtin_set},
+    {"trap", builtin_trap},
     {"test", builtin_test},
     {"[", builtin_test},
     {"type", builtin_type},

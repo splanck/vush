@@ -24,12 +24,43 @@
 #include "util.h"
 
 extern FILE *parse_input;
+extern char *trap_cmds[NSIG];
+void trap_handler(int sig);
 int last_status = 0;
 int script_argc = 0;
 char **script_argv = NULL;
 int opt_errexit = 0;
 int opt_nounset = 0;
 int opt_xtrace = 0;
+
+void trap_handler(int sig)
+{
+    if (sig <= 0 || sig >= NSIG)
+        return;
+    char *cmd = trap_cmds[sig];
+    if (!cmd)
+        return;
+    FILE *prev = parse_input;
+    parse_input = stdin;
+    Command *cmds = parse_line(cmd);
+    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+        CmdOp prevop = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prevop == OP_AND)
+                    run = (last_status == 0);
+                else if (prevop == OP_OR)
+                    run = (last_status != 0);
+            }
+            if (run)
+                run_pipeline(c, cmd);
+            prevop = c->op;
+        }
+    }
+    free_commands(cmds);
+    parse_input = prev;
+}
 
 int main(int argc, char **argv) {
     char linebuf[MAX_LINE];

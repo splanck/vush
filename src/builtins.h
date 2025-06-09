@@ -7,6 +7,10 @@
 #define BUILTINS_H
 
 #include "parser.h"
+#include <signal.h>
+#ifndef NSIG
+#define NSIG _NSIG
+#endif
 
 struct builtin {
     const char *name;
@@ -31,5 +35,8 @@ const char *get_shell_var(const char *name);
 void set_shell_var(const char *name, const char *value);
 void unset_shell_var(const char *name);
 void free_shell_vars(void);
+
+extern char *trap_cmds[NSIG];
+int builtin_trap(char **args);
 
 #endif /* BUILTINS_H */
