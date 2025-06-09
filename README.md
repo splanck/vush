@@ -81,6 +81,9 @@ vush> cd -
 /home/user
 vush> echo $HOME
 vush> cd ~otheruser
+vush> export CDPATH=/usr
+vush> cd bin
+/usr/bin
 vush> sleep 5 &
 ```
 
@@ -130,7 +133,7 @@ line.
 
 ## Built-in Commands
 
-- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`.
+- `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
 - `dirs` - display the directory stack.
