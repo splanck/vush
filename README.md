@@ -8,12 +8,13 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `set`,
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `let`, `set`,
   `type`, `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
 - Command substitution using backticks or `$(...)`
+- Arithmetic expansion using `$((...))` and a `let` builtin
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
