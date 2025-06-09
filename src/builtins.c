@@ -24,6 +24,8 @@ extern int builtin_read(char **);
 extern int builtin_getopts(char **);
 extern int builtin_eval(char **);
 extern int builtin_return(char **);
+extern int builtin_break(char **);
+extern int builtin_continue(char **);
 extern int builtin_shift(char **);
 extern int builtin_let(char **);
 extern int builtin_set(char **);
@@ -51,6 +53,8 @@ const struct builtin builtin_table[] = {
     {"unalias", builtin_unalias},
     {"read", builtin_read},
     {"return", builtin_return},
+    {"break", builtin_break},
+    {"continue", builtin_continue},
     {"shift", builtin_shift},
     {"getopts", builtin_getopts},
     {"let", builtin_let},
