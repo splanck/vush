@@ -14,5 +14,7 @@ const char *history_search_next(const char *term);
 void history_reset_search(void);
 void clear_history(void);
 void delete_history_entry(int id);
+const char *history_last(void);
+const char *history_find_prefix(const char *prefix);
 
 #endif /* HISTORY_H */

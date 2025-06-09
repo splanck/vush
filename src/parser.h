@@ -39,6 +39,7 @@ typedef struct Command {
 
 char *expand_var(const char *token);
 char *expand_prompt(const char *prompt);
+char *expand_history(const char *line);
 Command *parse_line(char *line);
 void free_pipeline(PipelineSegment *p);
 void free_commands(Command *c);
