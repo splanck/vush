@@ -19,85 +19,162 @@ int func_return = 0;
 
 static int run_command_list(Command *cmds, const char *line);
 static int run_function(Command *body, char **args);
+static int apply_temp_assignments(PipelineSegment *pipeline);
+static void setup_redirections(PipelineSegment *seg);
+static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
+                                   const char *line);
 
-static int run_pipeline_internal(PipelineSegment *pipeline, int background, const char *line) {
-    if (!pipeline)
+static int apply_temp_assignments(PipelineSegment *pipeline) {
+    if (pipeline->next)
         return 0;
 
-    if (opt_xtrace && line)
-        fprintf(stderr, "+ %s\n", line);
-
-    if (!pipeline->next && !pipeline->argv[0] && pipeline->assign_count > 0) {
+    if (!pipeline->argv[0] && pipeline->assign_count > 0) {
         for (int i = 0; i < pipeline->assign_count; i++) {
             char *eq = strchr(pipeline->assigns[i], '=');
-            if (!eq) continue;
+            if (!eq)
+                continue;
             char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-            set_shell_var(name, eq + 1);
-            free(name);
-        }
-        last_status = 0;
-        return last_status;
-    }
-
-    if (!pipeline->next && pipeline->argv[0]) {
-        struct {
-            char *name; char *env; char *var; int had_env; int had_var;
-        } backs[pipeline->assign_count];
-        for (int i = 0; i < pipeline->assign_count; i++) {
-            char *eq = strchr(pipeline->assigns[i], '=');
-            if (!eq) { backs[i].name = NULL; continue; }
-            backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-            const char *oe = getenv(backs[i].name);
-            backs[i].had_env = oe != NULL;
-            backs[i].env = oe ? strdup(oe) : NULL;
-            const char *ov = get_shell_var(backs[i].name);
-            backs[i].had_var = ov != NULL;
-            backs[i].var = ov ? strdup(ov) : NULL;
-            setenv(backs[i].name, eq + 1, 1);
-            set_shell_var(backs[i].name, eq + 1);
-        }
-        int handled = 0;
-        if (run_builtin(pipeline->argv))
-            handled = 1;
-        else {
-            Command *fn = get_function(pipeline->argv[0]);
-            if (fn) {
-                run_function(fn, pipeline->argv);
-                handled = 1;
+            if (name) {
+                set_shell_var(name, eq + 1);
+                free(name);
             }
         }
-        for (int i = 0; i < pipeline->assign_count; i++) {
-            if (!backs[i].name) continue;
-            if (backs[i].had_env)
-                setenv(backs[i].name, backs[i].env, 1);
-            else
-                unsetenv(backs[i].name);
-            if (backs[i].had_var)
-                set_shell_var(backs[i].name, backs[i].var);
-            else
-                unset_shell_var(backs[i].name);
-            free(backs[i].name);
-            free(backs[i].env);
-            free(backs[i].var);
-        }
-        if (handled)
-            return last_status;
+        last_status = 0;
+        return 1;
     }
 
+    if (!pipeline->argv[0])
+        return 0;
+
+    struct {
+        char *name;
+        char *env;
+        char *var;
+        int had_env;
+        int had_var;
+    } backs[pipeline->assign_count];
+
+    for (int i = 0; i < pipeline->assign_count; i++) {
+        char *eq = strchr(pipeline->assigns[i], '=');
+        if (!eq) {
+            backs[i].name = NULL;
+            continue;
+        }
+        backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+        const char *oe = getenv(backs[i].name);
+        backs[i].had_env = oe != NULL;
+        backs[i].env = oe ? strdup(oe) : NULL;
+        const char *ov = get_shell_var(backs[i].name);
+        backs[i].had_var = ov != NULL;
+        backs[i].var = ov ? strdup(ov) : NULL;
+        setenv(backs[i].name, eq + 1, 1);
+        set_shell_var(backs[i].name, eq + 1);
+    }
+
+    int handled = 0;
+    if (run_builtin(pipeline->argv))
+        handled = 1;
+    else {
+        Command *fn = get_function(pipeline->argv[0]);
+        if (fn) {
+            run_function(fn, pipeline->argv);
+            handled = 1;
+        }
+    }
+
+    for (int i = 0; i < pipeline->assign_count; i++) {
+        if (!backs[i].name)
+            continue;
+        if (backs[i].had_env)
+            setenv(backs[i].name, backs[i].env, 1);
+        else
+            unsetenv(backs[i].name);
+        if (backs[i].had_var)
+            set_shell_var(backs[i].name, backs[i].var);
+        else
+            unset_shell_var(backs[i].name);
+        free(backs[i].name);
+        free(backs[i].env);
+        free(backs[i].var);
+    }
+
+    return handled;
+}
+
+static void setup_redirections(PipelineSegment *seg) {
+    if (seg->in_file) {
+        int fd = open(seg->in_file, O_RDONLY);
+        if (fd < 0) {
+            perror(seg->in_file);
+            exit(1);
+        }
+        if (seg->here_doc)
+            unlink(seg->in_file);
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+    }
+
+    if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
+        seg->append == seg->err_append) {
+        int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
+        int fd = open(seg->out_file, flags, 0644);
+        if (fd < 0) {
+            perror(seg->out_file);
+            exit(1);
+        }
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+    } else {
+        if (seg->out_file) {
+            int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
+            int fd = open(seg->out_file, flags, 0644);
+            if (fd < 0) {
+                perror(seg->out_file);
+                exit(1);
+            }
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+        }
+        if (seg->err_file) {
+            int flags = O_WRONLY | O_CREAT | (seg->err_append ? O_APPEND : O_TRUNC);
+            int fd = open(seg->err_file, flags, 0644);
+            if (fd < 0) {
+                perror(seg->err_file);
+                exit(1);
+            }
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+        }
+    }
+
+    if (seg->dup_out != -1)
+        dup2(seg->dup_out, STDOUT_FILENO);
+    if (seg->dup_err != -1)
+        dup2(seg->dup_err, STDERR_FILENO);
+}
+
+static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
+                                   const char *line) {
     int seg_count = 0;
-    for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next) seg_count++;
+    for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next)
+        seg_count++;
     pid_t *pids = calloc(seg_count, sizeof(pid_t));
+    if (!pids)
+        return 1;
+
     int i = 0;
     int in_fd = -1;
-    PipelineSegment *seg = pipeline;
     int pipefd[2];
-    while (seg) {
+
+    for (PipelineSegment *seg = pipeline; seg; seg = seg->next) {
         if (seg->next && pipe(pipefd) < 0) {
             perror("pipe");
             free(pids);
             last_status = 1;
             return 1;
         }
+
         pid_t pid = fork();
         if (pid == 0) {
             signal(SIGINT, SIG_DFL);
@@ -110,65 +187,9 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
                 dup2(pipefd[1], STDOUT_FILENO);
                 close(pipefd[1]);
             }
-            if (seg->in_file) {
-                int fd = open(seg->in_file, O_RDONLY);
-                if (fd < 0) {
-                    perror(seg->in_file);
-                    exit(1);
-                }
-                if (seg->here_doc)
-                    unlink(seg->in_file);
-                dup2(fd, STDIN_FILENO);
-                close(fd);
-            }
-            if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 && seg->append == seg->err_append) {
-                int flags = O_WRONLY | O_CREAT;
-                if (seg->append)
-                    flags |= O_APPEND;
-                else
-                    flags |= O_TRUNC;
-                int fd = open(seg->out_file, flags, 0644);
-                if (fd < 0) {
-                    perror(seg->out_file);
-                    exit(1);
-                }
-                dup2(fd, STDOUT_FILENO);
-                dup2(fd, STDERR_FILENO);
-                close(fd);
-            } else {
-                if (seg->out_file) {
-                    int flags = O_WRONLY | O_CREAT;
-                    if (seg->append)
-                        flags |= O_APPEND;
-                    else
-                        flags |= O_TRUNC;
-                    int fd = open(seg->out_file, flags, 0644);
-                    if (fd < 0) {
-                        perror(seg->out_file);
-                        exit(1);
-                    }
-                    dup2(fd, STDOUT_FILENO);
-                    close(fd);
-                }
-                if (seg->err_file) {
-                    int flags = O_WRONLY | O_CREAT;
-                    if (seg->err_append)
-                        flags |= O_APPEND;
-                    else
-                        flags |= O_TRUNC;
-                    int fd = open(seg->err_file, flags, 0644);
-                    if (fd < 0) {
-                        perror(seg->err_file);
-                        exit(1);
-                    }
-                    dup2(fd, STDERR_FILENO);
-                    close(fd);
-                }
-            }
-            if (seg->dup_out != -1)
-                dup2(seg->dup_out, STDOUT_FILENO);
-            if (seg->dup_err != -1)
-                dup2(seg->dup_err, STDERR_FILENO);
+
+            setup_redirections(seg);
+
             for (int ai = 0; ai < seg->assign_count; ai++) {
                 char *eq = strchr(seg->assigns[ai], '=');
                 if (eq) {
@@ -180,6 +201,7 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
                     }
                 }
             }
+
             execvp(seg->argv[0], seg->argv);
             if (errno == ENOENT)
                 fprintf(stderr, "%s: command not found\n", seg->argv[0]);
@@ -190,20 +212,22 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
             perror("fork");
         } else {
             pids[i++] = pid;
-            if (in_fd != -1) close(in_fd);
+            if (in_fd != -1)
+                close(in_fd);
             if (seg->next) {
                 close(pipefd[1]);
                 in_fd = pipefd[0];
             }
         }
-        seg = seg->next;
     }
-    if (in_fd != -1) close(in_fd);
+
+    if (in_fd != -1)
+        close(in_fd);
 
     int status = 0;
     if (background) {
         if (i > 0)
-            add_job(pids[i-1], line);
+            add_job(pids[i - 1], line);
         last_status = 0;
     } else {
         for (int j = 0; j < i; j++)
@@ -217,8 +241,22 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         if (opt_errexit && last_status != 0)
             exit(last_status);
     }
+
     free(pids);
     return last_status;
+}
+
+static int run_pipeline_internal(PipelineSegment *pipeline, int background, const char *line) {
+    if (!pipeline)
+        return 0;
+
+    if (opt_xtrace && line)
+        fprintf(stderr, "+ %s\n", line);
+
+    if (apply_temp_assignments(pipeline))
+        return last_status;
+
+    return spawn_pipeline_segments(pipeline, background, line);
 }
 
 static int run_command_list(Command *cmds, const char *line) {
