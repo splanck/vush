@@ -13,6 +13,18 @@
 static void redraw_line(const char *prompt, const char *buf, int prev_len,
                         int pos);
 
+static void handle_backspace(char *buf, int *lenp, int *posp);
+static void handle_insert(char *buf, int *lenp, int *posp, char c,
+                          int *disp_lenp);
+static void handle_word_erase(const char *prompt, char *buf, int *lenp,
+                              int *posp, int *disp_lenp);
+static void handle_line_start_erase(const char *prompt, char *buf, int *lenp,
+                                    int *posp, int *disp_lenp);
+static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
+                                  int *posp, int *disp_lenp);
+static void handle_completion(const char *prompt, char *buf, int *lenp,
+                              int *posp, int *disp_lenp);
+
 static int cmpstr(const void *a, const void *b) {
     const char *aa = *(const char **)a;
     const char *bb = *(const char **)b;
@@ -174,6 +186,145 @@ static void redraw_line(const char *prompt, const char *buf, int prev_len, int p
     fflush(stdout);
 }
 
+static void handle_backspace(char *buf, int *lenp, int *posp) {
+    if (*posp > 0) {
+        memmove(&buf[*posp - 1], &buf[*posp], *lenp - *posp);
+        (*posp)--;
+        (*lenp)--;
+        printf("\b");
+        fwrite(&buf[*posp], 1, *lenp - *posp, stdout);
+        putchar(' ');
+        for (int i = 0; i < *lenp - *posp + 1; i++)
+            printf("\b");
+        fflush(stdout);
+    }
+}
+
+static void handle_line_start_erase(const char *prompt, char *buf, int *lenp,
+                                    int *posp, int *disp_lenp) {
+    if (*posp > 0) {
+        memmove(buf, &buf[*posp], *lenp - *posp);
+        *lenp -= *posp;
+        *posp = 0;
+        redraw_line(prompt, buf, *disp_lenp, *posp);
+        *disp_lenp = *lenp;
+    }
+}
+
+static void handle_word_erase(const char *prompt, char *buf, int *lenp, int *posp,
+                              int *disp_lenp) {
+    if (*posp > 0) {
+        int end = *posp;
+        while (*posp > 0 && (buf[*posp - 1] == ' ' || buf[*posp - 1] == '\t'))
+            (*posp)--;
+        while (*posp > 0 && buf[*posp - 1] != ' ' && buf[*posp - 1] != '\t')
+            (*posp)--;
+        memmove(&buf[*posp], &buf[end], *lenp - end);
+        *lenp -= end - *posp;
+        redraw_line(prompt, buf, *disp_lenp, *posp);
+        if (*lenp > *disp_lenp)
+            *disp_lenp = *lenp;
+    }
+}
+
+static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
+                                  int *posp, int *disp_lenp) {
+    if (*posp < *lenp) {
+        buf[*posp] = '\0';
+        *lenp = *posp;
+        redraw_line(prompt, buf, *disp_lenp, *posp);
+        *disp_lenp = *lenp;
+    }
+}
+
+static void handle_completion(const char *prompt, char *buf, int *lenp,
+                              int *posp, int *disp_lenp) {
+    int start = *posp;
+    while (start > 0 && buf[start - 1] != ' ' && buf[start - 1] != '\t')
+        start--;
+
+    char prefix[MAX_LINE];
+    memcpy(prefix, &buf[start], *posp - start);
+    prefix[*posp - start] = '\0';
+
+    int mcount = 0;
+    int mcap = 16;
+    char **matches = malloc(mcap * sizeof(char *));
+    if (!matches)
+        matches = NULL;
+    const char **bn = get_builtin_names();
+    if (matches)
+    for (int i = 0; bn[i]; i++) {
+        if (strncmp(bn[i], prefix, *posp - start) == 0) {
+            if (mcount == mcap) {
+                mcap *= 2;
+                matches = realloc(matches, mcap * sizeof(char *));
+                if (!matches) break;
+            }
+            matches[mcount++] = strdup(bn[i]);
+        }
+    }
+    DIR *d = opendir(".");
+    if (d && matches) {
+        struct dirent *de;
+        while ((de = readdir(d))) {
+            if (strncmp(de->d_name, prefix, *posp - start) == 0) {
+                if (mcount == mcap) {
+                    mcap *= 2;
+                    matches = realloc(matches, mcap * sizeof(char *));
+                    if (!matches) break;
+                }
+                matches[mcount++] = strdup(de->d_name);
+            }
+        }
+        closedir(d);
+    }
+    if (matches) {
+        if (mcount == 1) {
+            const char *match = matches[0];
+            int mlen = strlen(match);
+            if (*lenp + mlen - (*posp - start) < MAX_LINE - 1) {
+                memmove(&buf[start + mlen], &buf[*posp], *lenp - *posp);
+                memcpy(&buf[start], match, mlen);
+                *lenp += mlen - (*posp - start);
+                *posp = start + mlen;
+                buf[*lenp] = '\0';
+                redraw_line(prompt, buf, *disp_lenp, *posp);
+                if (*lenp > *disp_lenp)
+                    *disp_lenp = *lenp;
+            }
+        } else if (mcount > 1) {
+            qsort(matches, mcount, sizeof(char *), cmpstr);
+            printf("\r\n");
+            for (int i = 0; i < mcount; i++)
+                printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
+            printf("\r\n");
+            redraw_line(prompt, buf, *disp_lenp, *posp);
+            if (*lenp > *disp_lenp)
+                *disp_lenp = *lenp;
+        }
+        for (int i = 0; i < mcount; i++)
+            free(matches[i]);
+        free(matches);
+    }
+}
+
+static void handle_insert(char *buf, int *lenp, int *posp, char c,
+                          int *disp_lenp) {
+    if (*lenp < MAX_LINE - 1) {
+        memmove(&buf[*posp + 1], &buf[*posp], *lenp - *posp);
+        buf[*posp] = c;
+        fwrite(&buf[*posp], 1, *lenp - *posp + 1, stdout);
+        (*posp)++;
+        (*lenp)++;
+        for (int i = 0; i < *lenp - *posp; i++)
+            printf("\b");
+        fflush(stdout);
+        if (*lenp > *disp_lenp)
+            *disp_lenp = *lenp;
+    }
+}
+
 char *line_edit(const char *prompt) {
     struct termios orig, raw;
     if (tcgetattr(STDIN_FILENO, &orig) == -1)
@@ -204,17 +355,7 @@ char *line_edit(const char *prompt) {
             len = -1;
             break;
         } else if (c == 0x7f) { /* backspace */
-            if (pos > 0) {
-                memmove(&buf[pos-1], &buf[pos], len - pos);
-                pos--;
-                len--;
-                printf("\b");
-                fwrite(&buf[pos], 1, len - pos, stdout);
-                putchar(' ');
-                for (int i = 0; i < len - pos + 1; i++)
-                    printf("\b");
-                fflush(stdout);
-            }
+            handle_backspace(buf, &len, &pos);
         } else if (c == 0x01) { /* Ctrl-A */
             while (pos > 0) {
                 printf("\b");
@@ -228,105 +369,17 @@ char *line_edit(const char *prompt) {
             }
             fflush(stdout);
         } else if (c == 0x15) { /* Ctrl-U */
-            if (pos > 0) {
-                memmove(buf, &buf[pos], len - pos);
-                len -= pos;
-                pos = 0;
-                redraw_line(prompt, buf, disp_len, pos);
-                disp_len = len;
-            }
+            handle_line_start_erase(prompt, buf, &len, &pos, &disp_len);
         } else if (c == 0x17) { /* Ctrl-W */
-            if (pos > 0) {
-                int end = pos;
-                while (pos > 0 && (buf[pos-1] == ' ' || buf[pos-1] == '\t'))
-                    pos--;
-                while (pos > 0 && buf[pos-1] != ' ' && buf[pos-1] != '\t')
-                    pos--;
-                memmove(&buf[pos], &buf[end], len - end);
-                len -= end - pos;
-                redraw_line(prompt, buf, disp_len, pos);
-                if (len > disp_len)
-                    disp_len = len;
-            }
+            handle_word_erase(prompt, buf, &len, &pos, &disp_len);
         } else if (c == 0x0b) { /* Ctrl-K */
-            if (pos < len) {
-                buf[pos] = '\0';
-                len = pos;
-                redraw_line(prompt, buf, disp_len, pos);
-                disp_len = len;
-            }
+            handle_line_end_erase(prompt, buf, &len, &pos, &disp_len);
         } else if (c == 0x0c) { /* Ctrl-L */
             printf("\x1b[H\x1b[2J");
             redraw_line(prompt, buf, disp_len, pos);
             fflush(stdout);
         } else if (c == '\t') { /* Tab completion */
-            int start = pos;
-            while (start > 0 && buf[start-1] != ' ' && buf[start-1] != '\t')
-                start--;
-            char prefix[MAX_LINE];
-            memcpy(prefix, &buf[start], pos - start);
-            prefix[pos - start] = '\0';
-
-            int mcount = 0;
-            int mcap = 16;
-            char **matches = malloc(mcap * sizeof(char *));
-            if (!matches)
-                matches = NULL;
-            const char **bn = get_builtin_names();
-            if (matches)
-            for (int i = 0; bn[i]; i++) {
-                if (strncmp(bn[i], prefix, pos - start) == 0) {
-                    if (mcount == mcap) {
-                        mcap *= 2;
-                        matches = realloc(matches, mcap * sizeof(char *));
-                        if (!matches) break;
-                    }
-                    matches[mcount++] = strdup(bn[i]);
-                }
-            }
-            DIR *d = opendir(".");
-            if (d && matches) {
-                struct dirent *de;
-                while ((de = readdir(d))) {
-                    if (strncmp(de->d_name, prefix, pos - start) == 0) {
-                        if (mcount == mcap) {
-                            mcap *= 2;
-                            matches = realloc(matches, mcap * sizeof(char *));
-                            if (!matches) break;
-                        }
-                        matches[mcount++] = strdup(de->d_name);
-                    }
-                }
-                closedir(d);
-            }
-            if (matches) {
-                if (mcount == 1) {
-                    const char *match = matches[0];
-                    int mlen = strlen(match);
-                    if (len + mlen - (pos - start) < MAX_LINE - 1) {
-                        memmove(&buf[start + mlen], &buf[pos], len - pos);
-                        memcpy(&buf[start], match, mlen);
-                        len += mlen - (pos - start);
-                        pos = start + mlen;
-                        buf[len] = '\0';
-                        redraw_line(prompt, buf, disp_len, pos);
-                        if (len > disp_len)
-                            disp_len = len;
-                    }
-                } else if (mcount > 1) {
-                    qsort(matches, mcount, sizeof(char *), cmpstr);
-                    printf("\r\n");
-                    for (int i = 0; i < mcount; i++)
-                        printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
-                    printf("\r\n");
-                    redraw_line(prompt, buf, disp_len, pos);
-                    if (len > disp_len)
-                        disp_len = len;
-                }
-                for (int i = 0; i < mcount; i++)
-                    free(matches[i]);
-                free(matches);
-            }
+            handle_completion(prompt, buf, &len, &pos, &disp_len);
         } else if (c == 0x12) { /* Ctrl-R */
             int r = reverse_search(prompt, buf, &len, &pos, &disp_len);
             if (r < 0) {
@@ -400,18 +453,7 @@ char *line_edit(const char *prompt) {
                 }
             }
         } else if (c >= 32 && c < 127) { /* printable */
-            if (len < MAX_LINE - 1) {
-                memmove(&buf[pos+1], &buf[pos], len - pos);
-                buf[pos] = c;
-                fwrite(&buf[pos], 1, len - pos + 1, stdout);
-                pos++;
-                len++;
-                for (int i = 0; i < len - pos; i++)
-                    printf("\b");
-                fflush(stdout);
-                if (len > disp_len)
-                    disp_len = len;
-            }
+            handle_insert(buf, &len, &pos, c, &disp_len);
         }
     }
 
