@@ -211,8 +211,12 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
                 if (**p == '}') {
                     (*p)++;
                     name[n] = '\0';
-                    char varbuf[MAX_LINE];
-                    snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                    char varbuf[MAX_LINE + 4];
+                    int needed = snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                    if (needed < 0 || needed >= (int)sizeof(varbuf)) {
+                        fprintf(stderr, "variable expansion too long\n");
+                        return NULL;
+                    }
                     char *res = expand_var(varbuf);
                     for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
                         buf[len++] = res[ci];
@@ -304,8 +308,12 @@ char *read_token(char **p, int *quoted) {
             if (**p == '}') {
                 (*p)++;
                 name[n] = '\0';
-                char varbuf[MAX_LINE];
-                snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                char varbuf[MAX_LINE + 4];
+                int needed = snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                if (needed < 0 || needed >= (int)sizeof(varbuf)) {
+                    fprintf(stderr, "variable expansion too long\n");
+                    return NULL;
+                }
                 char *res = expand_var(varbuf);
                 for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
                     buf[len++] = res[ci];
