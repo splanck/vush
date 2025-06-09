@@ -11,6 +11,7 @@
 int run_builtin(char **args);
 int builtin_type(char **args);
 int builtin_dirs(char **args);
+int builtin_read(char **args);
 const char **get_builtin_names(void);
 const char *get_alias(const char *name);
 void load_aliases(void);
