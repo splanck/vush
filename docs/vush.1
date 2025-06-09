@@ -7,7 +7,9 @@ vush \- simple UNIX shell
 .SH DESCRIPTION
 vush is a lightweight UNIX shell supporting command execution,
 pipelines and subshells using '(...)', command chaining with ';', '&&' and '||',
-environment variable expansion using \fB$VAR\fP or \fB${VAR}\fP (with "$?" storing the last exit status),
+environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
+\fB${VAR:-word}\fP, \fB${VAR:=word}\fP, \fB${VAR:+word}\fP, \fB${VAR#pat}\fP,
+\fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
 wildcard matching for '*' and '?', input and output redirection with
@@ -40,9 +42,22 @@ by spaces and \$# expands to the number of parameters.  The
 \fBshift\fP builtin discards the first parameter and moves the rest down.
 
 .SH ASSIGNMENTS
+.PP
 Words of the form \fBNAME=value\fP appearing before a command are added to that
 command's environment only.  Using the same syntax without a command creates a
 shell variable that persists but is not exported.
+.SH PARAMETER EXPANSION
+Several forms modify how variables are expanded:
+.EX
+unset TMP
+echo ${TMP:-default}
+echo ${TMP:=set}
+echo ${TMP:+alt}
+TMP=endings
+echo ${TMP#end}
+echo ${TMP%ings}
+echo ${#TMP}
+.EE
 .SH CONTROL STRUCTURES
 The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
 conditional execution. Commands following \fBthen\fP run when the test before
