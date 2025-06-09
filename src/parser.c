@@ -149,6 +149,44 @@ static char *gather_braced(char **p) {
     }
     return NULL;
 }
+
+/*
+ * Extract a parenthesis enclosed block while respecting quoted strings.
+ */
+
+static char *gather_parens(char **p) {
+    if (**p != '(')
+        return NULL;
+    (*p)++; /* skip '(' */
+    char *start = *p;
+    int depth = 1;
+    int in_s = 0, in_d = 0, esc = 0;
+    while (**p) {
+        char c = **p;
+        if (esc) {
+            esc = 0;
+        } else if (c == '\\') {
+            esc = 1;
+        } else if (c == '\'' && !in_d) {
+            in_s = !in_s;
+        } else if (c == '"' && !in_s) {
+            in_d = !in_d;
+        } else if (!in_s && !in_d) {
+            if (c == '(') depth++;
+            else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    size_t len = (size_t)(*p - start);
+                    char *res = strndup(start, len);
+                    (*p)++; /* skip closing paren */
+                    return res;
+                }
+            }
+        }
+        (*p)++;
+    }
+    return NULL;
+}
 /*
  * Parse an if/elif/else clause recursively.
  */
@@ -335,6 +373,26 @@ static Command *parse_function_def(char **p, CmdOp *op_out) {
     }
     if (fname) free(fname);
     return NULL;
+}
+
+/* Parse a parenthesized subshell command list. */
+static Command *parse_subshell(char **p, CmdOp *op_out) {
+    char *bodytxt = gather_parens(p);
+    if (!bodytxt)
+        return NULL;
+    Command *body_cmd = parse_line(bodytxt);
+    free(bodytxt);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_SUBSHELL;
+    cmd->group = body_cmd;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    CmdOp op = OP_NONE;
+    if (**p == ';') { op = OP_SEMI; (*p)++; }
+    else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
+    else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
+    cmd->op = op;
+    if (op_out) *op_out = op;
+    return cmd;
 }
 
 /* Parse top-level control clauses such as if, while, for and case. */
@@ -557,6 +615,10 @@ static int handle_redirection(PipelineSegment *seg, char **p, char *tok, int quo
 /* Parse a command line into pipeline segments with alias expansion,
  * redirections, globbing and here-doc handling. */
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p == '(')
+        return parse_subshell(p, op_out);
+
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;
     seg_head->dup_err = -1;
@@ -740,6 +802,8 @@ void free_commands(Command *c) {
         free(c->var);
         free(c->text);
         free_commands(c->body);
+    } else if (c->type == CMD_SUBSHELL) {
+        free_commands(c->group);
     }
         free(c);
         c = next;

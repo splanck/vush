@@ -278,6 +278,26 @@ int run_pipeline(Command *cmd, const char *line) {
             }
         }
         return last_status;
+    case CMD_SUBSHELL: {
+        pid_t pid = fork();
+        if (pid == 0) {
+            signal(SIGINT, SIG_DFL);
+            run_command_list(cmd->group, line);
+            exit(last_status);
+        } else if (pid > 0) {
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status))
+                last_status = WEXITSTATUS(status);
+            else if (WIFSIGNALED(status))
+                last_status = 128 + WTERMSIG(status);
+            return last_status;
+        } else {
+            perror("fork");
+            last_status = 1;
+            return 1;
+        }
+    }
     default:
         return 0;
     }

@@ -40,7 +40,8 @@ typedef enum {
     CMD_IF,
     CMD_FOR,
     CMD_WHILE,
-    CMD_CASE
+    CMD_CASE,
+    CMD_SUBSHELL
 } CmdType;
 
 typedef struct CaseItem {
@@ -62,6 +63,7 @@ typedef struct Command {
     int word_count;
     char *text;               /* function body as text */
     CaseItem *cases;          /* for case clause items */
+    struct Command *group;    /* commands for subshell */
     int background;
     CmdOp op; /* operator connecting to next command */
     struct Command *next;
