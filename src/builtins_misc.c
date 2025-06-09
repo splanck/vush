@@ -19,7 +19,7 @@ extern FILE *parse_input;
 #include <signal.h>
 
 int builtin_exit(char **args) {
-    int status = 0;
+    int status = last_status;
     if (args[1]) {
         char *end;
         errno = 0;
