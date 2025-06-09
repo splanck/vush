@@ -59,15 +59,16 @@ int builtin_source(char **args) {
         return 1;
     }
 
+    FILE *prev_input = parse_input;
     FILE *input = fopen(args[1], "r");
     if (!input) {
         perror(args[1]);
         return 1;
     }
 
+    parse_input = input;
     char line[MAX_LINE];
     while (read_logical_line(input, line, sizeof(line))) {
-        parse_input = input;
         Command *cmds = parse_line(line);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);
@@ -90,7 +91,7 @@ int builtin_source(char **args) {
         free_commands(cmds);
     }
     fclose(input);
-    parse_input = stdin;
+    parse_input = prev_input;
     return 1;
 }
 
