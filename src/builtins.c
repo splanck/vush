@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 extern int last_status;
+extern FILE *parse_input;
 #include "common.h"
 #include "scriptargs.h"
 #include "options.h"
@@ -469,6 +470,7 @@ static int builtin_source(char **args) {
         size_t len = strlen(line);
         if (len && line[len-1] == '\n') line[len-1] = '\0';
 
+        parse_input = input;
         Command *cmds = parse_line(line);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);
@@ -493,6 +495,7 @@ static int builtin_source(char **args) {
         free_commands(cmds);
     }
     fclose(input);
+    parse_input = stdin;
     return 1;
 }
 

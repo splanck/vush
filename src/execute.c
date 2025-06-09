@@ -55,6 +55,8 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
                     perror(seg->in_file);
                     exit(1);
                 }
+                if (seg->here_doc)
+                    unlink(seg->in_file);
                 dup2(fd, STDIN_FILENO);
                 close(fd);
             }

@@ -7,6 +7,7 @@
 #define PARSER_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #define MAX_TOKENS 64
 #define MAX_LINE 1024
@@ -14,6 +15,7 @@
 typedef struct PipelineSegment {
     char *argv[MAX_TOKENS];
     char *in_file;
+    int here_doc;     /* input file is temporary here-doc */
     char *out_file;
     int append;
     int dup_out;      /* > &N duplication */
@@ -43,5 +45,6 @@ char *expand_history(const char *line);
 Command *parse_line(char *line);
 void free_pipeline(PipelineSegment *p);
 void free_commands(Command *c);
+extern FILE *parse_input;
 
 #endif /* PARSER_H */

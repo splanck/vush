@@ -22,6 +22,7 @@
 #include "scriptargs.h"
 #include "options.h"
 
+extern FILE *parse_input;
 int last_status = 0;
 int script_argc = 0;
 char **script_argv = NULL;
@@ -87,6 +88,7 @@ int main(int argc, char **argv) {
                 char *exp = expand_history(rcline);
                 if (!exp)
                     continue;
+                parse_input = rc;
                 Command *cmds = parse_line(exp);
                 if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
                     free_commands(cmds);
@@ -115,6 +117,7 @@ int main(int argc, char **argv) {
                     free(exp);
             }
             fclose(rc);
+            parse_input = input;
         }
     }
 
@@ -125,6 +128,7 @@ int main(int argc, char **argv) {
 
         char *expanded = expand_history(line);
         if (expanded) {
+            parse_input = input;
             Command *cmds = parse_line(expanded);
             if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
                 add_history(line);
@@ -168,6 +172,7 @@ int main(int argc, char **argv) {
                 free(line);
             continue;
         }
+        parse_input = input;
         Command *cmds = parse_line(expanded);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);
