@@ -30,26 +30,36 @@ int main(int argc, char **argv) {
     char *line;
 
     FILE *input = stdin;
-    if (argc > 1) {
-        input = fopen(argv[1], "r");
-        if (!input) {
-            perror(argv[1]);
-            return 1;
-        }
+    char *dash_c = NULL;
 
-        script_argc = argc - 2;
-        script_argv = calloc(argc, sizeof(char *));
-        if (!script_argv) {
-            perror("calloc");
-            return 1;
+    if (argc > 1) {
+        if (strcmp(argv[1], "-c") == 0) {
+            if (argc < 3) {
+                fprintf(stderr, "usage: %s -c command\n", argv[0]);
+                return 1;
+            }
+            dash_c = argv[2];
+        } else {
+            input = fopen(argv[1], "r");
+            if (!input) {
+                perror(argv[1]);
+                return 1;
+            }
+
+            script_argc = argc - 2;
+            script_argv = calloc(argc, sizeof(char *));
+            if (!script_argv) {
+                perror("calloc");
+                return 1;
+            }
+            script_argv[0] = argv[1];
+            for (int i = 0; i < script_argc; i++)
+                script_argv[i + 1] = argv[i + 2];
+            script_argv[script_argc + 1] = NULL;
         }
-        script_argv[0] = argv[1];
-        for (int i = 0; i < script_argc; i++)
-            script_argv[i + 1] = argv[i + 2];
-        script_argv[script_argc + 1] = NULL;
     }
 
-    int interactive = (input == stdin);
+    int interactive = (input == stdin && !dash_c);
 
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
@@ -104,7 +114,36 @@ int main(int argc, char **argv) {
         }
     }
 
-    while (1) {
+    if (dash_c) {
+        strncpy(linebuf, dash_c, sizeof(linebuf) - 1);
+        linebuf[sizeof(linebuf) - 1] = '\0';
+        line = linebuf;
+
+        char *expanded = expand_history(line);
+        if (expanded) {
+            Command *cmds = parse_line(expanded);
+            if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+                add_history(line);
+
+                CmdOp prev = OP_SEMI;
+                for (Command *c = cmds; c; c = c->next) {
+                    int run = 1;
+                    if (c != cmds) {
+                        if (prev == OP_AND)
+                            run = (last_status == 0);
+                        else if (prev == OP_OR)
+                            run = (last_status != 0);
+                    }
+                    if (run)
+                        run_pipeline(c->pipeline, c->background, expanded);
+                    prev = c->op;
+                }
+            }
+            free_commands(cmds);
+            if (expanded != line)
+                free(expanded);
+        }
+    } else while (1) {
         check_jobs();
         if (interactive) {
             const char *ps = getenv("PS1");
@@ -157,6 +196,6 @@ int main(int argc, char **argv) {
         fclose(input);
     free(script_argv);
     free_aliases();
-    return 0;
+    return dash_c ? last_status : 0;
 }
 
