@@ -917,21 +917,73 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
     return cmd;
 }
 
-/* Expand an alias when TOK is the first word of a segment */
-static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
-    const char *alias = get_alias(tok);
-    if (!alias)
-        return 0;
-    free(tok);
+/* Expand an alias when TOK is the first word of a segment.
+ * Nested aliases are expanded recursively up to a small depth and
+ * previously visited names are tracked to avoid infinite loops. */
+#define MAX_ALIAS_DEPTH 10
+
+static void collect_alias_tokens(const char *name, char **out, int *count,
+                                 char visited[][MAX_LINE], int depth) {
+    if (*count >= MAX_TOKENS - 1)
+        return;
+
+    if (depth >= MAX_ALIAS_DEPTH) {
+        out[(*count)++] = strdup(name);
+        return;
+    }
+
+    for (int i = 0; i < depth; i++) {
+        if (strcmp(visited[i], name) == 0) {
+            out[(*count)++] = strdup(name);
+            return;
+        }
+    }
+
+    const char *alias = get_alias(name);
+    if (!alias) {
+        out[(*count)++] = strdup(name);
+        return;
+    }
+
+    strncpy(visited[depth], name, MAX_LINE);
+    visited[depth][MAX_LINE - 1] = '\0';
+
     char *dup = strdup(alias);
     char *sp = NULL;
     char *word = strtok_r(dup, " \t", &sp);
-    while (word && *argc < MAX_TOKENS - 1) {
-        seg->argv[(*argc)++] = strdup(word);
+    if (!word) {
+        free(dup);
+        return;
+    }
+
+    collect_alias_tokens(word, out, count, visited, depth + 1);
+
+    word = strtok_r(NULL, " \t", &sp);
+    while (word && *count < MAX_TOKENS - 1) {
+        out[(*count)++] = strdup(word);
         word = strtok_r(NULL, " \t", &sp);
     }
     free(dup);
-    return 1;
+}
+
+static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
+    char *orig = tok;
+    const char *initial_alias = get_alias(orig);
+
+    char *tokens[MAX_TOKENS];
+    int count = 0;
+    char visited[MAX_ALIAS_DEPTH][MAX_LINE];
+
+    collect_alias_tokens(orig, tokens, &count, visited, 0);
+    free(orig);
+
+    if (!initial_alias)
+        return 0;
+
+    for (int i = 0; i < count && *argc < MAX_TOKENS - 1; i++)
+        seg->argv[(*argc)++] = tokens[i];
+
+    return count > 0;
 }
 
 /* Collect a here-doc into a temporary file */
