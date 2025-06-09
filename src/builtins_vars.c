@@ -81,8 +81,9 @@ void free_shell_vars(void) {
 int builtin_shift(char **args) {
     (void)args;
     if (script_argc > 0) {
-        for (int i = 1; i < script_argc; i++)
-            script_argv[i] = script_argv[i + 1];
+        free(script_argv[1]);
+        for (int i = 2; i <= script_argc; i++)
+            script_argv[i - 1] = script_argv[i];
         script_argc--;
         script_argv[script_argc + 1] = NULL;
     }
