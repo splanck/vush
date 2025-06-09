@@ -7,9 +7,10 @@ and a few built-in commands.
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
- - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `let`, `set`,
-  `trap`, `type`, `eval`, `source` (or `.`), and `help`
+ - Built-in commands: `alias`, `bg`, `cd`, `dirs`, `eval`, `exit`, `export`, `fg`,
+  `getopts`, `help`, `history`, `jobs`, `kill`, `let`, `popd`, `pushd`,
+  `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`), `trap`, `type`,
+  `unalias`, and `unset`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
