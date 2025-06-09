@@ -25,7 +25,10 @@ recent command beginning with `prefix`.
 If \fB~/.vushrc\fP exists, commands from this file are executed before
 the first prompt is shown.
 .SH OPTIONS
-None.
+.TP
+.BI -c " command"
+Execute the provided command string non-interactively and exit with its
+status.
 .SH POSITIONAL PARAMETERS
 When executing a script file, the remaining command line words become
 positional parameters.  \$0 expands to the script path, \$1 through \$9

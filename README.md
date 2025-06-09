@@ -62,11 +62,12 @@ make uninstall
 
 Run the `vush` binary and enter commands as you would in a normal shell.  You
 can also provide a filename to execute commands from a script non-
-interactively.
+interactively or pass `-c` followed by a command string.
 
 ```
 ./vush                # interactive mode
 ./vush scriptfile     # run commands from "scriptfile"
+./vush -c "echo hi"   # run a single command and exit
 ```
 
 When invoked without a script file, commands from `~/.vushrc` are executed
