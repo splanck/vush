@@ -11,7 +11,9 @@ and a few built-in commands.
   `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
   `popd`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
   `trap`, `type`, `unalias`, and `unset`
-- Environment variable expansion using `$VAR` or `${VAR}` syntax
+- Environment variable expansion using `$VAR`, `${VAR}` and forms like
+  `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR%pat}` and
+  `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
 - Command substitution using backticks or `$(...)`
@@ -133,6 +135,25 @@ vush> echo $?
 0
 vush> echo $(echo hi)
 hi
+```
+
+Additional parameter expansion forms:
+
+```
+vush> unset TEMP
+vush> echo ${TEMP:-default}
+default
+vush> echo ${TEMP:=setnow}
+setnow
+vush> echo ${TEMP:+alt}
+alt
+vush> export TEMP=endings
+vush> echo ${TEMP#end}
+ings
+vush> echo ${TEMP%ings}
+end
+vush> echo ${#TEMP}
+7
 ```
 
 If the closing quote or `)` for command substitution is missing, `vush` prints

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fnmatch.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <unistd.h>
@@ -366,20 +367,106 @@ char *expand_var(const char *token) {
     if (token[1] == '{') {
         const char *end = strchr(token + 2, '}');
         if (end && end[1] == '\0') {
-            size_t len = (size_t)(end - (token + 2));
-            char *name = strndup(token + 2, len);
-            if (!name) return strdup("");
+            char inner[MAX_LINE];
+            size_t ilen = (size_t)(end - (token + 2));
+            if (ilen >= sizeof(inner)) ilen = sizeof(inner) - 1;
+            memcpy(inner, token + 2, ilen);
+            inner[ilen] = '\0';
+
+            if (inner[0] == '#') {
+                const char *name = inner + 1;
+                const char *val = get_shell_var(name);
+                if (!val) val = getenv(name);
+                if (!val) {
+                    if (opt_nounset) {
+                        fprintf(stderr, "%s: unbound variable\n", name);
+                        last_status = 1;
+                    }
+                    val = "";
+                }
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%zu", strlen(val));
+                return strdup(buf);
+            }
+
+            char name[MAX_LINE];
+            int n = 0;
+            const char *p = inner;
+            while (*p && *p != ':' && *p != '#' && *p != '%' && n < MAX_LINE - 1)
+                name[n++] = *p++;
+            name[n] = '\0';
+
             const char *val = get_shell_var(name);
             if (!val) val = getenv(name);
-            if (!val) {
-                if (opt_nounset) {
-                    fprintf(stderr, "%s: unbound variable\n", name);
-                    last_status = 1;
+
+            if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
+                char op = p[1];
+                const char *word = p + 2;
+                char *wexp = strdup(word ? word : "");
+                if (!wexp) wexp = strdup("");
+
+                int use_word = (!val || val[0] == '\0');
+                if (op == '+')
+                    use_word = (val && val[0] != '\0');
+                if (op == '=') {
+                    if (!val || val[0] == '\0') {
+                        set_shell_var(name, wexp);
+                        if (getenv(name))
+                            setenv(name, wexp, 1);
+                        val = wexp;
+                    }
                 }
-                val = "";
+
+                if (use_word)
+                    return wexp;
+
+                free(wexp);
+                if (!val) {
+                    if (opt_nounset) {
+                        fprintf(stderr, "%s: unbound variable\n", name);
+                        last_status = 1;
+                    }
+                    val = "";
+                }
+                return strdup(val);
+            } else if (*p == '#' || *p == '%') {
+                char op = *p;
+                const char *pattern = p + 1;
+                if (!val) val = "";
+                size_t vlen = strlen(val);
+                if (op == '#') {
+                    for (size_t i = 0; i <= vlen; i++) {
+                        char *pref = strndup(val, i);
+                        if (!pref) break;
+                        int m = fnmatch(pattern, pref, 0);
+                        free(pref);
+                        if (m == 0)
+                            return strdup(val + i);
+                    }
+                    return strdup(val);
+                } else {
+                    for (size_t i = 0; i <= vlen; i++) {
+                        char *suf = strdup(val + vlen - i);
+                        if (!suf) break;
+                        int m = fnmatch(pattern, suf, 0);
+                        free(suf);
+                        if (m == 0) {
+                            char *res = strndup(val, vlen - i);
+                            return res ? res : strdup("");
+                        }
+                    }
+                    return strdup(val);
+                }
+            } else {
+                if (!val) {
+                    if (opt_nounset) {
+                        fprintf(stderr, "%s: unbound variable\n", name);
+                        last_status = 1;
+                    }
+                    val = "";
+                }
+                return strdup(val);
             }
-            free(name);
-            return strdup(val);
         }
     }
     if (strcmp(token, "$#") == 0) {
