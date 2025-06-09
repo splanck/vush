@@ -1,3 +1,6 @@
+/*
+ * Incremental history search used by the line editor.
+ */
 #include "history_search.h"
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */

@@ -3,6 +3,9 @@
  * Licensed under the GNU GPLv3.
  */
 
+/*
+ * Linked list based job tracking for background processes.
+ */
 #define _GNU_SOURCE
 #include "jobs.h"
 #include "parser.h"  /* for MAX_LINE */
@@ -46,6 +49,9 @@ void remove_job(pid_t pid) {
         curr = &((*curr)->next);
     }
 }
+/*
+ * Reap any finished background processes and report their status.
+ */
 
 void check_jobs(void) {
     int status;

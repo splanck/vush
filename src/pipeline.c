@@ -1,3 +1,6 @@
+/*
+ * Low-level pipeline execution primitives.
+ */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +30,10 @@ void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
     }
 }
 
+/*
+ * Fork a process for one segment of the pipeline and set up pipes
+ * and redirections before executing the command.
+ */
 pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
     int pipefd[2];
     if (seg->next && pipe(pipefd) < 0) {
@@ -77,6 +84,10 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
     return pid;
 }
 
+/*
+ * Wait for all pipeline processes to finish or add the job to the
+ * background list when requested.
+ */
 void wait_for_pipeline(pid_t *pids, int count, int background, const char *line) {
     int status = 0;
     if (background) {

@@ -1,3 +1,6 @@
+/*
+ * Directory stack implementation for pushd/popd.
+ */
 #define _GNU_SOURCE
 #include "dirstack.h"
 #include <stdlib.h>

@@ -1,6 +1,7 @@
 /*
  * vush - a simple UNIX shell
  * Licensed under the GNU GPLv3.
+ * Parser for shell syntax and command structures.
  */
 
 #define _GNU_SOURCE
@@ -68,6 +69,10 @@ static int is_assignment(const char *tok) {
         return 0;
     return 1;
 }
+/*
+ * Read tokens until one of the stop words is encountered,
+ * returning the collected text.
+ */
 
 static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     char *res = NULL;
@@ -107,6 +112,9 @@ static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     }
     return res ? res : strdup("");
 }
+/*
+ * Extract a brace enclosed block while respecting quoted strings.
+ */
 
 static char *gather_braced(char **p) {
     if (**p != '{')
@@ -141,6 +149,9 @@ static char *gather_braced(char **p) {
     }
     return NULL;
 }
+/*
+ * Parse an if/elif/else clause recursively.
+ */
 
 static Command *parse_if_clause(char **p) {
     const char *stop1[] = {"then"};
@@ -169,6 +180,9 @@ static Command *parse_if_clause(char **p) {
     cmd->else_part = else_cmd;
     return cmd;
 }
+/*
+ * Parse a while/until loop body.
+ */
 
 static Command *parse_while_clause(char **p) {
     const char *stop1[] = {"do"};
@@ -185,6 +199,9 @@ static Command *parse_while_clause(char **p) {
     cmd->body = body_cmd;
     return cmd;
 }
+/*
+ * Parse a for loop and its word list.
+ */
 
 static Command *parse_for_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
@@ -231,6 +248,9 @@ static void free_case_items(CaseItem *ci) {
         ci = n;
     }
 }
+/*
+ * Parse a case statement with patterns and optional fall-through.
+ */
 
 static Command *parse_case_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
@@ -282,8 +302,10 @@ static Command *parse_case_clause(char **p) {
     cmd->cases = head;
     return cmd;
 }
-
-/* Parse a function definition and return the command or NULL */
+/*
+ * Parse a function definition and return the command or NULL.
+ * The body is collected using brace matching and parsed recursively.
+ */
 static Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
     int qfunc = 0;
@@ -315,7 +337,7 @@ static Command *parse_function_def(char **p, CmdOp *op_out) {
     return NULL;
 }
 
-/* Parse control clauses like if/while/for */
+/* Parse top-level control clauses such as if, while, for and case. */
 static Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
     if (strncmp(*p, "if", 2) == 0 && isspace((unsigned char)(*p)[2])) {
@@ -532,7 +554,8 @@ static int handle_redirection(PipelineSegment *seg, char **p, char *tok, int quo
     return 0;
 }
 
-/* Parse a regular command pipeline */
+/* Parse a command line into pipeline segments with alias expansion,
+ * redirections, globbing and here-doc handling. */
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;

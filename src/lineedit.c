@@ -1,3 +1,6 @@
+/*
+ * Minimal interactive line editor used for the shell prompt.
+ */
 #define _GNU_SOURCE
 #include "lineedit.h"
 #include "history.h"
@@ -207,6 +210,10 @@ static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
     }
 }
 
+/*
+ * Read a line using raw terminal mode and handle basic editing
+ * keys, history search and completion.
+ */
 
 char *line_edit(const char *prompt) {
     struct termios orig, raw;

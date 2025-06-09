@@ -1,7 +1,13 @@
+/*
+ * Utility helpers for reading lines and printing messages.
+ */
 #include <stdio.h>
 #include <string.h>
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
+/*
+ * Read a line continuing backslash escapes across multiple physical lines.
+ */
 
 char *read_logical_line(FILE *f, char *buf, size_t size) {
     if (!fgets(buf, size, f))

@@ -1,3 +1,6 @@
+/*
+ * Command history management routines.
+ */
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */
 #include <stdio.h>
