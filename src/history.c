@@ -182,7 +182,6 @@ void clear_history(void) {
     }
     head = tail = cursor = search_cursor = NULL;
     next_id = 1;
-    skip_next = 1;
     history_size = 0;
 
     const char *path = histfile_path();
