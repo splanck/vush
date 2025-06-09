@@ -34,6 +34,14 @@ struct alias_entry {
 
 static struct alias_entry *aliases = NULL;
 
+struct var_entry {
+    char *name;
+    char *value;
+    struct var_entry *next;
+};
+
+static struct var_entry *shell_vars = NULL;
+
 struct func_entry {
     char *name;
     char *text;
@@ -186,6 +194,58 @@ static void list_aliases(void) {
         printf("%s='%s'\n", a->name, a->value);
 }
 
+const char *get_shell_var(const char *name) {
+    for (struct var_entry *v = shell_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0)
+            return v->value;
+    }
+    return NULL;
+}
+
+void set_shell_var(const char *name, const char *value) {
+    for (struct var_entry *v = shell_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0) {
+            free(v->value);
+            v->value = strdup(value);
+            return;
+        }
+    }
+    struct var_entry *v = malloc(sizeof(struct var_entry));
+    if (!v) { perror("malloc"); return; }
+    v->name = strdup(name);
+    v->value = strdup(value);
+    v->next = shell_vars;
+    shell_vars = v;
+}
+
+void unset_shell_var(const char *name) {
+    struct var_entry *prev = NULL;
+    for (struct var_entry *v = shell_vars; v; prev = v, v = v->next) {
+        if (strcmp(v->name, name) == 0) {
+            if (prev)
+                prev->next = v->next;
+            else
+                shell_vars = v->next;
+            free(v->name);
+            free(v->value);
+            free(v);
+            return;
+        }
+    }
+}
+
+void free_shell_vars(void) {
+    struct var_entry *v = shell_vars;
+    while (v) {
+        struct var_entry *n = v->next;
+        free(v->name);
+        free(v->value);
+        free(v);
+        v = n;
+    }
+    shell_vars = NULL;
+}
+
 void define_function(const char *name, Command *body, const char *text) {
     for (struct func_entry *f = functions; f; f = f->next) {
         if (strcmp(f->name, name) == 0) {
@@ -248,6 +308,7 @@ void free_aliases(void) {
     }
     aliases = NULL;
 }
+
 
 static int builtin_cd(char **args) {
     char prev[PATH_MAX];
@@ -395,6 +456,7 @@ static int builtin_exit(char **args) {
     }
     free_aliases();
     free_functions();
+    free_shell_vars();
     exit(status);
 }
 
@@ -550,8 +612,10 @@ static int builtin_unset(char **args) {
         fprintf(stderr, "usage: unset NAME...\n");
         return 1;
     }
-    for (int i = 1; args[i]; i++)
+    for (int i = 1; args[i]; i++) {
         unsetenv(args[i]);
+        unset_shell_var(args[i]);
+    }
     return 1;
 }
 
@@ -567,6 +631,7 @@ static int builtin_export(char **args) {
     if (setenv(pair, eq + 1, 1) != 0) {
         perror("export");
     }
+    set_shell_var(pair, eq + 1);
     *eq = '=';
     return 1;
 }
