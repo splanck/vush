@@ -512,21 +512,17 @@ static void collect_alias_tokens(const char *name, char **out, int *count,
 }
 
 static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
-    char *orig = tok;
-    const char *initial_alias = get_alias(orig);
+    const char *alias = get_alias(tok);
+    if (!alias)
+        return 0;
 
+    char *orig = tok;
     char *tokens[MAX_TOKENS];
     int count = 0;
     char visited[MAX_ALIAS_DEPTH][MAX_LINE];
 
     collect_alias_tokens(orig, tokens, &count, visited, 0);
     free(orig);
-
-    if (!initial_alias) {
-        for (int i = 0; i < count; i++)
-            free(tokens[i]);
-        return 0;
-    }
 
     for (int i = 0; i < count && *argc < MAX_TOKENS - 1; i++)
         seg->argv[(*argc)++] = tokens[i];
