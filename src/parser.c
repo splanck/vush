@@ -731,7 +731,13 @@ static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
         }
         if (res) {
             char *tmp;
-            asprintf(&tmp, "%s %s", res, tok);
+            int ret = asprintf(&tmp, "%s %s", res, tok);
+            if (ret == -1 || tmp == NULL) {
+                free(res);
+                free(tok);
+                res = NULL;
+                return NULL;
+            }
             free(res);
             res = tmp;
         } else {
