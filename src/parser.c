@@ -514,7 +514,7 @@ static void collect_alias_tokens(const char *name, char **out, int *count,
 static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
     const char *alias = get_alias(tok);
     if (!alias)
-        return 0;
+        return 0; /* no alias, leave token untouched */
 
     char *orig = tok;
     char *tokens[MAX_TOKENS];
@@ -522,12 +522,12 @@ static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
     char visited[MAX_ALIAS_DEPTH][MAX_LINE];
 
     collect_alias_tokens(orig, tokens, &count, visited, 0);
-    free(orig);
+    free(orig); /* free only when expansion occurs */
 
     for (int i = 0; i < count && *argc < MAX_TOKENS - 1; i++)
         seg->argv[(*argc)++] = tokens[i];
 
-    return count > 0;
+    return 1; /* alias expanded */
 }
 
 /* Collect a here-doc into a temporary file */
