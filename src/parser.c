@@ -427,6 +427,40 @@ static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     return res ? res : strdup("");
 }
 
+static char *gather_braced(char **p) {
+    if (**p != '{')
+        return NULL;
+    (*p)++; /* skip '{' */
+    char *start = *p;
+    int depth = 1;
+    int in_s = 0, in_d = 0, esc = 0;
+    while (**p) {
+        char c = **p;
+        if (esc) {
+            esc = 0;
+        } else if (c == '\\') {
+            esc = 1;
+        } else if (c == '\'' && !in_d) {
+            in_s = !in_s;
+        } else if (c == '"' && !in_s) {
+            in_d = !in_d;
+        } else if (!in_s && !in_d) {
+            if (c == '{') depth++;
+            else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    size_t len = (size_t)(*p - start);
+                    char *res = strndup(start, len);
+                    (*p)++; /* skip closing brace */
+                    return res;
+                }
+            }
+        }
+        (*p)++;
+    }
+    return NULL;
+}
+
 static Command *parse_if_clause(char **p) {
     const char *stop1[] = {"then"};
     char *cond = gather_until(p, stop1, 1, NULL);
@@ -514,6 +548,37 @@ Command *parse_line(char *line) {
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0' || *p == '#')
             break;
+
+        char *savep = p;
+        int qfunc = 0;
+        char *fname = read_token(&p, &qfunc);
+        if (fname && !qfunc && *p == '(' && *(p+1) == ')') {
+            p += 2;
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p == '{') {
+                char *bodytxt = gather_braced(&p);
+                if (!bodytxt) { free(fname); free_commands(head); last_status = 1; return NULL; }
+                Command *body_cmd = parse_line(bodytxt);
+                Command *cmd = calloc(1, sizeof(Command));
+                cmd->type = CMD_FUNCDEF;
+                cmd->var = fname;
+                cmd->text = bodytxt;
+                cmd->body = body_cmd;
+                while (*p == ' ' || *p == '\t') p++;
+                CmdOp op = OP_NONE;
+                if (*p == ';') { op = OP_SEMI; p++; }
+                else if (*p == '&' && *(p+1) == '&') { op = OP_AND; p += 2; }
+                else if (*p == '|' && *(p+1) == '|') { op = OP_OR; p += 2; }
+                cmd->op = op;
+                if (!head) head = cmd; if (cur_cmd) cur_cmd->next = cmd; cur_cmd = cmd;
+                if (op == OP_NONE) break; else continue;
+            }
+            /* not a function, revert */
+            p = savep;
+            free(fname);
+        } else {
+            if (fname) { free(fname); p = savep; }
+        }
 
         if (strncmp(p, "if", 2) == 0 && isspace((unsigned char)p[2])) {
             p += 2;
@@ -814,22 +879,26 @@ void free_pipeline(PipelineSegment *p) {
 void free_commands(Command *c) {
     while (c) {
         Command *next = c->next;
-        if (c->type == CMD_PIPELINE) {
-            free_pipeline(c->pipeline);
-        } else if (c->type == CMD_IF) {
-            free_commands(c->cond);
-            free_commands(c->body);
-            free_commands(c->else_part);
-        } else if (c->type == CMD_WHILE) {
-            free_commands(c->cond);
-            free_commands(c->body);
-        } else if (c->type == CMD_FOR) {
-            free(c->var);
-            for (int i = 0; i < c->word_count; i++)
-                free(c->words[i]);
-            free(c->words);
-            free_commands(c->body);
-        }
+    if (c->type == CMD_PIPELINE) {
+        free_pipeline(c->pipeline);
+    } else if (c->type == CMD_IF) {
+        free_commands(c->cond);
+        free_commands(c->body);
+        free_commands(c->else_part);
+    } else if (c->type == CMD_WHILE) {
+        free_commands(c->cond);
+        free_commands(c->body);
+    } else if (c->type == CMD_FOR) {
+        free(c->var);
+        for (int i = 0; i < c->word_count; i++)
+            free(c->words[i]);
+        free(c->words);
+        free_commands(c->body);
+    } else if (c->type == CMD_FUNCDEF) {
+        free(c->var);
+        free(c->text);
+        free_commands(c->body);
+    }
         free(c);
         c = next;
     }

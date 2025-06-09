@@ -18,6 +18,7 @@
 
 extern int last_status;
 extern FILE *parse_input;
+extern int func_return;
 #include "common.h"
 #include "scriptargs.h"
 #include "options.h"
@@ -32,6 +33,27 @@ struct alias_entry {
 };
 
 static struct alias_entry *aliases = NULL;
+
+struct func_entry {
+    char *name;
+    char *text;
+    Command *body;
+    struct func_entry *next;
+};
+
+static struct func_entry *functions = NULL;
+
+static const char *funcfile_path(void) {
+    const char *env = getenv("VUSH_FUNCFILE");
+    if (env && *env)
+        return env;
+    const char *home = getenv("HOME");
+    if (!home)
+        return NULL;
+    static char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.vush_funcs", home);
+    return path;
+}
 
 static void set_alias(const char *name, const char *value);
 
@@ -59,6 +81,18 @@ static void save_aliases(void) {
     fclose(f);
 }
 
+static void save_functions(void) {
+    const char *path = funcfile_path();
+    if (!path)
+        return;
+    FILE *f = fopen(path, "w");
+    if (!f)
+        return;
+    for (struct func_entry *fn = functions; fn; fn = fn->next)
+        fprintf(f, "%s() { %s }\n", fn->name, fn->text);
+    fclose(f);
+}
+
 void load_aliases(void) {
     const char *path = aliasfile_path();
     if (!path)
@@ -76,6 +110,30 @@ void load_aliases(void) {
             continue;
         *eq = '\0';
         set_alias(line, eq + 1);
+    }
+    fclose(f);
+}
+
+void load_functions(void) {
+    const char *path = funcfile_path();
+    if (!path)
+        return;
+    FILE *f = fopen(path, "r");
+    if (!f)
+        return;
+    char line[MAX_LINE];
+    while (fgets(line, sizeof(line), f)) {
+        size_t len = strlen(line);
+        if (len && line[len - 1] == '\n')
+            line[len - 1] = '\0';
+        Command *cmds = parse_line(line);
+        for (Command *c = cmds; c; c = c->next) {
+            if (c->type == CMD_FUNCDEF) {
+                define_function(c->var, c->body, c->text);
+                c->body = NULL;
+            }
+        }
+        free_commands(cmds);
     }
     fclose(f);
 }
@@ -126,6 +184,56 @@ static void remove_alias(const char *name) {
 static void list_aliases(void) {
     for (struct alias_entry *a = aliases; a; a = a->next)
         printf("%s='%s'\n", a->name, a->value);
+}
+
+void define_function(const char *name, Command *body, const char *text) {
+    for (struct func_entry *f = functions; f; f = f->next) {
+        if (strcmp(f->name, name) == 0) {
+            free(f->name);
+            free(f->text);
+            free_commands(f->body);
+            f->name = strdup(name);
+            f->text = strdup(text);
+            f->body = body;
+            return;
+        }
+    }
+    struct func_entry *fn = malloc(sizeof(struct func_entry));
+    if (!fn) {
+        perror("malloc");
+        return;
+    }
+    fn->name = strdup(name);
+    fn->text = strdup(text);
+    fn->body = body;
+    fn->next = functions;
+    functions = fn;
+}
+
+Command *get_function(const char *name) {
+    for (struct func_entry *f = functions; f; f = f->next) {
+        if (strcmp(f->name, name) == 0)
+            return f->body;
+    }
+    return NULL;
+}
+
+static void free_function_entries(void) {
+    struct func_entry *f = functions;
+    while (f) {
+        struct func_entry *next = f->next;
+        free(f->name);
+        free(f->text);
+        free_commands(f->body);
+        free(f);
+        f = next;
+    }
+    functions = NULL;
+}
+
+void free_functions(void) {
+    save_functions();
+    free_function_entries();
 }
 
 void free_aliases(void) {
@@ -286,6 +394,7 @@ static int builtin_exit(char **args) {
         status = (int)val;
     }
     free_aliases();
+    free_functions();
     exit(status);
 }
 
@@ -391,6 +500,15 @@ static int builtin_unalias(char **args) {
     for (int i = 1; args[i]; i++)
         remove_alias(args[i]);
     save_aliases();
+    return 1;
+}
+
+static int builtin_return(char **args) {
+    int status = 0;
+    if (args[1])
+        status = atoi(args[1]);
+    last_status = status;
+    func_return = 1;
     return 1;
 }
 
@@ -543,6 +661,7 @@ static int builtin_help(char **args) {
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
+    printf("  return [status]     Return from a function\n");
     printf("  shift      Shift positional parameters\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
@@ -617,6 +736,7 @@ static struct builtin builtins[] = {
     {"history", builtin_history},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
+    {"return", builtin_return},
     {"shift", builtin_shift},
     {"set", builtin_set},
     {"test", builtin_test},
@@ -655,6 +775,11 @@ int builtin_type(char **args) {
         const char *alias = get_alias(args[i]);
         if (alias) {
             printf("%s is an alias for '%s'\n", args[i], alias);
+            continue;
+        }
+        Command *fn = get_function(args[i]);
+        if (fn) {
+            printf("%s is a function\n", args[i]);
             continue;
         }
         int is_builtin = 0;
