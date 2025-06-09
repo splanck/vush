@@ -10,11 +10,14 @@
 #include "execute.h"
 #include "jobs.h"
 #include "builtins.h"
+#include "scriptargs.h"
 #include "options.h"
 
 extern int last_status;
+int func_return = 0;
 
 static int run_command_list(Command *cmds, const char *line);
+static int run_function(Command *body, char **args);
 
 static int run_pipeline_internal(PipelineSegment *pipeline, int background, const char *line) {
     if (!pipeline)
@@ -25,6 +28,11 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
 
     if (!pipeline->next && run_builtin(pipeline->argv))
         return last_status;
+    if (!pipeline->next) {
+        Command *fn = get_function(pipeline->argv[0]);
+        if (fn)
+            return run_function(fn, pipeline->argv);
+    }
 
     int seg_count = 0;
     for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next) seg_count++;
@@ -165,6 +173,8 @@ static int run_command_list(Command *cmds, const char *line) {
         if (run)
             run_pipeline(c, line);
         prev = c->op;
+        if (func_return)
+            break;
     }
     return last_status;
 }
@@ -176,6 +186,10 @@ int run_pipeline(Command *cmd, const char *line) {
     switch (cmd->type) {
     case CMD_PIPELINE:
         return run_pipeline_internal(cmd->pipeline, cmd->background, line);
+    case CMD_FUNCDEF:
+        define_function(cmd->var, cmd->body, cmd->text);
+        cmd->body = NULL;
+        return last_status;
     case CMD_IF:
         run_command_list(cmd->cond, line);
         if (last_status == 0)
@@ -201,4 +215,24 @@ int run_pipeline(Command *cmd, const char *line) {
     default:
         return 0;
     }
+}
+
+static int run_function(Command *body, char **args) {
+    int argc = 0;
+    while (args[argc]) argc++;
+    int old_argc = script_argc;
+    char **old_argv = script_argv;
+    script_argc = argc - 1;
+    script_argv = calloc(argc + 1, sizeof(char *));
+    for (int i = 0; i < argc; i++)
+        script_argv[i] = strdup(args[i]);
+    script_argv[argc] = NULL;
+    func_return = 0;
+    run_command_list(body, NULL);
+    for (int i = 0; i < argc; i++)
+        free(script_argv[i]);
+    free(script_argv);
+    script_argv = old_argv;
+    script_argc = old_argc;
+    return last_status;
 }

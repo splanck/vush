@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
 
     load_history();
     load_aliases();
+    load_functions();
 
     /* Execute commands from ~/.vushrc if present */
     const char *home = getenv("HOME");
@@ -254,6 +255,7 @@ int main(int argc, char **argv) {
         fclose(input);
     free(script_argv);
     free_aliases();
+    free_functions();
     return dash_c ? last_status : 0;
 }
 

@@ -8,7 +8,7 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `shift`, `set`,
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `set`,
   `type`, `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
@@ -17,11 +17,13 @@ and a few built-in commands.
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
+- Shell functions using `name() { ... }` syntax and a `return` builtin
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
 - Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
+- Function definitions persisted in `~/.vush_funcs` (overridable with `VUSH_FUNCFILE`)
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
@@ -235,6 +237,17 @@ c
 vush> export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 0
 1
+```
+
+## Function Example
+
+```
+vush> greet() { echo Hello $1; }
+vush> greet world
+Hello world
+vush> greet foo; echo $?
+Hello foo
+0
 ```
 
 ## Type Example

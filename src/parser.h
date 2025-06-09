@@ -34,6 +34,7 @@ typedef enum {
 
 typedef enum {
     CMD_PIPELINE,
+    CMD_FUNCDEF,
     CMD_IF,
     CMD_FOR,
     CMD_WHILE,
@@ -49,6 +50,7 @@ typedef struct Command {
     char *var;                /* for for loop variable */
     char **words;             /* for for loop word list */
     int word_count;
+    char *text;               /* function body as text */
     int background;
     CmdOp op; /* operator connecting to next command */
     struct Command *next;

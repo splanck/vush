@@ -14,6 +14,7 @@ wildcard matching for '*' and '?', input and output redirection with
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.
+A function may be defined using \fIname\fP() {\fIcommands\fP} and invoked like a command.
 A trailing backslash joins the next line before parsing.
 When run interactively, arrow keys allow editing the current line and
 recalling previous commands from history.  `Ctrl-A` or the Home key moves
@@ -109,6 +110,9 @@ Set an alias or list aliases when used without arguments.
 .B unalias \fIname\fP
 Remove an alias.
 .TP
+.B return [status]
+Return from a shell function with the given status (default 0).
+.TP
 .B shift
 Shift positional parameters down by one.
 .TP
@@ -117,6 +121,8 @@ Toggle shell options. \-e exits on command failure, \-u errors on
 undefined variables and \-x prints each command before execution.
 .TP
 Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
+.TP
+Functions are saved to the file specified by \fBVUSH_FUNCFILE\fP (default \fB~/.vush_funcs\fP).
 .TP
 .B type \fIname\fP...
 For each argument, print whether it is an alias, builtin or the full path of an
