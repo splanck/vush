@@ -10,12 +10,16 @@
 #include "execute.h"
 #include "jobs.h"
 #include "builtins.h"
+#include "options.h"
 
 extern int last_status;
 
 int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
     if (!pipeline)
         return 0;
+
+    if (opt_xtrace && line)
+        fprintf(stderr, "+ %s\n", line);
 
     if (!pipeline->next && run_builtin(pipeline->argv))
         return 0;
@@ -136,6 +140,8 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
             last_status = 128 + WTERMSIG(status);
         else
             last_status = status;
+        if (opt_errexit && last_status != 0)
+            exit(last_status);
     }
     free(pids);
     return last_status;

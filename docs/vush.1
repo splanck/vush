@@ -95,6 +95,10 @@ Remove an alias.
 .B shift
 Shift positional parameters down by one.
 .TP
+\.B set [-e|-u|-x]
+Toggle shell options. \-e exits on command failure, \-u errors on
+undefined variables and \-x prints each command before execution.
+.TP
 Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
 .TP
 .B type \fIname\fP...

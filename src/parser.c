@@ -16,6 +16,7 @@
 #include <ctype.h>
 
 #include "scriptargs.h"
+#include "options.h"
 
 extern int last_status;
 
@@ -58,8 +59,15 @@ char *expand_var(const char *token) {
             char *name = strndup(token + 2, len);
             if (!name) return strdup("");
             const char *val = getenv(name);
+            if (!val) {
+                if (opt_nounset) {
+                    fprintf(stderr, "%s: unbound variable\n", name);
+                    last_status = 1;
+                }
+                val = "";
+            }
             free(name);
-            return strdup(val ? val : "");
+            return strdup(val);
         }
     }
 
@@ -88,18 +96,32 @@ char *expand_var(const char *token) {
 
     if (token[1] >= '0' && token[1] <= '9' && token[2] == '\0') {
         int idx = token[1] - '0';
-        const char *val = "";
+        const char *val = NULL;
         if (script_argv) {
             if (idx == 0)
                 val = script_argv[0];
             else if (idx <= script_argc)
                 val = script_argv[idx];
         }
-        return strdup(val ? val : "");
+        if (!val) {
+            if (opt_nounset) {
+                fprintf(stderr, "%c: unbound variable\n", token[1]);
+                last_status = 1;
+            }
+            val = "";
+        }
+        return strdup(val);
     }
 
     const char *val = getenv(token + 1);
-    return strdup(val ? val : "");
+    if (!val) {
+        if (opt_nounset) {
+            fprintf(stderr, "%s: unbound variable\n", token + 1);
+            last_status = 1;
+        }
+        val = "";
+    }
+    return strdup(val);
 }
 
 char *expand_history(const char *line) {
