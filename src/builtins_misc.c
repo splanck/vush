@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <linux/limits.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -152,6 +153,7 @@ int builtin_help(char **args) {
     printf("  getopts OPTSTRING VAR   Parse options from positional params\n");
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
+    printf("  test EXPR ([ EXPR ])  Evaluate a test expression\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
@@ -182,6 +184,22 @@ int builtin_test(char **args) {
             res = av[1][0] ? 0 : 1;
         else if (strcmp(av[0], "-z") == 0)
             res = av[1][0] ? 1 : 0;
+        else if (strcmp(av[0], "-e") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 ? 0 : 1;
+        } else if (strcmp(av[0], "-f") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISREG(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-d") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISDIR(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-r") == 0) {
+            res = access(av[1], R_OK) == 0 ? 0 : 1;
+        } else if (strcmp(av[0], "-w") == 0) {
+            res = access(av[1], W_OK) == 0 ? 0 : 1;
+        } else if (strcmp(av[0], "-x") == 0) {
+            res = access(av[1], X_OK) == 0 ? 0 : 1;
+        }
     } else if (count == 3) {
         if (strcmp(av[1], "=") == 0)
             res = strcmp(av[0], av[2]) == 0 ? 0 : 1;
