@@ -67,10 +67,6 @@ typedef struct Command {
     struct Command *next;
 } Command;
 
-char *expand_var(const char *token);
-char *expand_prompt(const char *prompt);
-char *expand_history(const char *line);
-long eval_arith(const char *expr);
 Command *parse_line(char *line);
 char *read_continuation_lines(FILE *f, char *buf, size_t size);
 void free_pipeline(PipelineSegment *p);

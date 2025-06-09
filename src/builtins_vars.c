@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "execute.h"
 #include "scriptargs.h"
+#include "arith.h"
 #include "options.h"
 #include <stdio.h>
 #include <stdlib.h>
