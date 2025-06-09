@@ -137,33 +137,65 @@ static int builtin_cd(char **args) {
         return 1;
     }
 
-    const char *dir;
+    const char *target;
     if (!args[1]) {
-        dir = getenv("HOME");
+        target = getenv("HOME");
     } else if (strcmp(args[1], "-") == 0) {
-        dir = getenv("OLDPWD");
-        if (!dir) {
+        target = getenv("OLDPWD");
+        if (!target) {
             fprintf(stderr, "cd: OLDPWD not set\n");
             return 1;
         }
-        printf("%s\n", dir);
+        printf("%s\n", target);
     } else {
-        dir = args[1];
+        target = args[1];
     }
 
-    if (chdir(dir) != 0) {
-        perror("cd");
-    } else {
-        char newcwd[PATH_MAX];
-        if (getcwd(newcwd, sizeof(newcwd))) {
-            const char *pwd = getenv("PWD");
-            if (!pwd) pwd = prev;
-            setenv("OLDPWD", pwd, 1);
-            setenv("PWD", newcwd, 1);
-        } else {
-            perror("getcwd");
+    char used[PATH_MAX];
+    const char *dir = target ? target : "";
+    int searched = 0;
+
+    if (args[1] && strcmp(args[1], "-") != 0 && dir[0] != '/' && dir[0] != '.' &&
+        strchr(dir, '/') == NULL) {
+        const char *cdpath = getenv("CDPATH");
+        if (cdpath && *cdpath) {
+            char *paths = strdup(cdpath);
+            if (paths) {
+                for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
+                    const char *base = *p ? p : ".";
+                    snprintf(used, sizeof(used), "%s/%s", base, dir);
+                    if (chdir(used) == 0) {
+                        dir = used;
+                        searched = 1;
+                        break;
+                    }
+                }
+                free(paths);
+            }
         }
     }
+
+    if (!searched) {
+        if (chdir(dir) != 0) {
+            perror("cd");
+            return 1;
+        }
+    }
+
+    char newcwd[PATH_MAX];
+    if (getcwd(newcwd, sizeof(newcwd))) {
+        const char *pwd = getenv("PWD");
+        if (!pwd) pwd = prev;
+        setenv("OLDPWD", pwd, 1);
+        setenv("PWD", newcwd, 1);
+    } else {
+        perror("getcwd");
+    }
+
+    if (args[1] && strcmp(args[1], "-") != 0 && strcmp(dir, args[1]) != 0) {
+        printf("%s\n", dir);
+    }
+
     return 1;
 }
 
