@@ -135,6 +135,12 @@ Return from a shell function with the given status (default 0).
 .B shift
 Shift positional parameters down by one.
 .TP
+.B getopts optstring var
+Parse positional parameters according to \fIoptstring\fP. The next option
+character is stored in \fIvar\fP and \fBOPTARG\fP is set when an argument is
+present. \fBOPTIND\fP is updated to the index of the next parameter. The
+status is 0 while options are found and 1 when parsing ends.
+.TP
 .B let expr
 Evaluate an arithmetic expression and return success if the result is non-zero.
 .TP

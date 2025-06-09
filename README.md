@@ -201,6 +201,9 @@ baz
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
 - `shift` - drop the first positional parameter.
+- `getopts OPTSTRING VAR` - parse positional parameters, storing the
+  current option letter in `VAR`, any argument in `OPTARG`, and advancing
+  `OPTIND`.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
