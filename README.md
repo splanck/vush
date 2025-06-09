@@ -8,8 +8,8 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
-  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `shift`, `type`,
-  `source` (or `.`), and `help`
+  `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `shift`, `set`,
+  `type`, `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
@@ -28,6 +28,7 @@ and a few built-in commands.
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
+- Shell options toggled with `set -e`, `set -u` and `set -x`
 
 ## Building
 

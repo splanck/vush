@@ -19,6 +19,7 @@
 extern int last_status;
 #include "common.h"
 #include "scriptargs.h"
+#include "options.h"
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -403,6 +404,28 @@ static int builtin_shift(char **args) {
     return 1;
 }
 
+static int builtin_set(char **args) {
+    for (int i = 1; args[i]; i++) {
+        if (strcmp(args[i], "-e") == 0)
+            opt_errexit = 1;
+        else if (strcmp(args[i], "-u") == 0)
+            opt_nounset = 1;
+        else if (strcmp(args[i], "-x") == 0)
+            opt_xtrace = 1;
+        else if (strcmp(args[i], "+e") == 0)
+            opt_errexit = 0;
+        else if (strcmp(args[i], "+u") == 0)
+            opt_nounset = 0;
+        else if (strcmp(args[i], "+x") == 0)
+            opt_xtrace = 0;
+        else {
+            fprintf(stderr, "set: unknown option %s\n", args[i]);
+            return 1;
+        }
+    }
+    return 1;
+}
+
 static int builtin_unset(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: unset NAME...\n");
@@ -492,6 +515,7 @@ static int builtin_help(char **args) {
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
     printf("  shift      Shift positional parameters\n");
+    printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
     return 1;
@@ -519,6 +543,7 @@ static struct builtin builtins[] = {
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
     {"shift", builtin_shift},
+    {"set", builtin_set},
     {"type", builtin_type},
     {"source", builtin_source},
     {".", builtin_source},

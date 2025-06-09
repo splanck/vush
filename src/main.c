@@ -20,10 +20,14 @@
 #include "history.h"
 #include "lineedit.h"
 #include "scriptargs.h"
+#include "options.h"
 
 int last_status = 0;
 int script_argc = 0;
 char **script_argv = NULL;
+int opt_errexit = 0;
+int opt_nounset = 0;
+int opt_xtrace = 0;
 
 int main(int argc, char **argv) {
     char linebuf[MAX_LINE];

@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+set timeout 5
+# nounset option
+spawn ../vush
+expect "vush> "
+send "set -u\r"
+expect "vush> "
+send "echo $FOO\r"
+expect {
+    -re "UNDEF: unbound variable" { }
+    -re "FOO: unbound variable" { }
+    timeout { send_user "nounset message missing\n"; exit 1 }
+}
+expect "vush> "
+send "echo $?\r"
+expect {
+    -re "[\r\n]+1[\r\n]+vush> " {}
+    timeout { send_user "nounset status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect eof
+
+# errexit option
+spawn ../vush
+expect "vush> "
+send "set -e\r"
+expect "vush> "
+send "false\r"
+expect eof
+
+# xtrace option
+spawn ../vush
+expect "vush> "
+send "set -x\r"
+expect "vush> "
+send "echo hi\r"
+expect {
+    -re "\+ echo hi\r\nhi\r\nvush> " {}
+    timeout { send_user "xtrace output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect eof
