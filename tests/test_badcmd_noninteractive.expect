@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush -c {idontexist}
+expect {
+    -re "idontexist: command not found\r?\n" {}
+    timeout { send_user "missing command not found message\n"; exit 1 }
+}
+expect eof
+set code [lindex [wait] 3]
+if { $code != 127 } {
+    send_user "exit status mismatch\n"
+    exit 1
+}
