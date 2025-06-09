@@ -14,7 +14,9 @@
 
 extern int last_status;
 
-int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
+static int run_command_list(Command *cmds, const char *line);
+
+static int run_pipeline_internal(PipelineSegment *pipeline, int background, const char *line) {
     if (!pipeline)
         return 0;
 
@@ -22,7 +24,7 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
         fprintf(stderr, "+ %s\n", line);
 
     if (!pipeline->next && run_builtin(pipeline->argv))
-        return 0;
+        return last_status;
 
     int seg_count = 0;
     for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next) seg_count++;
@@ -35,6 +37,7 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
         if (seg->next && pipe(pipefd) < 0) {
             perror("pipe");
             free(pids);
+            last_status = 1;
             return 1;
         }
         pid_t pid = fork();
@@ -147,4 +150,55 @@ int run_pipeline(PipelineSegment *pipeline, int background, const char *line) {
     }
     free(pids);
     return last_status;
+}
+
+static int run_command_list(Command *cmds, const char *line) {
+    CmdOp prev = OP_SEMI;
+    for (Command *c = cmds; c; c = c->next) {
+        int run = 1;
+        if (c != cmds) {
+            if (prev == OP_AND)
+                run = (last_status == 0);
+            else if (prev == OP_OR)
+                run = (last_status != 0);
+        }
+        if (run)
+            run_pipeline(c, line);
+        prev = c->op;
+    }
+    return last_status;
+}
+
+int run_pipeline(Command *cmd, const char *line) {
+    if (!cmd)
+        return 0;
+
+    switch (cmd->type) {
+    case CMD_PIPELINE:
+        return run_pipeline_internal(cmd->pipeline, cmd->background, line);
+    case CMD_IF:
+        run_command_list(cmd->cond, line);
+        if (last_status == 0)
+            run_command_list(cmd->body, line);
+        else if (cmd->else_part)
+            run_command_list(cmd->else_part, line);
+        return last_status;
+    case CMD_WHILE:
+        while (1) {
+            run_command_list(cmd->cond, line);
+            if (last_status != 0)
+                break;
+            run_command_list(cmd->body, line);
+        }
+        return last_status;
+    case CMD_FOR:
+        for (int i = 0; i < cmd->word_count; i++) {
+            if (cmd->var)
+                setenv(cmd->var, cmd->words[i], 1);
+            run_command_list(cmd->body, line);
+        }
+        return last_status;
+    default:
+        return 0;
+    }
 }

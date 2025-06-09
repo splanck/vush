@@ -32,8 +32,23 @@ typedef enum {
     OP_OR
 } CmdOp;
 
+typedef enum {
+    CMD_PIPELINE,
+    CMD_IF,
+    CMD_FOR,
+    CMD_WHILE,
+    CMD_CASE
+} CmdType;
+
 typedef struct Command {
+    CmdType type;
     PipelineSegment *pipeline;
+    struct Command *cond;     /* for if/while condition */
+    struct Command *body;     /* then/do body */
+    struct Command *else_part;/* else or elif chain */
+    char *var;                /* for for loop variable */
+    char **words;             /* for for loop word list */
+    int word_count;
     int background;
     CmdOp op; /* operator connecting to next command */
     struct Command *next;

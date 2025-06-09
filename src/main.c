@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
                             run = (last_status != 0);
                     }
                     if (run)
-                        run_pipeline(c->pipeline, c->background, exp);
+                        run_pipeline(c, exp);
                     prev = c->op;
                 }
                 free_commands(cmds);
@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
                             run = (last_status != 0);
                     }
                     if (run)
-                        run_pipeline(c->pipeline, c->background, expanded);
+                        run_pipeline(c, expanded);
                     prev = c->op;
                 }
             }
@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
                     run = (last_status != 0);
             }
             if (run)
-                run_pipeline(c->pipeline, c->background, expanded);
+                run_pipeline(c, expanded);
             prev = c->op;
         }
         free_commands(cmds);

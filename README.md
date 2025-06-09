@@ -223,6 +223,20 @@ vush> pushd /tmp
 vush> popd
 ```
 
+## Conditionals and Loops
+
+```
+vush> if test 1 -eq 1; then echo yes; else echo no; fi
+yes
+vush> for x in a b c; do echo $x; done
+a
+b
+c
+vush> export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
+0
+1
+```
+
 ## Type Example
 
 ```

@@ -36,6 +36,22 @@ positional parameters.  \$0 expands to the script path, \$1 through \$9
 refer to subsequent parameters, \$@ expands to all parameters separated
 by spaces and \$# expands to the number of parameters.  The
 \fBshift\fP builtin discards the first parameter and moves the rest down.
+.SH CONTROL STRUCTURES
+The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
+conditional execution. Commands following \fBthen\fP run when the test before
+it exits with status 0. An optional \fBelif\fP or \fBelse\fP section executes
+when previous tests fail.
+.PP
+Loops are created with \fBwhile\fP/\fBdo\fP/\fBdone\fP or \fBfor\fP/\fBin\fP/\fBdo\fP/\fBdone\fP.
+The \fBwhile\fP condition is evaluated before each iteration while \fBfor\fP
+assigns each word to a variable in turn.
+.PP
+Example:
+.EX
+if test "$USER" = root; then echo admin; else echo user; fi
+for x in a b c; do echo $x; done
+export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
+.EE
 .SH BUILTINS
 .TP
 .B cd [dir]
