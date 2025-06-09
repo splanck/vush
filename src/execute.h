@@ -4,5 +4,6 @@
 #include "parser.h"
 
 int run_pipeline(Command *cmd, const char *line);
+int run_command_list(Command *cmds, const char *line);
 
 #endif /* EXECUTE_H */

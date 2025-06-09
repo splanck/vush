@@ -9,7 +9,7 @@ and a few built-in commands.
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `cd`, `pushd`, `popd`, `dirs`, `exit`, `pwd`, `jobs`, `fg`,
   `bg`, `kill`, `export`, `unset`, `history`, `alias`, `unalias`, `return`, `shift`, `let`, `set`,
-  `trap`, `type`, `source` (or `.`), and `help`
+  `trap`, `type`, `eval`, `source` (or `.`), and `help`
 - Environment variable expansion using `$VAR` or `${VAR}` syntax
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
@@ -311,6 +311,14 @@ unknown not found
 vush> trap 'echo INT received' INT
 vush> # press Ctrl-C to test
 INT received
+```
+
+## Eval Example
+
+```
+vush> export cmd='echo hi'
+vush> eval $cmd there
+hi there
 ```
 
 ## Documentation
