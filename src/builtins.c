@@ -607,6 +607,22 @@ static int builtin_set(char **args) {
     return 1;
 }
 
+static int builtin_let(char **args) {
+    if (!args[1]) {
+        last_status = 1;
+        return 1;
+    }
+    char expr[MAX_LINE] = "";
+    for (int i = 1; args[i]; i++) {
+        if (i > 1 && strlen(expr) < sizeof(expr) - 1)
+            strcat(expr, " ");
+        strncat(expr, args[i], sizeof(expr) - strlen(expr) - 1);
+    }
+    long val = eval_arith(expr);
+    last_status = (val != 0) ? 0 : 1;
+    return 1;
+}
+
 static int builtin_unset(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: unset NAME...\n");
@@ -728,6 +744,7 @@ static int builtin_help(char **args) {
     printf("  unalias NAME        Remove an alias\n");
     printf("  return [status]     Return from a function\n");
     printf("  shift      Shift positional parameters\n");
+    printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
@@ -803,6 +820,7 @@ static struct builtin builtins[] = {
     {"unalias", builtin_unalias},
     {"return", builtin_return},
     {"shift", builtin_shift},
+    {"let", builtin_let},
     {"set", builtin_set},
     {"test", builtin_test},
     {"[", builtin_test},

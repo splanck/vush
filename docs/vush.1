@@ -9,6 +9,7 @@ vush is a lightweight UNIX shell supporting command execution,
 pipelines, command chaining with ';', '&&' and '||',
 environment variable expansion using \fB$VAR\fP or \fB${VAR}\fP (with "$?" storing the last exit status),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
+arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
 wildcard matching for '*' and '?', input and output redirection with
 \'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
@@ -120,6 +121,9 @@ Return from a shell function with the given status (default 0).
 .TP
 .B shift
 Shift positional parameters down by one.
+.TP
+.B let expr
+Evaluate an arithmetic expression and return success if the result is non-zero.
 .TP
 \.B set [-e|-u|-x]
 Toggle shell options. \-e exits on command failure, \-u errors on
