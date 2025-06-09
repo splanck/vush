@@ -32,12 +32,22 @@ static struct alias_entry *aliases = NULL;
 
 static void set_alias(const char *name, const char *value);
 
-static void save_aliases(void) {
+static const char *aliasfile_path(void) {
+    const char *env = getenv("VUSH_ALIASFILE");
+    if (env && *env)
+        return env;
     const char *home = getenv("HOME");
     if (!home)
-        return;
-    char path[PATH_MAX];
+        return NULL;
+    static char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s/.vush_aliases", home);
+    return path;
+}
+
+static void save_aliases(void) {
+    const char *path = aliasfile_path();
+    if (!path)
+        return;
     FILE *f = fopen(path, "w");
     if (!f)
         return;
@@ -47,11 +57,9 @@ static void save_aliases(void) {
 }
 
 void load_aliases(void) {
-    const char *home = getenv("HOME");
-    if (!home)
+    const char *path = aliasfile_path();
+    if (!path)
         return;
-    char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_aliases", home);
     FILE *f = fopen(path, "r");
     if (!f)
         return;

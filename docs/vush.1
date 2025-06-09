@@ -74,6 +74,7 @@ Remove an environment variable.
 .TP
 .B history [-c | -d \fInum\fP]
 Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB-d\fP.
+History is saved to the file specified by \fBVUSH_HISTFILE\fP (default \fB~/.vush_history\fP).
 The number of entries kept is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
 .TP
 .B alias \fIname\fP=\fIvalue\fP
@@ -82,7 +83,7 @@ Set an alias or list aliases when used without arguments.
 .B unalias \fIname\fP
 Remove an alias.
 .TP
-Aliases are saved to \fB~/.vush_aliases\fP, one \fIname\fP=\fIvalue\fP per line.
+Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
 .TP
 .B type \fIname\fP...
 For each argument, print whether it is an alias, builtin or the full path of an
