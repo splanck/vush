@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #include "parser.h"
 #include "builtins.h"
+#include "history.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -62,6 +63,53 @@ char *expand_var(const char *token) {
 
     const char *val = getenv(token + 1);
     return strdup(val ? val : "");
+}
+
+char *expand_history(const char *line) {
+    const char *p = line;
+    while (*p == ' ' || *p == '\t')
+        p++;
+    if (*p != '!')
+        return strdup(line);
+
+    const char *bang = p;
+    const char *rest;
+    const char *expansion = NULL;
+    char pref[MAX_LINE];
+
+    if (p[1] == '!' && (p[2] == '\0' || isspace((unsigned char)p[2]))) {
+        expansion = history_last();
+        rest = p + 2;
+        if (!expansion) {
+            fprintf(stderr, "history: event not found\n");
+            last_status = 1;
+            return NULL;
+        }
+    } else {
+        int n = 0;
+        p++;
+        while (*p && !isspace((unsigned char)*p) && n < MAX_LINE - 1)
+            pref[n++] = *p++;
+        pref[n] = '\0';
+        expansion = history_find_prefix(pref);
+        rest = p;
+        if (!expansion) {
+            fprintf(stderr, "history: event not found: %s\n", pref);
+            last_status = 1;
+            return NULL;
+        }
+    }
+
+    size_t pre_len = (size_t)(bang - line);
+    size_t exp_len = strlen(expansion);
+    size_t rest_len = strlen(rest);
+    char *res = malloc(pre_len + exp_len + rest_len + 1);
+    if (!res)
+        return NULL;
+    memcpy(res, line, pre_len);
+    memcpy(res + pre_len, expansion, exp_len);
+    memcpy(res + pre_len + exp_len, rest, rest_len + 1);
+    return res;
 }
 
 static char *command_output(const char *cmd) {

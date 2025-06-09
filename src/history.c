@@ -226,3 +226,18 @@ void delete_history_entry(int id) {
     fclose(f);
 }
 
+const char *history_last(void) {
+    return tail ? tail->cmd : NULL;
+}
+
+const char *history_find_prefix(const char *prefix) {
+    if (!prefix || !*prefix)
+        return NULL;
+    size_t len = strlen(prefix);
+    for (HistEntry *e = tail; e; e = e->prev) {
+        if (strncmp(e->cmd, prefix, len) == 0)
+            return e->cmd;
+    }
+    return NULL;
+}
+

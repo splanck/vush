@@ -56,9 +56,14 @@ int main(int argc, char **argv) {
                 if (len && rcline[len-1] == '\n')
                     rcline[len-1] = '\0';
 
-                Command *cmds = parse_line(rcline);
+                char *exp = expand_history(rcline);
+                if (!exp)
+                    continue;
+                Command *cmds = parse_line(exp);
                 if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
                     free_commands(cmds);
+                    if (exp != rcline)
+                        free(exp);
                     continue;
                 }
 
@@ -74,10 +79,12 @@ int main(int argc, char **argv) {
                             run = (last_status != 0);
                     }
                     if (run)
-                        run_pipeline(c->pipeline, c->background, rcline);
+                        run_pipeline(c->pipeline, c->background, exp);
                     prev = c->op;
                 }
                 free_commands(cmds);
+                if (exp != rcline)
+                    free(exp);
             }
             fclose(rc);
         }
@@ -98,9 +105,17 @@ int main(int argc, char **argv) {
             if (len && linebuf[len-1] == '\n') linebuf[len-1] = '\0';
             line = linebuf;
         }
-        Command *cmds = parse_line(line);
+        char *expanded = expand_history(line);
+        if (!expanded) {
+            if (line != linebuf)
+                free(line);
+            continue;
+        }
+        Command *cmds = parse_line(expanded);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);
+            if (expanded != line)
+                free(expanded);
             continue;
         }
         add_history(line);
@@ -115,10 +130,12 @@ int main(int argc, char **argv) {
                     run = (last_status != 0);
             }
             if (run)
-                run_pipeline(c->pipeline, c->background, line);
+                run_pipeline(c->pipeline, c->background, expanded);
             prev = c->op;
         }
         free_commands(cmds);
+        if (expanded != line)
+            free(expanded);
         if (line != linebuf)
             free(line);
     }
