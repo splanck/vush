@@ -96,19 +96,25 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
  */
 void wait_for_pipeline(pid_t *pids, int count, int background, const char *line) {
     int status = 0;
+    int not_found = 0;
     if (background) {
         if (count > 0)
             add_job(pids[count - 1], line);
         last_status = 0;
     } else {
-        for (int j = 0; j < count; j++)
+        for (int j = 0; j < count; j++) {
             waitpid(pids[j], &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 127)
+                not_found = 1;
+        }
         if (WIFEXITED(status))
             last_status = WEXITSTATUS(status);
         else if (WIFSIGNALED(status))
             last_status = 128 + WTERMSIG(status);
         else
             last_status = status;
+        if (not_found)
+            last_status = 127;
         if (opt_errexit && last_status != 0)
             exit(last_status);
     }
