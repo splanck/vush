@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set timeout 5
+set script [exec mktemp]
+set f [open $script "w"]
+puts $f "echo one \\\"
+puts $f "two"
+close $f
+spawn ../vush $script
+expect {
+    -re "one two\r?\n" {}
+    timeout { send_user "line continuation failed\n"; exec rm $script; exit 1 }
+}
+expect eof
+exec rm $script

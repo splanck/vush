@@ -133,6 +133,19 @@ If the closing quote or `)` for command substitution is missing, `vush` prints
 `syntax error: unmatched '<char>'` to stderr, sets `$?` to `1` and ignores the
 line.
 
+### Line Continuations
+
+When a line ends with an unescaped backslash the next line is joined before
+parsing. This works in scripts and startup files.
+
+```
+$ cat script.vsh
+echo one \
+two
+$ ./vush script.vsh
+one two
+```
+
 ### Positional Parameters
 
 When a script file is executed, the remaining command line arguments are stored
