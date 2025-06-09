@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <fnmatch.h>
 
 #include "execute.h"
 #include "jobs.h"
@@ -329,6 +330,22 @@ int run_pipeline(Command *cmd, const char *line) {
             if (cmd->var)
                 setenv(cmd->var, cmd->words[i], 1);
             run_command_list(cmd->body, line);
+        }
+        return last_status;
+    case CMD_CASE:
+        for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
+            int matched = 0;
+            for (int i = 0; i < ci->pattern_count; i++) {
+                if (fnmatch(ci->patterns[i], cmd->var, 0) == 0) {
+                    matched = 1;
+                    break;
+                }
+            }
+            if (matched) {
+                run_command_list(ci->body, line);
+                if (!ci->fall_through)
+                    break;
+            }
         }
         return last_status;
     default:

@@ -53,11 +53,16 @@ Loops are created with \fBwhile\fP/\fBdo\fP/\fBdone\fP or \fBfor\fP/\fBin\fP/\fB
 The \fBwhile\fP condition is evaluated before each iteration while \fBfor\fP
 assigns each word to a variable in turn.
 .PP
+The \fBcase\fP word is matched against pattern lists terminated with \fB;;\fP or
+\fB;&\fP to fall through to the next pattern. Wildcards \fB*\fP and \fB?\fP are
+supported. The list ends with \fBesac\fP.
+.PP
 Example:
 .EX
 if test "$USER" = root; then echo admin; else echo user; fi
 for x in a b c; do echo $x; done
 export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
+case 1 in 1) echo one ;& 2) echo two ;; esac
 .EE
 .SH BUILTINS
 .TP

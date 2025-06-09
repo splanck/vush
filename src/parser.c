@@ -860,6 +860,69 @@ static Command *parse_for_clause(char **p) {
     return cmd;
 }
 
+static void free_case_items(CaseItem *ci) {
+    while (ci) {
+        CaseItem *n = ci->next;
+        for (int i = 0; i < ci->pattern_count; i++)
+            free(ci->patterns[i]);
+        free(ci->patterns);
+        free_commands(ci->body);
+        free(ci);
+        ci = n;
+    }
+}
+
+static Command *parse_case_clause(char **p) {
+    while (**p == ' ' || **p == '\t') (*p)++;
+    int q = 0;
+    char *word = read_token(p, &q);
+    if (!word) return NULL;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    q = 0;
+    char *tok = read_token(p, &q);
+    if (!tok || strcmp(tok, "in") != 0) { free(word); free(tok); return NULL; }
+    free(tok);
+
+    CaseItem *head = NULL, *tail = NULL;
+    while (1) {
+        while (**p == ' ' || **p == '\t' || **p == '\n') (*p)++;
+        if (strncmp(*p, "esac", 4) == 0) { *p += 4; break; }
+
+        char **patterns = NULL; int pc = 0;
+        int done = 0;
+        while (!done) {
+            while (**p == ' ' || **p == '\t') (*p)++;
+            if (**p == '(') { (*p)++; continue; }
+            int q = 0; char *ptok = read_token(p, &q); if (!ptok) { free_case_items(head); free(word); return NULL; }
+            if (!q && strcmp(ptok, "|") == 0) { free(ptok); continue; }
+            if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
+            size_t len = strlen(ptok);
+            if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
+            patterns = realloc(patterns, sizeof(char*) * (pc + 1));
+            patterns[pc++] = ptok;
+            if (done) break;
+        }
+
+        const char *stops[] = {";;", ";&"};
+        int idx = -1;
+        char *body = gather_until(p, stops, 2, &idx);
+        if (!body) { free_case_items(head); free(word); return NULL; }
+        Command *body_cmd = parse_line(body); free(body);
+        CaseItem *ci = calloc(1, sizeof(CaseItem));
+        ci->patterns = patterns;
+        ci->pattern_count = pc;
+        ci->body = body_cmd;
+        ci->fall_through = (idx == 1);
+        if (!head) head = ci; else tail->next = ci; tail = ci;
+    }
+
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_CASE;
+    cmd->var = word;
+    cmd->cases = head;
+    return cmd;
+}
+
 /* Parse a function definition and return the command or NULL */
 static Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
@@ -904,6 +967,9 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
     } else if (strncmp(*p, "for", 3) == 0 && isspace((unsigned char)(*p)[3])) {
         *p += 3;
         cmd = parse_for_clause(p);
+    } else if (strncmp(*p, "case", 4) == 0 && isspace((unsigned char)(*p)[4])) {
+        *p += 4;
+        cmd = parse_case_clause(p);
     }
     if (!cmd)
         return NULL;
@@ -1284,6 +1350,9 @@ void free_commands(Command *c) {
             free(c->words[i]);
         free(c->words);
         free_commands(c->body);
+    } else if (c->type == CMD_CASE) {
+        free(c->var);
+        free_case_items(c->cases);
     } else if (c->type == CMD_FUNCDEF) {
         free(c->var);
         free(c->text);

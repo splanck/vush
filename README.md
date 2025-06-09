@@ -19,6 +19,7 @@ and a few built-in commands.
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
 - Shell functions using `name() { ... }` syntax and a `return` builtin
+- `case` selection statements with optional fall-through using `;&`
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
@@ -259,6 +260,9 @@ c
 vush> export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 0
 1
+vush> case 1 in 1) echo one ;& 2) echo two ;; esac
+one
+two
 ```
 
 ## Function Example
