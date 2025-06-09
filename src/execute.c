@@ -343,8 +343,22 @@ static int run_function(Command *body, char **args) {
     char **old_argv = script_argv;
     script_argc = argc - 1;
     script_argv = calloc(argc + 1, sizeof(char *));
-    for (int i = 0; i < argc; i++)
+    if (!script_argv) {
+        script_argc = old_argc;
+        script_argv = old_argv;
+        return 1;
+    }
+    for (int i = 0; i < argc; i++) {
         script_argv[i] = strdup(args[i]);
+        if (!script_argv[i]) {
+            for (int j = 0; j < i; j++)
+                free(script_argv[j]);
+            free(script_argv);
+            script_argv = old_argv;
+            script_argc = old_argc;
+            return 1;
+        }
+    }
     script_argv[argc] = NULL;
     func_return = 0;
     run_command_list(body, NULL);
