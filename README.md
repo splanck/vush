@@ -22,6 +22,7 @@ and a few built-in commands.
 - Simple pipelines using `|` to connect commands
 - Command chaining with `;`, `&&`, and `||`
 - Subshells using `( ... )` to group commands
+- Brace groups using `{ ... ; }` executed in the current shell
 - Shell functions using `name() { ... }` syntax and a `return` builtin
 - `case` selection statements with optional fall-through using `;&`
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
