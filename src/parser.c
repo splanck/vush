@@ -369,11 +369,9 @@ static char *command_output(const char *cmd) {
     return strdup(out);
 }
 
-static char *read_token(char **p, int *quoted) {
+static char *parse_redirect_token(char **p) {
     char buf[MAX_LINE];
     int len = 0;
-    int do_expand = 1;
-    *quoted = 0;
 
     if (**p == '2' && *(*p + 1) == '>') {
         buf[len++] = '2';
@@ -404,7 +402,8 @@ static char *read_token(char **p, int *quoted) {
     if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
         buf[len++] = '&';
         (*p)++;
-        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
+        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' &&
+               **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
             buf[len++] = **p;
             (*p)++;
         }
@@ -417,7 +416,8 @@ static char *read_token(char **p, int *quoted) {
         (*p)++;
         buf[len++] = '<';
         (*p)++;
-        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' && **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
+        while (**p && **p != ' ' && **p != '\t' && **p != '|' && **p != '<' &&
+               **p != '>' && **p != '&' && **p != ';' && len < MAX_LINE - 1) {
             buf[len++] = **p;
             (*p)++;
         }
@@ -438,32 +438,75 @@ static char *read_token(char **p, int *quoted) {
         return strdup(buf);
     }
 
-    if (**p == '\'') {
-        char quote = '\'';
-        *quoted = 1;
-        do_expand = 0;
-        (*p)++; /* skip opening quote */
-        while (**p && **p != quote && len < MAX_LINE - 1) {
-            buf[len++] = *(*p)++;
+    return NULL;
+}
+
+static char *parse_substitution(char **p) {
+    int depth = 0;
+    int is_dollar = (**p == '$');
+    (*p)++; /* skip ` or $ */
+    if (is_dollar) {
+        (*p)++; /* skip '(' */
+        depth = 1;
+    }
+
+    char cmd[MAX_LINE];
+    int clen = 0;
+    while (**p && ((is_dollar && depth > 0) || (!is_dollar && **p != '`')) &&
+           clen < MAX_LINE - 1) {
+        if (is_dollar) {
+            if (**p == '(') depth++;
+            else if (**p == ')') {
+                depth--;
+                if (depth == 0) { (*p)++; break; }
+            }
         }
+        if (!is_dollar && **p == '`') break;
+        cmd[clen++] = **p;
+        (*p)++;
+    }
+
+    if (is_dollar) {
+        if (depth > 0) {
+            fprintf(stderr, "syntax error: unmatched ')'\n");
+            return NULL;
+        }
+    } else {
+        if (**p == '`')
+            (*p)++; /* closing backtick */
+        else {
+            fprintf(stderr, "syntax error: unmatched '`'\n");
+            return NULL;
+        }
+    }
+
+    cmd[clen] = '\0';
+    return command_output(cmd);
+}
+
+static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
+    char buf[MAX_LINE];
+    int len = 0;
+    int do_expand = 1;
+    char quote = **p;
+    *quoted = 1;
+
+    if (quote == '\'') {
+        do_expand = 0;
+        (*p)++;
+        while (**p && **p != quote && len < MAX_LINE - 1)
+            buf[len++] = *(*p)++;
         if (**p == quote) {
-            (*p)++; /* skip closing quote */
+            (*p)++;
         } else {
             fprintf(stderr, "syntax error: unmatched '%c'\n", quote);
             return NULL;
         }
     } else {
-        int in_double = 0;
-        if (**p == '"') {
-            in_double = 1;
-            *quoted = 1;
-            (*p)++; /* skip opening quote */
-        }
+        (*p)++; /* skip opening quote */
         int first = 1;
-        while (**p && (in_double || (**p != ' ' && **p != '\t' && **p != '|' &&
-                **p != '<' && **p != '>' && **p != '&' && **p != ';'))) {
+        while (**p && **p != quote) {
             if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
-                /* arithmetic expansion $((expr)) - copy literally for later evaluation */
                 int depth = 1;
                 if (len < MAX_LINE - 1) buf[len++] = *(*p)++; /* $ */
                 if (len < MAX_LINE - 1) buf[len++] = *(*p)++; /* ( */
@@ -484,49 +527,17 @@ static char *read_token(char **p, int *quoted) {
                 first = 0;
                 continue;
             }
+
             if (**p == '`' || (**p == '$' && *(*p + 1) == '(')) {
-                int depth = 0;
-                int is_dollar = (**p == '$');
-                (*p)++; /* skip ` or $ */
-                if (is_dollar) {
-                    (*p)++; /* skip '(' */
-                    depth = 1;
-                }
-                char cmd[MAX_LINE];
-                int clen = 0;
-                while (**p && ((is_dollar && depth > 0) || (!is_dollar && **p != '`')) && clen < MAX_LINE - 1) {
-                    if (is_dollar) {
-                        if (**p == '(') depth++;
-                        else if (**p == ')') {
-                            depth--;
-                            if (depth == 0) { (*p)++; break; }
-                        }
-                    }
-                    if (!is_dollar && **p == '`') break;
-                    cmd[clen++] = **p;
-                    (*p)++;
-                }
-                if (is_dollar) {
-                    if (depth > 0) {
-                        fprintf(stderr, "syntax error: unmatched ')'\n");
-                        return NULL;
-                    }
-                } else {
-                    if (**p == '`')
-                        (*p)++; /* closing backtick */
-                    else {
-                        fprintf(stderr, "syntax error: unmatched '`'\n");
-                        return NULL;
-                    }
-                }
-                cmd[clen] = '\0';
-                char *res = command_output(cmd);
+                char *res = parse_substitution(p);
+                if (!res) return NULL;
                 for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
                     buf[len++] = res[ci];
                 free(res);
                 first = 0;
                 continue;
             }
+
             if (**p == '\\') {
                 (*p)++;
                 if (**p) {
@@ -537,6 +548,7 @@ static char *read_token(char **p, int *quoted) {
                 first = 0;
                 continue;
             }
+
             if (**p == '$' && *(*p + 1) == '{') {
                 const char *start = *p;
                 (*p) += 2; /* skip ${ */
@@ -558,21 +570,109 @@ static char *read_token(char **p, int *quoted) {
                     first = 0;
                     continue;
                 }
-                /* unmatched '{' - treat literally */
                 *p = (char *)start;
             }
-            if (in_double && **p == '"') {
-                (*p)++; /* end quote */
-                break;
-            }
+
             if (len < MAX_LINE - 1) buf[len++] = **p;
             (*p)++;
             first = 0;
         }
-        if (in_double && *(*p - 1) != '"') {
+        if (**p == quote) {
+            (*p)++;
+        } else {
             fprintf(stderr, "syntax error: unmatched '\"'\n");
             return NULL;
         }
+    }
+
+    buf[len] = '\0';
+    if (do_expand_out) *do_expand_out = do_expand;
+    return do_expand ? expand_var(buf) : strdup(buf);
+}
+
+static char *read_token(char **p, int *quoted) {
+    char buf[MAX_LINE];
+    int len = 0;
+    int do_expand = 1;
+    *quoted = 0;
+
+    char *redir = parse_redirect_token(p);
+    if (redir)
+        return redir;
+
+    if (**p == '\'' || **p == '"') {
+        return parse_quoted_word(p, quoted, &do_expand);
+    }
+
+    int first = 1;
+    while (**p && (**p != ' ' && **p != '\t' && **p != '|' &&
+            **p != '<' && **p != '>' && **p != '&' && **p != ';')) {
+        if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
+            int depth = 1;
+            if (len < MAX_LINE - 1) buf[len++] = *(*p)++; /* $ */
+            if (len < MAX_LINE - 1) buf[len++] = *(*p)++; /* ( */
+            if (len < MAX_LINE - 1) buf[len++] = *(*p)++; /* ( */
+            while (**p && !(**p == ')' && depth == 0 && *(*p + 1) == ')')) {
+                if (**p == '(') depth++;
+                else if (**p == ')') depth--;
+                if (len < MAX_LINE - 1) buf[len++] = **p;
+                (*p)++;
+            }
+            if (**p == ')' && *(*p + 1) == ')' && depth == 0) {
+                if (len < MAX_LINE - 1) buf[len++] = *(*p)++;
+                if (len < MAX_LINE - 1) buf[len++] = *(*p)++;
+            } else {
+                fprintf(stderr, "syntax error: unmatched ')'\n");
+                return NULL;
+            }
+            first = 0;
+            continue;
+        }
+        if (**p == '`' || (**p == '$' && *(*p + 1) == '(')) {
+            char *res = parse_substitution(p);
+            if (!res) return NULL;
+            for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
+                buf[len++] = res[ci];
+            free(res);
+            first = 0;
+            continue;
+        }
+        if (**p == '\\') {
+            (*p)++;
+            if (**p) {
+                if (len < MAX_LINE - 1) buf[len++] = **p;
+                if (first) do_expand = 0;
+                if (**p) (*p)++;
+            }
+            first = 0;
+            continue;
+        }
+        if (**p == '$' && *(*p + 1) == '{') {
+            const char *start = *p;
+            (*p) += 2; /* skip ${ */
+            char name[MAX_LINE];
+            int n = 0;
+            while (**p && **p != '}' && n < MAX_LINE - 1) {
+                name[n++] = **p;
+                (*p)++;
+            }
+            if (**p == '}') {
+                (*p)++; /* skip closing } */
+                name[n] = '\0';
+                char varbuf[MAX_LINE];
+                snprintf(varbuf, sizeof(varbuf), "${%s}", name);
+                char *res = expand_var(varbuf);
+                for (int ci = 0; res[ci] && len < MAX_LINE - 1; ci++)
+                    buf[len++] = res[ci];
+                free(res);
+                first = 0;
+                continue;
+            }
+            *p = (char *)start;
+        }
+        if (len < MAX_LINE - 1) buf[len++] = **p;
+        (*p)++;
+        first = 0;
     }
 
     buf[len] = '\0';
