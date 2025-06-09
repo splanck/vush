@@ -19,9 +19,9 @@ and a few built-in commands.
 - Command chaining with `;`, `&&`, and `||`
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
-- Persistent command history saved to `~/.vush_history`
+- Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
-- Alias definitions persisted in `~/.vush_aliases`
+- Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
@@ -146,11 +146,13 @@ line.
 - `export NAME=value` - set an environment variable for the shell.
 - `unset NAME` - remove an environment variable.
 - `history [-c|-d NUMBER]` - show command history, clear it with `-c`, or delete a specific entry with `-d`.
-  Entries are read from and written to `~/.vush_history`.
-  History size is controlled by the `VUSH_HISTSIZE` environment variable (default 1000).
+  Entries are read from and written to the file specified by `VUSH_HISTFILE`
+  (default `~/.vush_history`). History size is controlled by the
+  `VUSH_HISTSIZE` environment variable (default 1000).
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
-- Aliases are stored in `~/.vush_aliases`.
+- Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
+  `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
 - `type NAME...` - display how each NAME would be interpreted.
 - `source file` or `. file` - execute commands from a file.

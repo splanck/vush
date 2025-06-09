@@ -21,6 +21,18 @@ static int skip_next = 0;
 static int history_size = 0;
 static int max_history = MAX_HISTORY;
 
+static const char *histfile_path(void) {
+    const char *env = getenv("VUSH_HISTFILE");
+    if (env && *env)
+        return env;
+    const char *home = getenv("HOME");
+    if (!home)
+        return NULL;
+    static char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.vush_history", home);
+    return path;
+}
+
 static void history_init(void) {
     static int inited = 0;
     if (inited)
@@ -64,10 +76,8 @@ static void add_history_entry(const char *cmd, int save_file) {
     }
 
     if (save_file) {
-        const char *home = getenv("HOME");
-        if (home) {
-            char path[PATH_MAX];
-            snprintf(path, sizeof(path), "%s/.vush_history", home);
+        const char *path = histfile_path();
+        if (path) {
             FILE *f = fopen(path, "a");
             if (f) {
                 fprintf(f, "%s\n", cmd);
@@ -93,11 +103,9 @@ void print_history(void) {
 
 void load_history(void) {
     history_init();
-    const char *home = getenv("HOME");
-    if (!home)
+    const char *path = histfile_path();
+    if (!path)
         return;
-    char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_history", home);
     FILE *f = fopen(path, "r");
     if (!f)
         return;
@@ -177,10 +185,8 @@ void clear_history(void) {
     skip_next = 1;
     history_size = 0;
 
-    const char *home = getenv("HOME");
-    if (home) {
-        char path[PATH_MAX];
-        snprintf(path, sizeof(path), "%s/.vush_history", home);
+    const char *path = histfile_path();
+    if (path) {
         FILE *f = fopen(path, "w");
         if (f)
             fclose(f);
@@ -213,11 +219,9 @@ void delete_history_entry(int id) {
     free(e);
     history_size--;
 
-    const char *home = getenv("HOME");
-    if (!home)
+    const char *path = histfile_path();
+    if (!path)
         return;
-    char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_history", home);
     FILE *f = fopen(path, "w");
     if (!f)
         return;
