@@ -8,6 +8,13 @@
 
 #include "parser.h"
 
+struct builtin {
+    const char *name;
+    int (*func)(char **);
+};
+
+extern const struct builtin builtin_table[];
+
 int run_builtin(char **args);
 int builtin_type(char **args);
 int builtin_dirs(char **args);

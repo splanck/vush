@@ -3,8 +3,10 @@ CFLAGS ?= -Wall -Wextra -std=c99
 PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
 
-SRCS := src/builtins.c src/execute.c src/history.c src/jobs.c src/lineedit.c \
-       src/parser.c src/dirstack.c src/util.c src/main.c
+SRCS := src/builtins.c src/builtins_fs.c src/builtins_jobs.c \
+       src/builtins_vars.c src/builtins_misc.c src/execute.c src/history.c \
+       src/jobs.c src/lineedit.c src/parser.c src/dirstack.c src/util.c \
+       src/main.c
 
 vush: $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $(SRCS)
