@@ -43,6 +43,14 @@ typedef enum {
     CMD_CASE
 } CmdType;
 
+typedef struct CaseItem {
+    char **patterns;
+    int pattern_count;
+    struct Command *body;
+    int fall_through;
+    struct CaseItem *next;
+} CaseItem;
+
 typedef struct Command {
     CmdType type;
     PipelineSegment *pipeline;
@@ -53,6 +61,7 @@ typedef struct Command {
     char **words;             /* for for loop word list */
     int word_count;
     char *text;               /* function body as text */
+    CaseItem *cases;          /* for case clause items */
     int background;
     CmdOp op; /* operator connecting to next command */
     struct Command *next;
