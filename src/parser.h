@@ -40,6 +40,7 @@ typedef enum {
     CMD_IF,
     CMD_FOR,
     CMD_WHILE,
+    CMD_UNTIL,
     CMD_CASE,
     CMD_SUBSHELL
 } CmdType;
