@@ -210,7 +210,7 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (apply_temp_assignments(pipeline))
         return last_status;
 
-    if (!pipeline->argv[0]) {
+    if (!pipeline->argv[0] || pipeline->argv[0][0] == '\0') {
         fprintf(stderr, "syntax error: missing command\n");
         last_status = 1;
         return last_status;

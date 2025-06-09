@@ -35,7 +35,7 @@ void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
  * and redirections before executing the command.
  */
 pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
-    if (!seg->argv[0]) {
+    if (!seg->argv[0] || seg->argv[0][0] == '\0') {
         fprintf(stderr, "syntax error: missing command\n");
         last_status = 1;
         return -1;
