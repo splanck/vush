@@ -19,5 +19,9 @@ void define_function(const char *name, Command *body, const char *text);
 Command *get_function(const char *name);
 void load_functions(void);
 void free_functions(void);
+const char *get_shell_var(const char *name);
+void set_shell_var(const char *name, const char *value);
+void unset_shell_var(const char *name);
+void free_shell_vars(void);
 
 #endif /* BUILTINS_H */

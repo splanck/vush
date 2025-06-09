@@ -22,6 +22,8 @@ typedef struct PipelineSegment {
     char *err_file;
     int err_append;
     int dup_err;      /* 2>&N duplication */
+    char **assigns;   /* NAME=value pairs preceding the command */
+    int assign_count;
     struct PipelineSegment *next;
 } PipelineSegment;
 

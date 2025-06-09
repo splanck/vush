@@ -23,6 +23,45 @@
 extern int last_status;
 FILE *parse_input = NULL;
 
+struct temp_var { char *name; char *value; struct temp_var *next; };
+static struct temp_var *temp_vars = NULL;
+
+static void set_temp_var(const char *name, const char *value) {
+    for (struct temp_var *v = temp_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0) {
+            free(v->value);
+            v->value = strdup(value);
+            return;
+        }
+    }
+    struct temp_var *v = malloc(sizeof(struct temp_var));
+    if (!v) return;
+    v->name = strdup(name);
+    v->value = strdup(value);
+    v->next = temp_vars;
+    temp_vars = v;
+}
+
+static const char *get_temp_var(const char *name) {
+    for (struct temp_var *v = temp_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0)
+            return v->value;
+    }
+    return NULL;
+}
+
+static void clear_temp_vars(void) {
+    struct temp_var *v = temp_vars;
+    while (v) {
+        struct temp_var *n = v->next;
+        free(v->name);
+        free(v->value);
+        free(v);
+        v = n;
+    }
+    temp_vars = NULL;
+}
+
 char *expand_var(const char *token) {
     if (strcmp(token, "$?") == 0) {
         char buf[16];
@@ -61,7 +100,9 @@ char *expand_var(const char *token) {
             size_t len = (size_t)(end - (token + 2));
             char *name = strndup(token + 2, len);
             if (!name) return strdup("");
-            const char *val = getenv(name);
+            const char *val = get_temp_var(name);
+            if (!val) val = get_shell_var(name);
+            if (!val) val = getenv(name);
             if (!val) {
                 if (opt_nounset) {
                     fprintf(stderr, "%s: unbound variable\n", name);
@@ -116,7 +157,9 @@ char *expand_var(const char *token) {
         return strdup(val);
     }
 
-    const char *val = getenv(token + 1);
+    const char *val = get_temp_var(token + 1);
+    if (!val) val = get_shell_var(token + 1);
+    if (!val) val = getenv(token + 1);
     if (!val) {
         if (opt_nounset) {
             fprintf(stderr, "%s: unbound variable\n", token + 1);
@@ -394,6 +437,19 @@ char *expand_prompt(const char *prompt) {
     return res;
 }
 
+static int is_assignment(const char *tok) {
+    const char *eq = strchr(tok, '=');
+    if (!eq || eq == tok)
+        return 0;
+    for (const char *p = tok; p < eq; p++) {
+        if (!(isalnum((unsigned char)*p) || *p == '_'))
+            return 0;
+    }
+    if (isdigit((unsigned char)tok[0]))
+        return 0;
+    return 1;
+}
+
 static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     char *res = NULL;
     if (idx) *idx = -1;
@@ -544,6 +600,8 @@ Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;
 
+    clear_temp_vars();
+
     while (1) {
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0' || *p == '#')
@@ -621,6 +679,8 @@ Command *parse_line(char *line) {
         PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
         seg_head->dup_out = -1;
         seg_head->dup_err = -1;
+        seg_head->assigns = NULL;
+        seg_head->assign_count = 0;
         PipelineSegment *seg = seg_head;
         int argc = 0;
         int background = 0;
@@ -639,10 +699,13 @@ Command *parse_line(char *line) {
                 PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
                 next->dup_out = -1;
                 next->dup_err = -1;
+                next->assigns = NULL;
+                next->assign_count = 0;
                 seg->next = next;
                 seg = next;
                 argc = 0;
                 p++;
+                clear_temp_vars();
                 continue;
             }
 
@@ -653,6 +716,20 @@ Command *parse_line(char *line) {
                 free_commands(head);
                 last_status = 1;
                 return NULL;
+            }
+
+            if (!quoted && argc == 0 && is_assignment(tok)) {
+                seg->assigns = realloc(seg->assigns, sizeof(char *) * (seg->assign_count + 1));
+                seg->assigns[seg->assign_count++] = tok;
+                char *eq = strchr(tok, '=');
+                if (eq) {
+                    char *name = strndup(tok, eq - tok);
+                    if (name) {
+                        set_temp_var(name, eq + 1);
+                        free(name);
+                    }
+                }
+                continue;
             }
 
             if (!quoted && argc == 0) {
@@ -853,6 +930,8 @@ Command *parse_line(char *line) {
         if (cur_cmd) cur_cmd->next = cmd;
         cur_cmd = cmd;
 
+        clear_temp_vars();
+
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '#') break;
         if (!*p) break;
@@ -867,6 +946,9 @@ void free_pipeline(PipelineSegment *p) {
         PipelineSegment *next = p->next;
         for (int i = 0; p->argv[i]; i++)
             free(p->argv[i]);
+        for (int i = 0; i < p->assign_count; i++)
+            free(p->assigns[i]);
+        free(p->assigns);
         free(p->in_file);
         free(p->out_file);
         if (p->err_file && p->err_file != p->out_file)

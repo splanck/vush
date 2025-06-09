@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,12 +27,61 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (opt_xtrace && line)
         fprintf(stderr, "+ %s\n", line);
 
-    if (!pipeline->next && run_builtin(pipeline->argv))
+    if (!pipeline->next && !pipeline->argv[0] && pipeline->assign_count > 0) {
+        for (int i = 0; i < pipeline->assign_count; i++) {
+            char *eq = strchr(pipeline->assigns[i], '=');
+            if (!eq) continue;
+            char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+            set_shell_var(name, eq + 1);
+            free(name);
+        }
+        last_status = 0;
         return last_status;
-    if (!pipeline->next) {
-        Command *fn = get_function(pipeline->argv[0]);
-        if (fn)
-            return run_function(fn, pipeline->argv);
+    }
+
+    if (!pipeline->next && pipeline->argv[0]) {
+        struct {
+            char *name; char *env; char *var; int had_env; int had_var;
+        } backs[pipeline->assign_count];
+        for (int i = 0; i < pipeline->assign_count; i++) {
+            char *eq = strchr(pipeline->assigns[i], '=');
+            if (!eq) { backs[i].name = NULL; continue; }
+            backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+            const char *oe = getenv(backs[i].name);
+            backs[i].had_env = oe != NULL;
+            backs[i].env = oe ? strdup(oe) : NULL;
+            const char *ov = get_shell_var(backs[i].name);
+            backs[i].had_var = ov != NULL;
+            backs[i].var = ov ? strdup(ov) : NULL;
+            setenv(backs[i].name, eq + 1, 1);
+            set_shell_var(backs[i].name, eq + 1);
+        }
+        int handled = 0;
+        if (run_builtin(pipeline->argv))
+            handled = 1;
+        else {
+            Command *fn = get_function(pipeline->argv[0]);
+            if (fn) {
+                run_function(fn, pipeline->argv);
+                handled = 1;
+            }
+        }
+        for (int i = 0; i < pipeline->assign_count; i++) {
+            if (!backs[i].name) continue;
+            if (backs[i].had_env)
+                setenv(backs[i].name, backs[i].env, 1);
+            else
+                unsetenv(backs[i].name);
+            if (backs[i].had_var)
+                set_shell_var(backs[i].name, backs[i].var);
+            else
+                unset_shell_var(backs[i].name);
+            free(backs[i].name);
+            free(backs[i].env);
+            free(backs[i].var);
+        }
+        if (handled)
+            return last_status;
     }
 
     int seg_count = 0;
@@ -119,6 +169,17 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
                 dup2(seg->dup_out, STDOUT_FILENO);
             if (seg->dup_err != -1)
                 dup2(seg->dup_err, STDERR_FILENO);
+            for (int ai = 0; ai < seg->assign_count; ai++) {
+                char *eq = strchr(seg->assigns[ai], '=');
+                if (eq) {
+                    size_t len = (size_t)(eq - seg->assigns[ai]);
+                    char *name = strndup(seg->assigns[ai], len);
+                    if (name) {
+                        setenv(name, eq + 1, 1);
+                        free(name);
+                    }
+                }
+            }
             execvp(seg->argv[0], seg->argv);
             if (errno == ENOENT)
                 fprintf(stderr, "%s: command not found\n", seg->argv[0]);

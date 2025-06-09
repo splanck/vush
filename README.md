@@ -156,6 +156,27 @@ as positional parameters.  `$0` expands to the script path while `$1` through
 spaces and `$#` gives the count of arguments.  The `shift` builtin discards the
 first parameter and shifts the rest down.
 
+## Assignments
+
+Words of the form `NAME=value` placed at the beginning of a command only affect
+that command's environment:
+
+```sh
+vush> FOO=bar echo $FOO
+bar
+vush> echo $FOO
+
+```
+
+Without a following command the assignment creates a shell variable that is not
+exported but persists for later use:
+
+```sh
+vush> BAR=baz
+vush> echo $BAR
+baz
+```
+
 ## Built-in Commands
 
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.

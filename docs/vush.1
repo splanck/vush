@@ -37,6 +37,11 @@ positional parameters.  \$0 expands to the script path, \$1 through \$9
 refer to subsequent parameters, \$@ expands to all parameters separated
 by spaces and \$# expands to the number of parameters.  The
 \fBshift\fP builtin discards the first parameter and moves the rest down.
+
+.SH ASSIGNMENTS
+Words of the form \fBNAME=value\fP appearing before a command are added to that
+command's environment only.  Using the same syntax without a command creates a
+shell variable that persists but is not exported.
 .SH CONTROL STRUCTURES
 The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
 conditional execution. Commands following \fBthen\fP run when the test before
