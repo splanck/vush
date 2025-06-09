@@ -837,7 +837,6 @@ static Command *parse_for_clause(char **p) {
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
     char **words = NULL; int count = 0;
-    const char *stop[] = {"do"};
     while (1) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (**p == '\0') { free(var); free(words); return NULL; }
