@@ -12,11 +12,15 @@
 #include <errno.h>
 #include <limits.h>
 #include <linux/limits.h>
+#include <ctype.h>
 
 extern int last_status;
 extern FILE *parse_input;
 #include <sys/wait.h>
 #include <signal.h>
+
+char *trap_cmds[NSIG];
+extern void trap_handler(int);
 
 int builtin_exit(char **args) {
     int status = last_status;
@@ -218,6 +222,78 @@ int builtin_type(char **args) {
         free(paths);
         if (!found)
             printf("%s not found\n", args[i]);
+    }
+    return 1;
+}
+
+static int sig_from_name(const char *name)
+{
+    if (!name || !*name)
+        return -1;
+    if (isdigit((unsigned char)name[0]))
+        return atoi(name);
+    if (strncasecmp(name, "SIG", 3) == 0)
+        name += 3;
+    struct { const char *n; int v; } map[] = {
+        {"INT", SIGINT}, {"TERM", SIGTERM}, {"HUP", SIGHUP},
+#ifdef SIGQUIT
+        {"QUIT", SIGQUIT},
+#endif
+#ifdef SIGUSR1
+        {"USR1", SIGUSR1},
+#endif
+#ifdef SIGUSR2
+        {"USR2", SIGUSR2},
+#endif
+#ifdef SIGCHLD
+        {"CHLD", SIGCHLD},
+#endif
+#ifdef SIGCONT
+        {"CONT", SIGCONT},
+#endif
+#ifdef SIGSTOP
+        {"STOP", SIGSTOP},
+#endif
+#ifdef SIGALRM
+        {"ALRM", SIGALRM},
+#endif
+        {NULL, 0}
+    };
+    for (int i = 0; map[i].n; i++) {
+        if (strcasecmp(name, map[i].n) == 0)
+            return map[i].v;
+    }
+    return -1;
+}
+
+int builtin_trap(char **args)
+{
+    if (!args[1]) {
+        fprintf(stderr, "usage: trap [command] SIGNAL...\n");
+        return 1;
+    }
+
+    char *cmd = NULL;
+    int idx = 1;
+    if (args[2]) {
+        cmd = args[1];
+        idx = 2;
+    }
+
+    for (int i = idx; args[i]; i++) {
+        int sig = sig_from_name(args[i]);
+        if (sig <= 0 || sig >= NSIG) {
+            fprintf(stderr, "trap: invalid signal %s\n", args[i]);
+            continue;
+        }
+        free(trap_cmds[sig]);
+        trap_cmds[sig] = cmd ? strdup(cmd) : NULL;
+
+        struct sigaction sa;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        sa.sa_handler = cmd ? trap_handler : SIG_DFL;
+        sigaction(sig, &sa, NULL);
     }
     return 1;
 }

@@ -104,6 +104,9 @@ Continue job ID in the background.
 .B kill [-SIGNAL] ID
 Send a signal to job ID.
 .TP
+.B trap 'cmd' SIGNAL
+Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear.
+.TP
 .B export NAME=value
 Set an environment variable for the shell.
 .TP
