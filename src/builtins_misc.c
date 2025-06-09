@@ -100,6 +100,32 @@ int builtin_source(char **args) {
     return 1;
 }
 
+int builtin_eval(char **args) {
+    if (!args[1])
+        return 1;
+
+    size_t len = 0;
+    for (int i = 1; args[i]; i++)
+        len += strlen(args[i]) + 1;
+
+    char *line = malloc(len + 1);
+    if (!line)
+        return 1;
+    line[0] = '\0';
+    for (int i = 1; args[i]; i++) {
+        strcat(line, args[i]);
+        if (args[i + 1])
+            strcat(line, " ");
+    }
+
+    Command *cmds = parse_line(line);
+    if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
+        run_command_list(cmds, line);
+    free_commands(cmds);
+    free(line);
+    return 1;
+}
+
 int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
@@ -123,6 +149,7 @@ int builtin_help(char **args) {
     printf("  shift      Shift positional parameters\n");
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
+    printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
     return 1;

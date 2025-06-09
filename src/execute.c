@@ -18,7 +18,7 @@
 extern int last_status;
 int func_return = 0;
 
-static int run_command_list(Command *cmds, const char *line);
+int run_command_list(Command *cmds, const char *line);
 static int run_function(Command *body, char **args);
 static int apply_temp_assignments(PipelineSegment *pipeline);
 static void setup_redirections(PipelineSegment *seg);
@@ -280,7 +280,7 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     return spawn_pipeline_segments(pipeline, background, line);
 }
 
-static int run_command_list(Command *cmds, const char *line) {
+int run_command_list(Command *cmds, const char *line) {
     CmdOp prev = OP_SEMI;
     for (Command *c = cmds; c; c = c->next) {
         int run = 1;

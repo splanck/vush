@@ -150,6 +150,10 @@ Functions are saved to the file specified by \fBVUSH_FUNCFILE\fP (default \fB~/.
 For each argument, print whether it is an alias, builtin or the full path of an
 executable found in \fB$PATH\fP.
 .TP
+.B eval \fIargs...\fP
+Concatenate the arguments into a single command line and execute it in the
+current shell.
+.TP
 .B source \fIfile\fP
 Read commands from \fIfile\fP.
 .TP
