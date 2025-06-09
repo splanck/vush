@@ -14,14 +14,14 @@
 #include "builtins.h"
 #include "scriptargs.h"
 #include "options.h"
+#include "pipeline.h"
+#include "func_exec.h"
 
 extern int last_status;
-int func_return = 0;
 
 int run_command_list(Command *cmds, const char *line);
-static int run_function(Command *body, char **args);
 static int apply_temp_assignments(PipelineSegment *pipeline);
-static void setup_redirections(PipelineSegment *seg);
+void setup_redirections(PipelineSegment *seg);
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);
 
@@ -102,7 +102,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
     return handled;
 }
 
-static void setup_redirections(PipelineSegment *seg) {
+void setup_redirections(PipelineSegment *seg) {
     if (seg->in_file) {
         int fd = open(seg->in_file, O_RDONLY);
         if (fd < 0) {
@@ -155,88 +155,6 @@ static void setup_redirections(PipelineSegment *seg) {
         dup2(seg->dup_err, STDERR_FILENO);
 }
 
-static void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
-    if (in_fd != -1) {
-        dup2(in_fd, STDIN_FILENO);
-        close(in_fd);
-    }
-    if (seg->next) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
-    }
-}
-
-static pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
-    int pipefd[2];
-    if (seg->next && pipe(pipefd) < 0) {
-        perror("pipe");
-        return -1;
-    }
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        signal(SIGINT, SIG_DFL);
-        setup_child_pipes(seg, *in_fd, pipefd);
-        setup_redirections(seg);
-
-        for (int ai = 0; ai < seg->assign_count; ai++) {
-            char *eq = strchr(seg->assigns[ai], '=');
-            if (eq) {
-                size_t len = (size_t)(eq - seg->assigns[ai]);
-                char *name = strndup(seg->assigns[ai], len);
-                if (name) {
-                    setenv(name, eq + 1, 1);
-                    free(name);
-                }
-            }
-        }
-
-        execvp(seg->argv[0], seg->argv);
-        if (errno == ENOENT)
-            fprintf(stderr, "%s: command not found\n", seg->argv[0]);
-        else
-            fprintf(stderr, "%s: %s\n", seg->argv[0], strerror(errno));
-        exit(127);
-    } else if (pid > 0) {
-        if (*in_fd != -1)
-            close(*in_fd);
-        if (seg->next) {
-            close(pipefd[1]);
-            *in_fd = pipefd[0];
-        } else {
-            *in_fd = -1;
-        }
-    } else {
-        perror("fork");
-        if (seg->next) {
-            close(pipefd[0]);
-            close(pipefd[1]);
-        }
-    }
-    return pid;
-}
-
-static void wait_for_pipeline(pid_t *pids, int count, int background,
-                              const char *line) {
-    int status = 0;
-    if (background) {
-        if (count > 0)
-            add_job(pids[count - 1], line);
-        last_status = 0;
-    } else {
-        for (int j = 0; j < count; j++)
-            waitpid(pids[j], &status, 0);
-        if (WIFEXITED(status))
-            last_status = WEXITSTATUS(status);
-        else if (WIFSIGNALED(status))
-            last_status = 128 + WTERMSIG(status);
-        else
-            last_status = status;
-        if (opt_errexit && last_status != 0)
-            exit(last_status);
-    }
-}
 
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line) {
@@ -353,36 +271,3 @@ int run_pipeline(Command *cmd, const char *line) {
     }
 }
 
-static int run_function(Command *body, char **args) {
-    int argc = 0;
-    while (args[argc]) argc++;
-    int old_argc = script_argc;
-    char **old_argv = script_argv;
-    script_argc = argc - 1;
-    script_argv = calloc(argc + 1, sizeof(char *));
-    if (!script_argv) {
-        script_argc = old_argc;
-        script_argv = old_argv;
-        return 1;
-    }
-    for (int i = 0; i < argc; i++) {
-        script_argv[i] = strdup(args[i]);
-        if (!script_argv[i]) {
-            for (int j = 0; j < i; j++)
-                free(script_argv[j]);
-            free(script_argv);
-            script_argv = old_argv;
-            script_argc = old_argc;
-            return 1;
-        }
-    }
-    script_argv[argc] = NULL;
-    func_return = 0;
-    run_command_list(body, NULL);
-    for (int i = 0; i < argc; i++)
-        free(script_argv[i]);
-    free(script_argv);
-    script_argv = old_argv;
-    script_argc = old_argc;
-    return last_status;
-}

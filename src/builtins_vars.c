@@ -4,6 +4,7 @@
 #include "history.h"
 #include "parser.h"
 #include "execute.h"
+#include "func_exec.h"
 #include "scriptargs.h"
 #include "arith.h"
 #include "options.h"
@@ -15,7 +16,6 @@
 #include <linux/limits.h>
 
 extern int last_status;
-extern int func_return;
 
 struct var_entry {
     char *name;

@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "parser.h" /* for MAX_LINE */
+#include "func_exec.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +11,6 @@
 #include <linux/limits.h>
 
 extern int last_status;
-extern int func_return;
 
 struct func_entry {
     char *name;
