@@ -607,6 +607,66 @@ static int builtin_set(char **args) {
     return 1;
 }
 
+int builtin_read(char **args) {
+    int raw = 0;
+    int idx = 1;
+    if (args[idx] && strcmp(args[idx], "-r") == 0) {
+        raw = 1;
+        idx++;
+    }
+    if (!args[idx]) {
+        fprintf(stderr, "usage: read [-r] NAME...\n");
+        last_status = 1;
+        return 1;
+    }
+
+    char line[MAX_LINE];
+    if (!fgets(line, sizeof(line), stdin)) {
+        last_status = 1;
+        return 1;
+    }
+
+    size_t len = strlen(line);
+    if (len && line[len - 1] == '\n')
+        line[--len] = '\0';
+
+    if (!raw) {
+        char *src = line;
+        char *dst = line;
+        while (*src) {
+            if (*src == '\\' && src[1]) {
+                src++;
+                *dst++ = *src++;
+            } else {
+                *dst++ = *src++;
+            }
+        }
+        *dst = '\0';
+    }
+
+    int var_count = 0;
+    for (int i = idx; args[i]; i++)
+        var_count++;
+
+    char *p = line;
+    for (int i = 0; i < var_count; i++) {
+        while (*p == ' ' || *p == '\t')
+            p++;
+        char *val = p;
+        if (i < var_count - 1) {
+            while (*p && *p != ' ' && *p != '\t')
+                p++;
+            if (*p)
+                *p++ = '\0';
+        } else {
+            /* last variable gets the rest of the line */
+        }
+        set_shell_var(args[idx + i], val);
+    }
+    last_status = 0;
+    return 1;
+}
+
 static int builtin_let(char **args) {
     if (!args[1]) {
         last_status = 1;
@@ -742,6 +802,7 @@ static int builtin_help(char **args) {
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
+    printf("  read [-r] VAR...    Read a line into variables\n");
     printf("  return [status]     Return from a function\n");
     printf("  shift      Shift positional parameters\n");
     printf("  let EXPR  Evaluate arithmetic expression\n");
@@ -818,6 +879,7 @@ static struct builtin builtins[] = {
     {"history", builtin_history},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},
+    {"read", builtin_read},
     {"return", builtin_return},
     {"shift", builtin_shift},
     {"let", builtin_let},

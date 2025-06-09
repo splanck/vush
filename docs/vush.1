@@ -116,6 +116,11 @@ Set an alias or list aliases when used without arguments.
 .B unalias \fIname\fP
 Remove an alias.
 .TP
+.B read [-r] \fIvar\fP ...
+Read a line from standard input and assign the words to each \fIvar\fP in
+order. The last variable receives the remainder of the line. With \fB-r\fP
+backslashes are not treated specially.
+.TP
 .B return [status]
 Return from a shell function with the given status (default 0).
 .TP

@@ -272,6 +272,23 @@ Hello foo
 0
 ```
 
+## Read Example
+
+Create a small script that reads a line and prints it back:
+
+```sh
+echo "Enter something:";
+read line;
+echo "You typed: $line";
+```
+
+Running it with redirected input will feed the line to `read`:
+
+```sh
+$ printf "hello\n" | ./vush script.vsh
+You typed: hello
+```
+
 ## Type Example
 
 ```
