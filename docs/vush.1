@@ -175,6 +175,26 @@ Controls the interactive shell prompt. The contents of this variable are
 printed before each command and undergo normal variable and command
 substitution. The default prompt is \"vush> \" but users may set \fBPS1\fP to any
 string to include information such as the current directory.
+.TP
+.B VUSH_HISTFILE
+Path to the file used for saving command history. The default is
+\fB~/.vush_history\fP.
+.TP
+.B VUSH_HISTSIZE
+Maximum number of commands retained in \fBVUSH_HISTFILE\fP. The default
+is 1000.
+.TP
+.B VUSH_ALIASFILE
+File that stores persistent alias definitions. Defaults to
+\fB~/.vush_aliases\fP.
+.TP
+.B VUSH_FUNCFILE
+File that stores persistent function definitions. Defaults to
+\fB~/.vush_funcs\fP.
+.TP
+.B CDPATH
+Colon-separated list of directories searched by \fBcd\fP when given a
+relative path. Unset by default.
 .SH REDIRECTION
 Standard input can be redirected with '<'.  Standard output may be
 redirected with '>' or '>>' to append.  Likewise, file descriptor 2
