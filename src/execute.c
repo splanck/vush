@@ -262,6 +262,18 @@ int run_pipeline(Command *cmd, const char *line) {
             if (loop_continue) { loop_continue = 0; continue; }
         }
         return last_status;
+    case CMD_UNTIL:
+        while (1) {
+            run_command_list(cmd->cond, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
+            if (last_status == 0)
+                break;
+            run_command_list(cmd->body, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
+        }
+        return last_status;
     case CMD_FOR:
         for (int i = 0; i < cmd->word_count; i++) {
             if (cmd->var)

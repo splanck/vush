@@ -237,6 +237,22 @@ static Command *parse_while_clause(char **p) {
     cmd->body = body_cmd;
     return cmd;
 }
+
+static Command *parse_until_clause(char **p) {
+    const char *stop1[] = {"do"};
+    char *cond = gather_until(p, stop1, 1, NULL);
+    if (!cond) return NULL;
+    Command *cond_cmd = parse_line(cond); free(cond);
+    const char *stop2[] = {"done"};
+    char *body = gather_until(p, stop2, 1, NULL);
+    if (!body) { free_commands(cond_cmd); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_UNTIL;
+    cmd->cond = cond_cmd;
+    cmd->body = body_cmd;
+    return cmd;
+}
 /*
  * Parse a for loop and its word list.
  */
@@ -404,6 +420,9 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
     } else if (strncmp(*p, "while", 5) == 0 && isspace((unsigned char)(*p)[5])) {
         *p += 5;
         cmd = parse_while_clause(p);
+    } else if (strncmp(*p, "until", 5) == 0 && isspace((unsigned char)(*p)[5])) {
+        *p += 5;
+        cmd = parse_until_clause(p);
     } else if (strncmp(*p, "for", 3) == 0 && isspace((unsigned char)(*p)[3])) {
         *p += 3;
         cmd = parse_for_clause(p);
@@ -786,7 +805,7 @@ void free_commands(Command *c) {
         free_commands(c->cond);
         free_commands(c->body);
         free_commands(c->else_part);
-    } else if (c->type == CMD_WHILE) {
+    } else if (c->type == CMD_WHILE || c->type == CMD_UNTIL) {
         free_commands(c->cond);
         free_commands(c->body);
     } else if (c->type == CMD_FOR) {

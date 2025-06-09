@@ -64,9 +64,11 @@ conditional execution. Commands following \fBthen\fP run when the test before
 it exits with status 0. An optional \fBelif\fP or \fBelse\fP section executes
 when previous tests fail.
 .PP
-Loops are created with \fBwhile\fP/\fBdo\fP/\fBdone\fP or \fBfor\fP/\fBin\fP/\fBdo\fP/\fBdone\fP.
-The \fBwhile\fP condition is evaluated before each iteration while \fBfor\fP
-assigns each word to a variable in turn.
+Loops are created with \fBwhile\fP/\fBdo\fP/\fBdone\fP,
+\fBuntil\fP/\fBdo\fP/\fBdone\fP or \fBfor\fP/\fBin\fP/\fBdo\fP/\fBdone\fP.
+The \fBwhile\fP and \fBuntil\fP conditions are evaluated before each iteration.
+\fBwhile\fP continues while the test succeeds whereas \fBuntil\fP repeats until
+the test succeeds. \fBfor\fP assigns each word to a variable in turn.
 .PP
 The \fBcase\fP word is matched against pattern lists terminated with \fB;;\fP or
 \fB;&\fP to fall through to the next pattern. Wildcards \fB*\fP and \fB?\fP are
@@ -79,6 +81,7 @@ for x in a b c; do echo $x; done
 export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 for x in a b c; do if test $x = b; then continue; fi; echo $x; done
 while true; do echo done; break; done
+export j=2; until test $j -eq 0; do echo $j; export j=$(expr $j - 1); done
 case 1 in 1) echo one ;& 2) echo two ;; esac
 .EE
 .SH BUILTINS
