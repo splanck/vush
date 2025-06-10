@@ -912,6 +912,159 @@ static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quot
     return 0;
 }
 
+static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
+                                      char **tok_ptr, int quoted) {
+    char *tok = *tok_ptr;
+
+    if (!quoted && *argc == 0 && is_assignment(tok)) {
+        char *eq = strchr(tok, '=');
+        if (eq && eq[1] == '(' && tok[strlen(tok) - 1] != ')') {
+            char *assign = strdup(tok);
+            char *tmp;
+            do {
+                int q2 = 0;
+                tmp = read_token(p, &q2);
+                if (!tmp) { free(assign); return -1; }
+                char *old = assign;
+                asprintf(&assign, "%s %s", assign, tmp);
+                free(old);
+                free(tmp);
+            } while (assign[strlen(assign) - 1] != ')');
+            free(tok);
+            tok = assign;
+            eq = strchr(tok, '=');
+        }
+        seg->assigns = realloc(seg->assigns,
+                               sizeof(char *) * (seg->assign_count + 1));
+        seg->assigns[seg->assign_count++] = tok;
+        if (eq) {
+            char *name = strndup(tok, eq - tok);
+            if (name) { set_temp_var(name, eq + 1); free(name); }
+        }
+        *tok_ptr = NULL;
+        return 1;
+    }
+
+    if (!quoted && *argc == 0) {
+        if (expand_aliases_in_segment(seg, argc, tok)) {
+            *tok_ptr = NULL;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
+    if (argc > 0 && strcmp(seg->argv[argc - 1], "&") == 0) {
+        *background = 1;
+        free(seg->argv[argc - 1]);
+        seg->argv[argc - 1] = NULL;
+    } else {
+        seg->argv[argc] = NULL;
+    }
+}
+
+static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc,
+                                  CmdOp *op_out) {
+    PipelineSegment *seg = *seg_ptr;
+    CmdOp op = OP_NONE;
+
+    while (**p && *argc < MAX_TOKENS - 1) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '\0' || **p == '#') { op = OP_NONE; break; }
+
+        if (**p == ';') { op = OP_SEMI; (*p)++; break; }
+        if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; break; }
+        if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; break; }
+
+        if (**p == '|') {
+            seg->argv[*argc] = NULL;
+            PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+            next->dup_out = -1;
+            next->dup_err = -1;
+            next->assigns = NULL;
+            next->assign_count = 0;
+            seg->next = next;
+            seg = next;
+            *seg_ptr = seg;
+            *argc = 0;
+            (*p)++;
+            clear_temp_vars();
+            continue;
+        }
+
+        if (**p == '<' && *(*p + 1) == '(') {
+            (*p)++; /* skip '<' */
+            char *path = process_substitution(p, 0);
+            if (!path) return -1;
+            seg->argv[(*argc)++] = path;
+            continue;
+        }
+        if (**p == '>' && *(*p + 1) == '(') {
+            (*p)++; /* skip '>' */
+            char *path = process_substitution(p, 1);
+            if (!path) return -1;
+            seg->argv[(*argc)++] = path;
+            continue;
+        }
+
+        int quoted = 0;
+        char *tok = read_token(p, &quoted);
+        if (getenv("VUSH_DEBUG"))
+            fprintf(stderr, "parse_pipeline token: '%s'\n",
+                    tok ? tok : "(null)");
+        if (!tok) return -1;
+
+        int h = handle_assignment_or_alias(seg, argc, p, &tok, quoted);
+        if (h == -1) { free(tok); return -1; }
+        if (h == 1) { if (tok) free(tok); continue; }
+
+        h = process_here_doc(seg, p, tok, quoted);
+        if (h == -1) { free(tok); return -1; }
+        if (h == 1) continue;
+
+        h = parse_redirection(seg, p, tok, quoted);
+        if (h == -1) { free(tok); return -1; }
+        if (h == 1) continue;
+
+        char **btoks = NULL;
+        int bcount = 0;
+        if (!quoted)
+            btoks = expand_braces(tok, &bcount);
+        if (!btoks) {
+            btoks = malloc(2 * sizeof(char *));
+            btoks[0] = tok;
+            btoks[1] = NULL;
+            bcount = 1;
+        } else {
+            free(tok);
+        }
+
+        for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
+            char *bt = btoks[bi];
+            if (!quoted && (strchr(bt, '*') || strchr(bt, '?'))) {
+                glob_t g;
+                int r = glob(bt, 0, NULL, &g);
+                if (r == 0 && g.gl_pathc > 0) {
+                    for (size_t gi = 0; gi < g.gl_pathc && *argc < MAX_TOKENS - 1; gi++)
+                        seg->argv[(*argc)++] = strdup(g.gl_pathv[gi]);
+                    free(bt);
+                    globfree(&g);
+                    continue;
+                }
+                globfree(&g);
+            }
+            seg->argv[(*argc)++] = bt;
+        }
+        free(btoks);
+    }
+
+    if (op_out) *op_out = op;
+    *seg_ptr = seg;
+    return 0;
+}
+
 /* Parse a command line into pipeline segments with alias expansion,
  * redirections, globbing and here-doc handling. */
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
@@ -931,133 +1084,12 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     int background = 0;
     CmdOp op = OP_NONE;
 
-    while (**p && argc < MAX_TOKENS - 1) {
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '\0' || **p == '#') { op = OP_NONE; break; }
-
-        if (**p == ';') { op = OP_SEMI; (*p)++; break; }
-        if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; break; }
-        if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; break; }
-
-        if (**p == '|') {
-            seg->argv[argc] = NULL;
-            PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
-            next->dup_out = -1;
-            next->dup_err = -1;
-            next->assigns = NULL;
-            next->assign_count = 0;
-            seg->next = next;
-            seg = next;
-            argc = 0;
-            (*p)++;
-            clear_temp_vars();
-            continue;
-        }
-
-        if (**p == '<' && *(*p + 1) == '(') {
-            (*p)++; /* skip '<' */
-            char *path = process_substitution(p, 0);
-            if (!path) { free_pipeline(seg_head); return NULL; }
-            seg->argv[argc++] = path;
-            continue;
-        }
-        if (**p == '>' && *(*p + 1) == '(') {
-            (*p)++; /* skip '>' */
-            char *path = process_substitution(p, 1);
-            if (!path) { free_pipeline(seg_head); return NULL; }
-            seg->argv[argc++] = path;
-            continue;
-        }
-
-        int quoted = 0;
-        char *tok = read_token(p, &quoted);
-        if (getenv("VUSH_DEBUG"))
-            fprintf(stderr, "parse_pipeline token: '%s'\n", tok ? tok : "(null)");
-        if (!tok) { free_pipeline(seg_head); return NULL; }
-
-        if (!quoted && argc == 0 && is_assignment(tok)) {
-            char *eq = strchr(tok, '=');
-            if (eq && eq[1] == '(' && tok[strlen(tok)-1] != ')') {
-                char *assign = strdup(tok);
-                char *tmp;
-                do {
-                    int q2 = 0;
-                    tmp = read_token(p, &q2);
-                    if (!tmp) { free(assign); free_pipeline(seg_head); return NULL; }
-                    char *old = assign;
-                    asprintf(&assign, "%s %s", assign, tmp);
-                    free(old);
-                    free(tmp);
-                } while (assign[strlen(assign)-1] != ')');
-                free(tok);
-                tok = assign;
-                eq = strchr(tok, '=');
-            }
-            seg->assigns = realloc(seg->assigns, sizeof(char *) * (seg->assign_count + 1));
-            seg->assigns[seg->assign_count++] = tok;
-            if (eq) {
-                char *name = strndup(tok, eq - tok);
-                if (name) { set_temp_var(name, eq + 1); free(name); }
-            }
-            continue;
-        }
-
-        if (!quoted && argc == 0) {
-            if (expand_aliases_in_segment(seg, &argc, tok))
-                continue;
-        }
-
-        int handled = process_here_doc(seg, p, tok, quoted);
-        if (handled == -1) { free_pipeline(seg_head); return NULL; }
-        if (handled == 1) {
-            continue;
-        }
-
-        handled = parse_redirection(seg, p, tok, quoted);
-        if (handled == -1) { free_pipeline(seg_head); return NULL; }
-        if (handled == 1) {
-            continue;
-        }
-
-        char **btoks = NULL;
-        int bcount = 0;
-        if (!quoted)
-            btoks = expand_braces(tok, &bcount);
-        if (!btoks) {
-            btoks = malloc(2 * sizeof(char *));
-            btoks[0] = tok;
-            btoks[1] = NULL;
-            bcount = 1;
-        } else {
-            free(tok);
-        }
-
-        for (int bi = 0; bi < bcount && argc < MAX_TOKENS - 1; bi++) {
-            char *bt = btoks[bi];
-            if (!quoted && (strchr(bt, '*') || strchr(bt, '?'))) {
-                glob_t g;
-                int r = glob(bt, 0, NULL, &g);
-                if (r == 0 && g.gl_pathc > 0) {
-                    for (size_t gi = 0; gi < g.gl_pathc && argc < MAX_TOKENS - 1; gi++)
-                        seg->argv[argc++] = strdup(g.gl_pathv[gi]);
-                    free(bt);
-                    globfree(&g);
-                    continue;
-                }
-                globfree(&g);
-            }
-            seg->argv[argc++] = bt;
-        }
-        free(btoks);
+    if (parse_pipeline_segment(p, &seg, &argc, &op) == -1) {
+        free_pipeline(seg_head);
+        return NULL;
     }
 
-    if (argc > 0 && strcmp(seg->argv[argc-1], "&") == 0) {
-        background = 1;
-        free(seg->argv[argc-1]);
-        seg->argv[argc-1] = NULL;
-    } else {
-        seg->argv[argc] = NULL;
-    }
+    finalize_segment(seg, argc, &background);
 
     Command *cmd = calloc(1, sizeof(Command));
     cmd->pipeline = seg_head;
