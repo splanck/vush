@@ -803,112 +803,143 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     return 1;
 }
 
-/* Handle <, >, 2>, &> style redirections */
-static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
-    if (quoted)
+/* Parse here-string redirection like '<<<word' */
+static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
+    if (!((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0))
         return 0;
-    if ((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0) {
-        if (strncmp(tok, "<<<", 3) == 0 && tok[3] == '<') {
-            free(tok);
-            return -1; /* malformed */
-        }
-        if (strcmp(tok, "<<") == 0 && **p == '<')
-            (*p)++; /* skip third '<' */
+    if (strncmp(tok, "<<<", 3) == 0 && tok[3] == '<') {
+        free(tok);
+        return -1; /* malformed */
+    }
+    if (strcmp(tok, "<<") == 0 && **p == '<')
+        (*p)++; /* skip third '<' */
+    while (**p == ' ' || **p == '\t') (*p)++;
+    char *word = NULL;
+    if (strncmp(tok, "<<<", 3) == 0 && tok[3]) {
+        word = strdup(tok + 3);
+    } else if (**p) {
+        int q = 0;
+        word = read_token(p, &q);
+        if (!word) { free(tok); return -1; }
+    } else {
+        word = strdup("");
+    }
+    char template[] = "/tmp/vushXXXXXX";
+    int fd = mkstemp(template);
+    if (fd < 0) { perror("mkstemp"); free(word); free(tok); return -1; }
+    FILE *tf = fdopen(fd, "w");
+    if (!tf) { perror("fdopen"); close(fd); unlink(template); free(word); free(tok); return -1; }
+    fprintf(tf, "%s", word);
+    fclose(tf);
+    seg->in_file = strdup(template);
+    seg->here_doc = 1;
+    free(word);
+    free(tok);
+    return 1;
+}
+
+/* Parse '<' input redirection */
+static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
+    if (strcmp(tok, "<") != 0)
+        return 0;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p) {
+        int q = 0;
+        seg->in_file = read_token(p, &q);
+        if (!seg->in_file) { free(tok); return -1; }
+    }
+    free(tok);
+    return 1;
+}
+
+/* Parse '>' or '>>' output redirection */
+static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
+    if (!(strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0))
+        return 0;
+    seg->append = (tok[1] == '>');
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p == '&') {
+        (*p)++;
         while (**p == ' ' || **p == '\t') (*p)++;
-        char *word = NULL;
-        if (strncmp(tok, "<<<", 3) == 0 && tok[3]) {
-            word = strdup(tok + 3);
+        if (isdigit(**p)) {
+            seg->dup_out = strtol(*p, p, 10);
         } else if (**p) {
-            int q = 0;
-            word = read_token(p, &q);
-            if (!word) { free(tok); return -1; }
-        } else {
-            word = strdup("");
-        }
-        char template[] = "/tmp/vushXXXXXX";
-        int fd = mkstemp(template);
-        if (fd < 0) { perror("mkstemp"); free(word); free(tok); return -1; }
-        FILE *tf = fdopen(fd, "w");
-        if (!tf) { perror("fdopen"); close(fd); unlink(template); free(word); free(tok); return -1; }
-        fprintf(tf, "%s", word);
-        fclose(tf);
-        seg->in_file = strdup(template);
-        seg->here_doc = 1;
-        free(word);
-        free(tok);
-        return 1;
-    }
-    if (strcmp(tok, "<") == 0) {
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p) {
-            int q = 0;
-            seg->in_file = read_token(p, &q);
-            if (!seg->in_file) { free(tok); return -1; }
-        }
-        free(tok);
-        return 1;
-    }
-    if (strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0) {
-        seg->append = (tok[1] == '>');
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '&') {
-            (*p)++;
-            while (**p == ' ' || **p == '\t') (*p)++;
-            if (isdigit(**p)) {
-                seg->dup_out = strtol(*p, p, 10);
-            } else if (**p) {
-                int q = 0;
-                char *file = read_token(p, &q);
-                if (!file) { free(tok); return -1; }
-                seg->out_file = file;
-                seg->err_file = file;
-                seg->err_append = seg->append;
-            }
-        } else if (**p) {
-            int q = 0;
-            seg->out_file = read_token(p, &q);
-            if (!seg->out_file) { free(tok); return -1; }
-        }
-        free(tok);
-        return 1;
-    }
-    if (strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0) {
-        seg->err_append = (tok[2] == '>');
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '&') {
-            (*p)++;
-            while (**p == ' ' || **p == '\t') (*p)++;
-            if (isdigit(**p)) {
-                seg->dup_err = strtol(*p, p, 10);
-            } else if (**p) {
-                int q = 0;
-                char *file = read_token(p, &q);
-                if (!file) { free(tok); return -1; }
-                seg->err_file = file;
-            }
-        } else if (**p) {
-            int q = 0;
-            seg->err_file = read_token(p, &q);
-            if (!seg->err_file) { free(tok); return -1; }
-        }
-        free(tok);
-        return 1;
-    }
-    if (strcmp(tok, "&>") == 0 || strcmp(tok, "&>>") == 0) {
-        int app = (tok[2] == '>');
-        seg->append = app;
-        seg->err_append = app;
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p) {
             int q = 0;
             char *file = read_token(p, &q);
             if (!file) { free(tok); return -1; }
             seg->out_file = file;
             seg->err_file = file;
+            seg->err_append = seg->append;
         }
-        free(tok);
-        return 1;
+    } else if (**p) {
+        int q = 0;
+        seg->out_file = read_token(p, &q);
+        if (!seg->out_file) { free(tok); return -1; }
     }
+    free(tok);
+    return 1;
+}
+
+/* Parse '2>' or '2>>' error redirection */
+static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
+    if (!(strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0))
+        return 0;
+    seg->err_append = (tok[2] == '>');
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p == '&') {
+        (*p)++;
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (isdigit(**p)) {
+            seg->dup_err = strtol(*p, p, 10);
+        } else if (**p) {
+            int q = 0;
+            char *file = read_token(p, &q);
+            if (!file) { free(tok); return -1; }
+            seg->err_file = file;
+        }
+    } else if (**p) {
+        int q = 0;
+        seg->err_file = read_token(p, &q);
+        if (!seg->err_file) { free(tok); return -1; }
+    }
+    free(tok);
+    return 1;
+}
+
+/* Parse '&>' or '&>>' combined redirection */
+static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
+    if (!(strcmp(tok, "&>") == 0 || strcmp(tok, "&>>") == 0))
+        return 0;
+    int app = (tok[2] == '>');
+    seg->append = app;
+    seg->err_append = app;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p) {
+        int q = 0;
+        char *file = read_token(p, &q);
+        if (!file) { free(tok); return -1; }
+        seg->out_file = file;
+        seg->err_file = file;
+    }
+    free(tok);
+    return 1;
+}
+
+/* Handle <, >, 2>, &> style redirections */
+static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
+    if (quoted)
+        return 0;
+    int r;
+    r = parse_here_string(seg, p, tok);
+    if (r) return r;
+    r = parse_input_redirect(seg, p, tok);
+    if (r) return r;
+    r = parse_output_redirect(seg, p, tok);
+    if (r) return r;
+    r = parse_error_redirect(seg, p, tok);
+    if (r) return r;
+    r = parse_combined_redirect(seg, p, tok);
+    if (r) return r;
     return 0;
 }
 
