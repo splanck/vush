@@ -5,6 +5,9 @@ All notable changes to **vush** will be documented in this file.
 ## 1.2.0 - Additional shell options
 - Added `pipefail` and `noclobber` options via `set -o`
 
+## 1.3.0 - Extended history expansion
+- History expansion now understands `!n`, `!-n`, `!$` and `!*` forms
+
 ## 1.1.0 - Menu selection loop
 - Added `select` command for interactive menus
 

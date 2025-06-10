@@ -752,13 +752,50 @@ char *expand_history(const char *line) {
         return strdup(line);
     const char *bang = p;
     const char *rest;
-    const char *expansion = NULL;
+    char *expansion = NULL;
     char pref[MAX_LINE];
     if (p[1] == '!' && (p[2] == '\0' || isspace((unsigned char)p[2]))) {
-        expansion = history_last();
+        const char *tmp = history_last();
+        if (tmp)
+            expansion = strdup(tmp);
         rest = p + 2;
         if (!expansion) {
             fprintf(stderr, "history: event not found\n");
+            last_status = 1;
+            return NULL;
+        }
+    } else if (isdigit((unsigned char)p[1]) ||
+               (p[1] == '-' && isdigit((unsigned char)p[2]))) {
+        int neg = (p[1] == '-');
+        p += neg ? 2 : 1;
+        int n = 0;
+        while (isdigit((unsigned char)*p) && n < MAX_LINE - 1)
+            pref[n++] = *p++;
+        pref[n] = '\0';
+        rest = p;
+        int id = atoi(pref);
+        const char *tmp = neg ? history_get_relative(id + 1) : history_get_by_id(id);
+        if (tmp)
+            expansion = strdup(tmp);
+        if (!expansion) {
+            fprintf(stderr, "history: event not found: %s%s\n", neg ? "-" : "",
+                    pref);
+            last_status = 1;
+            return NULL;
+        }
+    } else if (p[1] == '$' && (p[2] == '\0' || isspace((unsigned char)p[2]))) {
+        expansion = history_last_word();
+        rest = p + 2;
+        if (!expansion) {
+            fprintf(stderr, "history: event not found: $\n");
+            last_status = 1;
+            return NULL;
+        }
+    } else if (p[1] == '*' && (p[2] == '\0' || isspace((unsigned char)p[2]))) {
+        expansion = history_all_words();
+        rest = p + 2;
+        if (!expansion) {
+            fprintf(stderr, "history: event not found: *\n");
             last_status = 1;
             return NULL;
         }
@@ -768,7 +805,9 @@ char *expand_history(const char *line) {
         while (*p && !isspace((unsigned char)*p) && n < MAX_LINE - 1)
             pref[n++] = *p++;
         pref[n] = '\0';
-        expansion = history_find_prefix(pref);
+        const char *tmp = history_find_prefix(pref);
+        if (tmp)
+            expansion = strdup(tmp);
         rest = p;
         if (!expansion) {
             fprintf(stderr, "history: event not found: %s\n", pref);
@@ -785,6 +824,7 @@ char *expand_history(const char *line) {
     memcpy(res, line, pre_len);
     memcpy(res + pre_len, expansion, exp_len);
     memcpy(res + pre_len + exp_len, rest, rest_len + 1);
+    free(expansion);
     return res;
 }
 

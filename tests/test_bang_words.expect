@@ -1,0 +1,26 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo foo bar\r"
+expect {
+    -re "[\r\n]+foo bar[\r\n]+vush> " {}
+    timeout { send_user "echo foo bar failed\n"; exit 1 }
+}
+send "!$\r"
+expect {
+    -re "[\r\n]+bar: command not found[\r\n]+vush> " {}
+    timeout { send_user "bang last word failed\n"; exit 1 }
+}
+send "echo one two\r"
+expect {
+    -re "[\r\n]+one two[\r\n]+vush> " {}
+    timeout { send_user "echo one two failed\n"; exit 1 }
+}
+send "!*\r"
+expect {
+    -re "[\r\n]+one: command not found[\r\n]+vush> " {}
+    timeout { send_user "bang all words failed\n"; exit 1 }
+}
+send "exit\r"
+expect eof

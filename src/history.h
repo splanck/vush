@@ -57,4 +57,16 @@ const char *history_last(void);
 /* Find the most recent entry starting with PREFIX or return NULL. */
 const char *history_find_prefix(const char *prefix);
 
+/* Retrieve a command by absolute identifier or NULL if not present. */
+const char *history_get_by_id(int id);
+
+/* Return the OFFSET-th previous command where 1 is the last entry. */
+const char *history_get_relative(int offset);
+
+/* Obtain the last argument of the most recent command. Caller must free. */
+char *history_last_word(void);
+
+/* Obtain all arguments from the most recent command. Caller must free. */
+char *history_all_words(void);
+
 #endif /* HISTORY_H */
