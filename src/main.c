@@ -38,6 +38,10 @@ int opt_xtrace = 0;
 int opt_pipefail = 0;
 int opt_noclobber = 0;
 
+static void process_startup_file(FILE *input);
+static void run_command_string(const char *cmd);
+static void repl_loop(FILE *input);
+
 void trap_handler(int sig)
 {
     if (sig <= 0 || sig >= NSIG)
@@ -67,9 +71,153 @@ void trap_handler(int sig)
     parse_input = prev;
 }
 
-int main(int argc, char **argv) {
+static void process_startup_file(FILE *input)
+{
+    const char *home = getenv("HOME");
+    if (!home)
+        return;
+    char rcpath[PATH_MAX];
+    snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
+    FILE *rc = fopen(rcpath, "r");
+    if (!rc)
+        return;
+
+    char rcline[MAX_LINE];
+    while (read_logical_line(rc, rcline, sizeof(rcline))) {
+        char *exp = expand_history(rcline);
+        if (!exp)
+            continue;
+        parse_input = rc;
+        Command *cmds = parse_line(exp);
+        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+            free_commands(cmds);
+            if (exp != rcline)
+                free(exp);
+            continue;
+        }
+
+        add_history(rcline);
+
+        CmdOp prev = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prev == OP_AND)
+                    run = (last_status == 0);
+                else if (prev == OP_OR)
+                    run = (last_status != 0);
+            }
+            if (run)
+                run_pipeline(c, exp);
+            prev = c->op;
+        }
+        free_commands(cmds);
+        if (exp != rcline)
+            free(exp);
+    }
+    fclose(rc);
+    parse_input = input;
+}
+
+static void run_command_string(const char *cmd)
+{
+    char linebuf[MAX_LINE];
+    strncpy(linebuf, cmd, sizeof(linebuf) - 1);
+    linebuf[sizeof(linebuf) - 1] = '\0';
+    char *line = linebuf;
+
+    char *expanded = expand_history(line);
+    if (!expanded)
+        return;
+
+    parse_input = stdin;
+    Command *cmds = parse_line(expanded);
+    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+        add_history(line);
+
+        CmdOp prev = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prev == OP_AND)
+                    run = (last_status == 0);
+                else if (prev == OP_OR)
+                    run = (last_status != 0);
+            }
+            if (run)
+                run_pipeline(c, expanded);
+            prev = c->op;
+        }
+    }
+    free_commands(cmds);
+    if (expanded != line)
+        free(expanded);
+}
+
+static void repl_loop(FILE *input)
+{
     char linebuf[MAX_LINE];
     char *line;
+    int interactive = (input == stdin);
+
+    while (1) {
+        check_jobs();
+        if (interactive) {
+            const char *ps = getenv("PS1");
+            char *prompt = expand_prompt(ps ? ps : "vush> ");
+            history_reset_cursor();
+            line = line_edit(prompt);
+            free(prompt);
+            if (!line)
+                break;
+        } else {
+            if (!read_logical_line(input, linebuf, sizeof(linebuf)))
+                break;
+            line = linebuf;
+        }
+
+        char *expanded = expand_history(line);
+        if (!expanded) {
+            if (line != linebuf)
+                free(line);
+            continue;
+        }
+
+        parse_input = input;
+        Command *cmds = parse_line(expanded);
+        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+            free_commands(cmds);
+            if (expanded != line)
+                free(expanded);
+            if (line != linebuf)
+                free(line);
+            continue;
+        }
+
+        add_history(line);
+
+        CmdOp prev = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prev == OP_AND)
+                    run = (last_status == 0);
+                else if (prev == OP_OR)
+                    run = (last_status != 0);
+            }
+            if (run)
+                run_pipeline(c, expanded);
+            prev = c->op;
+        }
+        free_commands(cmds);
+        if (expanded != line)
+            free(expanded);
+        if (line != linebuf)
+            free(line);
+    }
+}
+
+int main(int argc, char **argv) {
 
     FILE *input = stdin;
     char *dash_c = NULL;
@@ -101,8 +249,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    int interactive = (input == stdin && !dash_c);
-
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
 
@@ -110,130 +256,12 @@ int main(int argc, char **argv) {
     load_aliases();
     load_functions();
 
-    /* Execute commands from ~/.vushrc if present */
-    const char *home = getenv("HOME");
-    if (home) {
-        char rcpath[PATH_MAX];
-        snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
-        FILE *rc = fopen(rcpath, "r");
-        if (rc) {
-            char rcline[MAX_LINE];
-            while (read_logical_line(rc, rcline, sizeof(rcline))) {
+    process_startup_file(input);
 
-                char *exp = expand_history(rcline);
-                if (!exp)
-                    continue;
-                parse_input = rc;
-                Command *cmds = parse_line(exp);
-                if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
-                    free_commands(cmds);
-                    if (exp != rcline)
-                        free(exp);
-                    continue;
-                }
-
-                add_history(rcline);
-
-                CmdOp prev = OP_SEMI;
-                for (Command *c = cmds; c; c = c->next) {
-                    int run = 1;
-                    if (c != cmds) {
-                        if (prev == OP_AND)
-                            run = (last_status == 0);
-                        else if (prev == OP_OR)
-                            run = (last_status != 0);
-                    }
-                    if (run)
-                        run_pipeline(c, exp);
-                    prev = c->op;
-                }
-                free_commands(cmds);
-                if (exp != rcline)
-                    free(exp);
-            }
-            fclose(rc);
-            parse_input = input;
-        }
-    }
-
-    if (dash_c) {
-        strncpy(linebuf, dash_c, sizeof(linebuf) - 1);
-        linebuf[sizeof(linebuf) - 1] = '\0';
-        line = linebuf;
-
-        char *expanded = expand_history(line);
-        if (expanded) {
-            parse_input = input;
-            Command *cmds = parse_line(expanded);
-            if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
-                add_history(line);
-
-                CmdOp prev = OP_SEMI;
-                for (Command *c = cmds; c; c = c->next) {
-                    int run = 1;
-                    if (c != cmds) {
-                        if (prev == OP_AND)
-                            run = (last_status == 0);
-                        else if (prev == OP_OR)
-                            run = (last_status != 0);
-                    }
-                    if (run)
-                        run_pipeline(c, expanded);
-                    prev = c->op;
-                }
-            }
-            free_commands(cmds);
-            if (expanded != line)
-                free(expanded);
-        }
-    } else while (1) {
-        check_jobs();
-        if (interactive) {
-            const char *ps = getenv("PS1");
-            char *prompt = expand_prompt(ps ? ps : "vush> ");
-            history_reset_cursor();
-            line = line_edit(prompt);
-            free(prompt);
-            if (!line) break;
-        } else {
-            if (!read_logical_line(input, linebuf, sizeof(linebuf))) break;
-            line = linebuf;
-        }
-        char *expanded = expand_history(line);
-        if (!expanded) {
-            if (line != linebuf)
-                free(line);
-            continue;
-        }
-        parse_input = input;
-        Command *cmds = parse_line(expanded);
-        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
-            free_commands(cmds);
-            if (expanded != line)
-                free(expanded);
-            continue;
-        }
-        add_history(line);
-
-        CmdOp prev = OP_SEMI;
-        for (Command *c = cmds; c; c = c->next) {
-            int run = 1;
-            if (c != cmds) {
-                if (prev == OP_AND)
-                    run = (last_status == 0);
-                else if (prev == OP_OR)
-                    run = (last_status != 0);
-            }
-            if (run)
-                run_pipeline(c, expanded);
-            prev = c->op;
-        }
-        free_commands(cmds);
-        if (expanded != line)
-            free(expanded);
-        if (line != linebuf)
-            free(line);
-    }
+    if (dash_c)
+        run_command_string(dash_c);
+    else
+        repl_loop(input);
     if (input != stdin)
         fclose(input);
     free(script_argv);
