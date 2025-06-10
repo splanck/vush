@@ -1,5 +1,15 @@
 /*
  * Low-level pipeline execution primitives.
+ *
+ * Each pipeline is a linked list of PipelineSegment structures.  The
+ * execution engine walks this list and forks a child process for every
+ * segment.  When a segment is not the final one, a new pipe is created so
+ * that the child's stdout feeds into the next segment's stdin.  The parent
+ * retains the read end of that pipe and passes it to the next fork.  In the
+ * child process unused pipe ends are closed, redirections are applied and the
+ * command is executed.  After all segments have been spawned,
+ * wait_for_pipeline() either waits for the children to finish or registers the
+ * job for background execution.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -18,6 +28,13 @@ extern int last_status;
 
 extern void setup_redirections(PipelineSegment *seg);
 
+/*
+ * Configure the child's standard input and output.
+ *
+ * If 'in_fd' is valid it becomes the child's stdin.  When the segment has a
+ * successor, 'pipefd' is the pipe whose write end should be connected to
+ * stdout.  All unused pipe ends are closed to avoid descriptor leaks.
+ */
 void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
     if (in_fd != -1) {
         dup2(in_fd, STDIN_FILENO);
@@ -31,8 +48,13 @@ void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
 }
 
 /*
- * Fork a process for one segment of the pipeline and set up pipes
- * and redirections before executing the command.
+ * Fork a child process for one pipeline segment.
+ *
+ * A pipe is created when the segment has a successor.  The child installs
+ * the appropriate pipe ends using setup_child_pipes(), applies any I/O
+ * redirections and exports temporary assignments before executing the
+ * command.  The parent's copy of 'in_fd' is updated with the read end of the
+ * pipe so the next segment can consume it.
  */
 pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
     if (!seg->argv[0] || seg->argv[0][0] == '\0') {
@@ -91,8 +113,13 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
 }
 
 /*
- * Wait for all pipeline processes to finish or add the job to the
- * background list when requested.
+ * Wait for all processes spawned for a pipeline.
+ *
+ * If 'background' is true the last process is recorded in the job list and
+ * the function returns immediately.  Otherwise each child's status is
+ * collected in order.  The pipefail option is honoured when computing
+ * last_status and the shell exits early if opt_errexit is set and the final
+ * status is non-zero.
  */
 void wait_for_pipeline(pid_t *pids, int count, int background, const char *line) {
     int status = 0;
