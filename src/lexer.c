@@ -407,8 +407,36 @@ char *expand_var(const char *token) {
                 name[n++] = *p++;
             name[n] = '\0';
 
-            const char *val = get_shell_var(name);
-            if (!val) val = getenv(name);
+            const char *val = NULL;
+            char *lb = strchr(name, '[');
+            if (lb && name[strlen(name)-1] == ']') {
+                *lb = '\0';
+                char *idxstr = lb + 1;
+                idxstr[strlen(idxstr)-1] = '\0';
+                if (strcmp(idxstr, "@") == 0) {
+                    int alen = 0; char **arr = get_shell_array(name, &alen);
+                    if (arr) {
+                        size_t tlen = 0; for(int ai=0; ai<alen; ai++) tlen += strlen(arr[ai]) + 1;
+                        char *joined = malloc(tlen+1); if(joined){ joined[0]='\0'; for(int ai=0; ai<alen; ai++){ strcat(joined, arr[ai]); if(ai<alen-1) strcat(joined, " "); }}
+                        return joined ? joined : strdup("");
+                    }
+                    val = getenv(name);
+                    if (!val) val = "";
+                    char *ret = strdup(val);
+                    return ret;
+                } else {
+                    int idx = atoi(idxstr);
+                    int alen = 0; char **arr = get_shell_array(name, &alen);
+                    if (arr && idx >=0 && idx < alen) return strdup(arr[idx]);
+                    val = getenv(name);
+                    if (!val) val = "";
+                    *lb='['; // restore
+                    return strdup(val);
+                }
+            } else {
+                val = get_shell_var(name);
+                if (!val) val = getenv(name);
+            }
 
             if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
                 char op = p[1];

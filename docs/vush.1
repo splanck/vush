@@ -46,6 +46,9 @@ by spaces and \$# expands to the number of parameters.  The
 Words of the form \fBNAME=value\fP appearing before a command are added to that
 command's environment only.  Using the same syntax without a command creates a
 shell variable that persists but is not exported.
+.PP
+Arrays are created with \fBNAME=(word ...)\fP. Elements are referenced with
+\fB${NAME[index]}\fP and all elements with \fB${NAME[@]}\fP.
 .SH PARAMETER EXPANSION
 Several forms modify how variables are expanded:
 .EX
