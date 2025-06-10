@@ -55,6 +55,30 @@ int builtin_exit(char **args) {
     exit(status);
 }
 
+/* No-op builtin that always succeeds. */
+int builtin_colon(char **args)
+{
+    (void)args;
+    last_status = 0;
+    return 1;
+}
+
+/* Always succeed and set status to 0. */
+int builtin_true(char **args)
+{
+    (void)args;
+    last_status = 0;
+    return 1;
+}
+
+/* Always fail and set status to 1. */
+int builtin_false(char **args)
+{
+    (void)args;
+    last_status = 1;
+    return 1;
+}
+
 /* Display the command history or modify it with -c to clear or -d N to
  * delete a specific entry. */
 int builtin_history(char **args) {
@@ -286,6 +310,9 @@ int builtin_help(char **args) {
     printf("  printf FORMAT [ARGS]  Print formatted text\n");
     printf("  dirs       Display the directory stack\n");
     printf("  exit [status]  Exit the shell with optional status\n");
+    printf("  :          Do nothing and return success\n");
+    printf("  true       Return a successful status\n");
+    printf("  false      Return a failure status\n");
     printf("  pwd        Print the current working directory\n");
     printf("  jobs       List running background jobs\n");
     printf("  fg ID      Wait for job ID in foreground\n");
