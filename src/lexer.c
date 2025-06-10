@@ -1,4 +1,7 @@
-/* Lexical utilities and expansions */
+/*
+ * Lexical utilities used by the parser.  These helpers implement shell
+ * tokenization along with variable and command expansion facilities.
+ */
 #define _GNU_SOURCE
 #include "lexer.h"
 #include "history.h"
@@ -17,6 +20,10 @@
 
 extern int last_status;
 
+/*
+ * Execute CMD via popen and return its stdout output as a newly
+ * allocated string with any trailing newline removed.
+ */
 static char *command_output(const char *cmd) {
     FILE *fp = popen(cmd, "r");
     if (!fp) return strdup("");
@@ -32,6 +39,11 @@ static char *command_output(const char *cmd) {
     return strdup(out);
 }
 
+/*
+ * Parse a command substitution starting at *p.  Supports both $(...) and
+ * backtick forms.  On success *p is advanced past the closing delimiter and
+ * the command's output is returned.  NULL is returned on syntax errors.
+ */
 static char *parse_substitution(char **p) {
     int depth = 0;
     int is_dollar = (**p == '$');
@@ -72,6 +84,11 @@ static char *parse_substitution(char **p) {
     return command_output(cmd);
 }
 
+/*
+ * If *p points at a redirection or control operator, extract the operator
+ * token and advance *p.  Returns the allocated token string or NULL when
+ * no operator is found.
+ */
 static char *parse_redirect_token(char **p) {
     char buf[MAX_LINE];
     int len = 0;
@@ -138,6 +155,12 @@ static char *parse_redirect_token(char **p) {
     return NULL;
 }
 
+/*
+ * Consume a backslash escape from *p and append the escaped character to BUF.
+ * FIRST indicates whether this is the first character of the token and thus
+ * controls whether variable expansion should occur. DO_EXPAND is updated
+ * accordingly.
+ */
 static void handle_backslash_escape(char **p, char buf[], int *len,
                                    int *first, int *do_expand) {
     (*p)++;
@@ -152,6 +175,11 @@ static void handle_backslash_escape(char **p, char buf[], int *len,
     *first = 0;
 }
 
+/*
+ * Perform command substitution at *p and append the resulting text to BUF.
+ * LEN tracks the number of bytes currently in BUF.  Returns 0 on success or
+ * -1 on syntax errors.
+ */
 static int expand_substitution(char **p, char buf[], int *len) {
     char *res = parse_substitution(p);
     if (!res)
@@ -162,15 +190,23 @@ static int expand_substitution(char **p, char buf[], int *len) {
     return 0;
 }
 
+/* Return non-zero when character C terminates an unquoted token. */
 static int is_end_unquoted(int c) {
     return c == ' ' || c == '\t' || c == '|' || c == '<' ||
            c == '>' || c == '&' || c == ';';
 }
 
+/* Return non-zero when character C terminates a double quoted token. */
 static int is_end_dquote(int c) {
     return c == '"';
 }
 
+/*
+ * Read characters for a simple token using IS_END as the terminator predicate.
+ * Expansion and substitution are performed as characters are copied into BUF
+ * and LEN updated. DO_EXPAND is set to zero when quoting prevents expansion.
+ * Returns 0 on success or -1 on errors.
+ */
 static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                              int *len, int *do_expand) {
     int first = 1;
@@ -240,6 +276,11 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
     return 0;
 }
 
+/*
+ * Parse a single or double quoted word starting at *p.  The QUOTED flag is
+ * set and DO_EXPAND_OUT receives whether expansion should occur.  Returns the
+ * resulting allocated string or NULL on syntax errors.
+ */
 static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
     char buf[MAX_LINE];
     int len = 0;
@@ -273,6 +314,11 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
     return do_expand ? expand_var(buf) : strdup(buf);
 }
 
+/*
+ * Read the next shell token from *p performing necessary expansions.
+ * QUOTED is set when the token was quoted.  The returned string is
+ * dynamically allocated and *p is advanced past the token.
+ */
 char *read_token(char **p, int *quoted) {
     char buf[MAX_LINE];
     int len = 0;
@@ -294,6 +340,8 @@ char *read_token(char **p, int *quoted) {
 }
 
 /* -- Expansion helper functions --------------------------------------- */
+
+/* Expand ~ or ~user to the appropriate home directory path. */
 
 static char *expand_tilde(const char *token) {
     const char *rest = token + 1;
@@ -320,6 +368,7 @@ static char *expand_tilde(const char *token) {
     return ret;
 }
 
+/* Evaluate an arithmetic expansion token $((expr)) and return its value. */
 static char *expand_arith(const char *token) {
     size_t tlen = strlen(token);
     if (!(tlen > 4 && strncmp(token, "$((", 3) == 0 &&
@@ -334,6 +383,10 @@ static char *expand_arith(const char *token) {
     return strdup(buf);
 }
 
+/*
+ * Expand NAME[IDX] style references.  IDX may be '@' to join all elements.
+ * Falls back to environment variables when the shell array is unset.
+ */
 static char *expand_array_element(const char *name, const char *idxstr) {
     if (strcmp(idxstr, "@") == 0) {
         int alen = 0; char **arr = get_shell_array(name, &alen);
@@ -366,6 +419,12 @@ static char *expand_array_element(const char *name, const char *idxstr) {
     }
 }
 
+/*
+ * Apply parameter expansion modifiers contained in P to VAL.  Handles
+ * operations such as default values, assignment, removal of prefixes or
+ * suffixes, and others used in ${NAMEMOD}.  NAME is used for error messages
+ * and assignments.
+ */
 static char *apply_modifier(const char *name, const char *val, const char *p) {
     if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
         char op = p[1];
@@ -437,6 +496,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
     }
 }
 
+/* Expand ${#NAME} to the length of NAME's value. */
 static char *expand_length(const char *name) {
     const char *val = get_shell_var(name);
     if (!val) val = getenv(name);
@@ -452,6 +512,10 @@ static char *expand_length(const char *name) {
     return strdup(buf);
 }
 
+/*
+ * Expand a ${...} expression contained in INNER.  Handles array indexing,
+ * length expansion and parameter modifiers.
+ */
 static char *expand_braced(const char *inner) {
     if (inner[0] == '#')
         return expand_length(inner + 1);
@@ -488,6 +552,9 @@ static char *expand_braced(const char *inner) {
     return strdup(val);
 }
 
+/*
+ * Expand special parameters such as $?, $#, $@, $*, and positional arguments.
+ */
 static char *expand_special(const char *token) {
     if (strcmp(token, "$?") == 0) {
         char buf[16];
@@ -561,6 +628,7 @@ static char *expand_special(const char *token) {
     return NULL;
 }
 
+/* Expand a normal variable name to its value or an empty string. */
 static char *expand_plain_var(const char *name) {
     const char *val = get_shell_var(name);
     if (!val) val = getenv(name);
@@ -574,6 +642,11 @@ static char *expand_plain_var(const char *name) {
     return strdup(val);
 }
 
+/*
+ * Expand a TOKEN that may contain variable, arithmetic, tilde or
+ * parameter expansion syntax.  Returns a newly allocated string with the
+ * result of the expansion.
+ */
 char *expand_var(const char *token) {
     char *s = expand_special(token);
     if (s)
@@ -602,6 +675,10 @@ char *expand_var(const char *token) {
     return expand_plain_var(token + 1);
 }
 
+/*
+ * Perform history expansion on LINE when it begins with '!'.  Returns a new
+ * string with the expansion applied or NULL on error.
+ */
 char *expand_history(const char *line) {
     const char *p = line;
     while (*p == ' ' || *p == '\t')
@@ -754,6 +831,10 @@ char **expand_braces(const char *word, int *count_out) {
     return res;
 }
 
+/*
+ * Expand escape sequences and variables found in PROMPT using the normal
+ * token expansion logic.  A new string is returned.
+ */
 char *expand_prompt(const char *prompt) {
     if (!prompt)
         return strdup("");
