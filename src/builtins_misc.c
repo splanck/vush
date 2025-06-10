@@ -319,6 +319,7 @@ int builtin_help(char **args) {
     printf("  bg ID      Continue job ID in background\n");
     printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
     printf("  export NAME=value   Set an environment variable\n");
+    printf("  readonly NAME[=VALUE]  Mark variable as read-only\n");
     printf("  unset NAME          Remove an environment variable\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  alias NAME=VALUE    Set an alias\n");
