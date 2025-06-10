@@ -13,7 +13,7 @@ environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
 wildcard matching for '*' and '?', input and output redirection with
-\'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", and background jobs.  When a
+\'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", process substitution using \fB<(cmd)\fP and \fB>(cmd)\fP, and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.

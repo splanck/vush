@@ -11,6 +11,7 @@
 #include "util.h"
 #include "lexer.h"
 #include "arith.h"
+#include "execute.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,6 +19,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 #include "scriptargs.h"
 #include "options.h"
@@ -27,6 +30,37 @@ FILE *parse_input = NULL;
 
 struct temp_var { char *name; char *value; struct temp_var *next; };
 static struct temp_var *temp_vars = NULL;
+
+struct proc_sub {
+    char *path;
+    pid_t pid;
+    struct proc_sub *next;
+};
+static struct proc_sub *proc_subs = NULL;
+
+static void add_proc_sub(const char *path, pid_t pid) {
+    struct proc_sub *ps = malloc(sizeof(struct proc_sub));
+    if (!ps) return;
+    ps->path = strdup(path);
+    ps->pid = pid;
+    ps->next = proc_subs;
+    proc_subs = ps;
+}
+
+void cleanup_proc_subs(void) {
+    struct proc_sub *ps = proc_subs;
+    while (ps) {
+        struct proc_sub *n = ps->next;
+        if (ps->pid > 0)
+            waitpid(ps->pid, NULL, 0);
+        if (ps->path)
+            unlink(ps->path);
+        free(ps->path);
+        free(ps);
+        ps = n;
+    }
+    proc_subs = NULL;
+}
 
 static void set_temp_var(const char *name, const char *value) {
     for (struct temp_var *v = temp_vars; v; v = v->next) {
@@ -186,6 +220,57 @@ static char *gather_parens(char **p) {
         (*p)++;
     }
     return NULL;
+}
+
+static char *process_substitution(char **p, int read_from) {
+    char *body = gather_parens(p);
+    if (!body)
+        return NULL;
+    char template[] = "/tmp/vushpsXXXXXX";
+    int fd = mkstemp(template);
+    if (fd < 0) {
+        perror("mkstemp");
+        free(body);
+        return NULL;
+    }
+    close(fd);
+    unlink(template);
+    if (mkfifo(template, 0600) != 0) {
+        perror("mkfifo");
+        free(body);
+        return NULL;
+    }
+    char *copy = strdup(body);
+    Command *cmd = NULL;
+    if (copy)
+        cmd = parse_line(copy);
+    free(copy);
+    if (!cmd) {
+        unlink(template);
+        free(body);
+        return NULL;
+    }
+    pid_t pid = fork();
+    if (pid == 0) {
+        signal(SIGINT, SIG_DFL);
+        int f = open(template, read_from ? O_RDONLY : O_WRONLY);
+        if (f < 0) { perror(template); exit(1); }
+        if (read_from)
+            dup2(f, STDIN_FILENO);
+        else
+            dup2(f, STDOUT_FILENO);
+        close(f);
+        run_command_list(cmd, body);
+        exit(last_status);
+    } else if (pid > 0) {
+        add_proc_sub(template, pid);
+    } else {
+        perror("fork");
+        unlink(template);
+    }
+    free_commands(cmd);
+    free(body);
+    return strdup(template);
 }
 /*
  * Parse an if/elif/else clause recursively.
@@ -763,6 +848,21 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
             argc = 0;
             (*p)++;
             clear_temp_vars();
+            continue;
+        }
+
+        if (**p == '<' && *(*p + 1) == '(') {
+            (*p)++; /* skip '<' */
+            char *path = process_substitution(p, 0);
+            if (!path) { free_pipeline(seg_head); return NULL; }
+            seg->argv[argc++] = path;
+            continue;
+        }
+        if (**p == '>' && *(*p + 1) == '(') {
+            (*p)++; /* skip '>' */
+            char *path = process_substitution(p, 1);
+            if (!path) { free_pipeline(seg_head); return NULL; }
+            seg->argv[argc++] = path;
             continue;
         }
 
