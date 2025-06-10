@@ -61,32 +61,23 @@ int builtin_history(char **args) {
     return 1;
 }
 
-int builtin_source(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: source file [args...]\n");
-        return 1;
-    }
+static int prepare_source_args(char **args, int *old_argc, char ***old_argv,
+                               int *new_argc)
+{
+    *old_argc = script_argc;
+    *old_argv = script_argv;
 
-    FILE *prev_input = parse_input;
-    FILE *input = fopen(args[1], "r");
-    if (!input) {
-        perror(args[1]);
-        return 1;
-    }
-
-    int old_argc = script_argc;
-    char **old_argv = script_argv;
     int argc = 0;
     for (int i = 1; args[i]; i++)
         argc++;
-    int new_argc = argc - 1;
-    script_argc = new_argc;
+    *new_argc = argc - 1;
+
+    script_argc = *new_argc;
     script_argv = calloc(argc + 1, sizeof(char *));
     if (!script_argv) {
-        script_argc = old_argc;
-        script_argv = old_argv;
-        fclose(input);
-        return 1;
+        script_argc = *old_argc;
+        script_argv = *old_argv;
+        return -1;
     }
     for (int i = 0; i < argc; i++) {
         script_argv[i] = strdup(args[i + 1]);
@@ -94,15 +85,26 @@ int builtin_source(char **args) {
             for (int j = 0; j < i; j++)
                 free(script_argv[j]);
             free(script_argv);
-            script_argc = old_argc;
-            script_argv = old_argv;
-            fclose(input);
-            return 1;
+            script_argc = *old_argc;
+            script_argv = *old_argv;
+            return -1;
         }
     }
     script_argv[argc] = NULL;
+    return 0;
+}
 
-    parse_input = input;
+static void restore_source_args(int old_argc, char **old_argv, int new_argc)
+{
+    for (int i = 0; i <= new_argc; i++)
+        free(script_argv[i]);
+    free(script_argv);
+    script_argv = old_argv;
+    script_argc = old_argc;
+}
+
+static void execute_source_file(FILE *input)
+{
     char line[MAX_LINE];
     while (read_logical_line(input, line, sizeof(line))) {
         Command *cmds = parse_line(line);
@@ -126,12 +128,32 @@ int builtin_source(char **args) {
         }
         free_commands(cmds);
     }
+}
+
+int builtin_source(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: source file [args...]\n");
+        return 1;
+    }
+
+    FILE *prev_input = parse_input;
+    FILE *input = fopen(args[1], "r");
+    if (!input) {
+        perror(args[1]);
+        return 1;
+    }
+
+    int old_argc, new_argc;
+    char **old_argv;
+    if (prepare_source_args(args, &old_argc, &old_argv, &new_argc) < 0) {
+        fclose(input);
+        return 1;
+    }
+
+    parse_input = input;
+    execute_source_file(input);
     fclose(input);
-    for (int i = 0; i <= new_argc; i++)
-        free(script_argv[i]);
-    free(script_argv);
-    script_argv = old_argv;
-    script_argc = old_argc;
+    restore_source_args(old_argc, old_argv, new_argc);
     parse_input = prev_input;
     return 1;
 }
