@@ -1,7 +1,13 @@
 /*
  * vush - a simple UNIX shell
  * Licensed under the GNU GPLv3.
- * Parser for shell syntax and command structures.
+ *
+ * This file implements the parser which consumes tokens produced by
+ * the lexer and builds the Command and Pipeline structures used by the
+ * executor.  It performs alias expansion, handles redirections and
+ * here-docs and recognises the various shell control constructs.  The
+ * executor walks the resulting tree of commands to actually run the
+ * user's input.
  */
 
 #define _GNU_SOURCE
@@ -38,6 +44,7 @@ struct proc_sub {
 };
 static struct proc_sub *proc_subs = NULL;
 
+/* Track a process substitution FIFO for later cleanup */
 static void add_proc_sub(const char *path, pid_t pid) {
     struct proc_sub *ps = malloc(sizeof(struct proc_sub));
     if (!ps) return;
@@ -47,6 +54,7 @@ static void add_proc_sub(const char *path, pid_t pid) {
     proc_subs = ps;
 }
 
+/* Wait on all process substitutions and remove their FIFOs */
 void cleanup_proc_subs(void) {
     struct proc_sub *ps = proc_subs;
     while (ps) {
@@ -62,6 +70,7 @@ void cleanup_proc_subs(void) {
     proc_subs = NULL;
 }
 
+/* Store NAME=VALUE pairs temporarily for assignments preceding a command */
 static void set_temp_var(const char *name, const char *value) {
     for (struct temp_var *v = temp_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -78,6 +87,7 @@ static void set_temp_var(const char *name, const char *value) {
     temp_vars = v;
 }
 
+/* Remove any temporary variable assignments */
 static void clear_temp_vars(void) {
     struct temp_var *v = temp_vars;
     while (v) {
@@ -91,6 +101,7 @@ static void clear_temp_vars(void) {
 }
 
 
+/* Determine if TOK is a shell variable assignment */
 static int is_assignment(const char *tok) {
     const char *eq = strchr(tok, '=');
     if (!eq || eq == tok)
@@ -104,8 +115,9 @@ static int is_assignment(const char *tok) {
     return 1;
 }
 /*
- * Read tokens until one of the stop words is encountered,
- * returning the collected text.
+ * Read tokens from *p until one of the stop words is encountered.
+ * The collected text is returned and IDX receives the stop index if
+ * supplied.
  */
 
 static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
@@ -147,7 +159,8 @@ static char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     return res ? res : strdup("");
 }
 /*
- * Extract a brace enclosed block while respecting quoted strings.
+ * Extract the text inside a brace group "{...}" while respecting
+ * nested braces and quoted strings.
  */
 
 static char *gather_braced(char **p) {
@@ -185,7 +198,8 @@ static char *gather_braced(char **p) {
 }
 
 /*
- * Extract a parenthesis enclosed block while respecting quoted strings.
+ * Extract the text inside a parenthesis group "(...)" while
+ * handling nested parentheses and quotes.
  */
 
 static char *gather_parens(char **p) {
@@ -222,6 +236,11 @@ static char *gather_parens(char **p) {
     return NULL;
 }
 
+/*
+ * Handle process substitution like <(cmd) or >(cmd).
+ * A FIFO is created and the command is executed in a child.
+ * The path to the FIFO is returned.
+ */
 static char *process_substitution(char **p, int read_from) {
     char *body = gather_parens(p);
     if (!body)
@@ -273,7 +292,8 @@ static char *process_substitution(char **p, int read_from) {
     return strdup(template);
 }
 /*
- * Parse an if/elif/else clause recursively.
+ * Parse an if/elif/else/fi construct and return the resulting
+ * command tree.  Advances *p past the entire clause.
  */
 
 static Command *parse_if_clause(char **p) {
@@ -304,7 +324,8 @@ static Command *parse_if_clause(char **p) {
     return cmd;
 }
 /*
- * Parse a while/until loop body.
+ * Parse a while loop of the form 'while CMD; do ... done'.
+ * Returns a command tree for the loop body.
  */
 
 static Command *parse_while_clause(char **p) {
@@ -323,6 +344,9 @@ static Command *parse_while_clause(char **p) {
     return cmd;
 }
 
+/*
+ * Parse an 'until CMD; do ... done' loop and return its command tree.
+ */
 static Command *parse_until_clause(char **p) {
     const char *stop1[] = {"do"};
     char *cond = gather_until(p, stop1, 1, NULL);
@@ -339,7 +363,8 @@ static Command *parse_until_clause(char **p) {
     return cmd;
 }
 /*
- * Parse a for loop and its word list.
+ * Parse a shell 'for' loop, collecting the iteration variable and
+ * word list.  Returns a Command representing the loop.
  */
 
 static Command *parse_for_clause(char **p) {
@@ -376,6 +401,10 @@ static Command *parse_for_clause(char **p) {
     return cmd;
 }
 
+/*
+ * Parse a 'select' loop which displays a menu and runs the body
+ * for the chosen item.
+ */
 static Command *parse_select_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int q = 0;
@@ -410,6 +439,7 @@ static Command *parse_select_clause(char **p) {
     return cmd;
 }
 
+/* Strip leading and trailing whitespace from a string */
 static char *trim_ws(const char *s) {
     while (*s && isspace((unsigned char)*s)) s++;
     const char *end = s + strlen(s);
@@ -417,6 +447,10 @@ static char *trim_ws(const char *s) {
     return strndup(s, end - s);
 }
 
+/*
+ * Gather an arithmetic expression enclosed by a double pair of
+ * parentheses "(( expr ))".
+ */
 static char *gather_dbl_parens(char **p) {
     if (strncmp(*p, "((", 2) != 0)
         return NULL;
@@ -440,6 +474,10 @@ static char *gather_dbl_parens(char **p) {
     return NULL;
 }
 
+/*
+ * Parse the arithmetic form of the for loop: for (( init; cond; inc )) do ...
+ * Returns a Command describing the loop.
+ */
 static Command *parse_for_arith_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     char *exprs = gather_dbl_parens(p);
@@ -472,6 +510,7 @@ static Command *parse_for_arith_clause(char **p) {
     return cmd;
 }
 
+/* Free a linked list of case patterns and their command bodies */
 static void free_case_items(CaseItem *ci) {
     while (ci) {
         CaseItem *n = ci->next;
@@ -484,7 +523,8 @@ static void free_case_items(CaseItem *ci) {
     }
 }
 /*
- * Parse a case statement with patterns and optional fall-through.
+ * Parse a 'case' statement.  Patterns and their command lists are
+ * collected into a linked list of CaseItem structures.
  */
 
 static Command *parse_case_clause(char **p) {
@@ -538,8 +578,9 @@ static Command *parse_case_clause(char **p) {
     return cmd;
 }
 /*
- * Parse a function definition and return the command or NULL.
- * The body is collected using brace matching and parsed recursively.
+ * Parse a shell function definition "name() { ... }" and return a
+ * Command describing it.  *p is left after the definition and the
+ * operator following it is returned via op_out.
  */
 static Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
@@ -572,7 +613,10 @@ static Command *parse_function_def(char **p, CmdOp *op_out) {
     return NULL;
 }
 
-/* Parse a parenthesized subshell command list. */
+/*
+ * Parse a parenthesized subshell '( ... )' and return it as a
+ * CMD_SUBSHELL command.
+ */
 static Command *parse_subshell(char **p, CmdOp *op_out) {
     char *bodytxt = gather_parens(p);
     if (!bodytxt)
@@ -592,7 +636,10 @@ static Command *parse_subshell(char **p, CmdOp *op_out) {
     return cmd;
 }
 
-/* Parse a brace grouped command list executed in the current shell. */
+/*
+ * Parse a brace grouped list '{ ... }' which executes in the current
+ * shell environment.
+ */
 static Command *parse_brace_group(char **p, CmdOp *op_out) {
     char *bodytxt = gather_braced(p);
     if (!bodytxt)
@@ -612,7 +659,10 @@ static Command *parse_brace_group(char **p, CmdOp *op_out) {
     return cmd;
 }
 
-/* Parse a [[ expression ]] conditional */
+/*
+ * Parse a '[[ expression ]]' conditional test returning a CMD_COND
+ * structure.
+ */
 static Command *parse_conditional(char **p, CmdOp *op_out) {
     if (strncmp(*p, "[[", 2) != 0)
         return NULL;
@@ -653,7 +703,10 @@ static Command *parse_conditional(char **p, CmdOp *op_out) {
     return cmd;
 }
 
-/* Parse top-level control clauses such as if, while, for and case. */
+/*
+ * Dispatch parser for the various shell control structures like if,
+ * loops and case statements.  Returns NULL if no known clause is found.
+ */
 static Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
     if (strncmp(*p, "if", 2) == 0 && isspace((unsigned char)(*p)[2])) {
@@ -696,6 +749,10 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
  * previously visited names are tracked to avoid infinite loops. */
 #define MAX_ALIAS_DEPTH 10
 
+/*
+ * Recursively collect tokens for an alias expansion.  Visited aliases
+ * are tracked to avoid infinite loops.
+ */
 static void collect_alias_tokens(const char *name, char **out, int *count,
                                  char visited[][MAX_LINE], int depth) {
     if (*count >= MAX_TOKENS - 1)
@@ -740,6 +797,7 @@ static void collect_alias_tokens(const char *name, char **out, int *count,
     free(dup);
 }
 
+/* Expand aliases at the start of a pipeline segment */
 static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok) {
     const char *alias = get_alias(tok);
     if (!alias)
@@ -759,7 +817,10 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
     return 1; /* alias expanded */
 }
 
-/* Collect a here-doc into a temporary file */
+/*
+ * Collect a here-document and write it to a temporary file.  The path
+ * to the file is stored in the pipeline segment for later reading.
+ */
 static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted || strncmp(tok, "<<", 2) != 0)
         return 0;
@@ -803,7 +864,10 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     return 1;
 }
 
-/* Parse here-string redirection like '<<<word' */
+/*
+ * Handle here-string redirection (<<< word) by placing WORD into a
+ * temporary file and using it for stdin.
+ */
 static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     if (!((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0))
         return 0;
@@ -838,7 +902,10 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
-/* Parse '<' input redirection */
+/*
+ * Handle standard input redirection using '<'.  The filename is read
+ * from the following token.
+ */
 static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (strcmp(tok, "<") != 0)
         return 0;
@@ -852,7 +919,10 @@ static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
-/* Parse '>' or '>>' output redirection */
+/*
+ * Handle output redirection using '>' or '>>'.  Also supports
+ * descriptor duplication via '&'.
+ */
 static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (!(strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0))
         return 0;
@@ -880,7 +950,10 @@ static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
-/* Parse '2>' or '2>>' error redirection */
+/*
+ * Handle stderr redirection using '2>' or '2>>'.  Allows duplication
+ * of another descriptor with '&'.
+ */
 static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (!(strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0))
         return 0;
@@ -906,7 +979,9 @@ static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
-/* Parse '&>' or '&>>' combined redirection */
+/*
+ * Handle combined stdout/stderr redirection '&>' or '&>>'.
+ */
 static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (!(strcmp(tok, "&>") == 0 || strcmp(tok, "&>>") == 0))
         return 0;
@@ -925,7 +1000,10 @@ static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
-/* Handle <, >, 2>, &> style redirections */
+/*
+ * Dispatch routine for all redirection operators.  Returns 1 when a
+ * redirection is processed, 0 otherwise and -1 on error.
+ */
 static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted)
         return 0;
@@ -943,6 +1021,10 @@ static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quot
     return 0;
 }
 
+/*
+ * Handle variable assignments at the start of a command and expand
+ * aliases when appropriate.  Returns 1 if TOK was consumed.
+ */
 static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
                                       char **tok_ptr, int quoted) {
     char *tok = *tok_ptr;
@@ -986,6 +1068,7 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
     return 0;
 }
 
+/* Terminate argument list and detect background execution */
 static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     if (argc > 0 && strcmp(seg->argv[argc - 1], "&") == 0) {
         *background = 1;
@@ -996,7 +1079,7 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     }
 }
 
-/* Start a new pipeline segment when encountering a pipe character */
+/* Start a new pipeline segment upon encountering a '|' token */
 static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
@@ -1014,7 +1097,10 @@ static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     clear_temp_vars();
 }
 
-/* Expand braces for a token, returning an array like expand_braces */
+/*
+ * Perform brace expansion on TOK unless it was quoted.  Returns an
+ * array of expanded tokens.
+ */
 static char **expand_token_braces(char *tok, int quoted, int *count) {
     char **btoks = NULL;
     if (!quoted)
@@ -1030,6 +1116,11 @@ static char **expand_token_braces(char *tok, int quoted, int *count) {
     return btoks;
 }
 
+/*
+ * Parse one segment of a pipeline, performing globbing, alias
+ * expansion and redirection handling.  *seg_ptr is updated to point to
+ * the current segment.
+ */
 static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc,
                                   CmdOp *op_out) {
     PipelineSegment *seg = *seg_ptr;
@@ -1109,8 +1200,11 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
     return 0;
 }
 
-/* Parse a command line into pipeline segments with alias expansion,
- * redirections, globbing and here-doc handling. */
+/*
+ * Parse a simple pipeline.  Alias expansion, globbing, redirections
+ * and here-doc handling are performed and the resulting Command is
+ * returned.
+ */
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p == '(')
@@ -1151,6 +1245,10 @@ char *read_continuation_lines(FILE *f, char *buf, size_t size) {
     return read_logical_line(f, buf, size);
 }
 
+/*
+ * Parse a complete line of shell input into a linked list of Command
+ * structures.  Returns NULL on syntax error.
+ */
 Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;
@@ -1189,6 +1287,7 @@ Command *parse_line(char *line) {
     return head;
 }
 
+/* Free a linked list of PipelineSegment structures */
 void free_pipeline(PipelineSegment *p) {
     while (p) {
         PipelineSegment *next = p->next;
@@ -1206,6 +1305,7 @@ void free_pipeline(PipelineSegment *p) {
     }
 }
 
+/* Recursively free a chain of Command structures */
 void free_commands(Command *c) {
     while (c) {
         Command *next = c->next;
