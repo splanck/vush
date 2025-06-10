@@ -916,20 +916,36 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
             continue;
         }
 
-        if (!quoted && (strchr(tok, '*') || strchr(tok, '?'))) {
-            glob_t g;
-            int r = glob(tok, 0, NULL, &g);
-            if (r == 0 && g.gl_pathc > 0) {
-                for (size_t gi = 0; gi < g.gl_pathc && argc < MAX_TOKENS - 1; gi++)
-                    seg->argv[argc++] = strdup(g.gl_pathv[gi]);
-                free(tok);
-                globfree(&g);
-                continue;
-            }
-            globfree(&g);
+        char **btoks = NULL;
+        int bcount = 0;
+        if (!quoted)
+            btoks = expand_braces(tok, &bcount);
+        if (!btoks) {
+            btoks = malloc(2 * sizeof(char *));
+            btoks[0] = tok;
+            btoks[1] = NULL;
+            bcount = 1;
+        } else {
+            free(tok);
         }
 
-        seg->argv[argc++] = tok;
+        for (int bi = 0; bi < bcount && argc < MAX_TOKENS - 1; bi++) {
+            char *bt = btoks[bi];
+            if (!quoted && (strchr(bt, '*') || strchr(bt, '?'))) {
+                glob_t g;
+                int r = glob(bt, 0, NULL, &g);
+                if (r == 0 && g.gl_pathc > 0) {
+                    for (size_t gi = 0; gi < g.gl_pathc && argc < MAX_TOKENS - 1; gi++)
+                        seg->argv[argc++] = strdup(g.gl_pathv[gi]);
+                    free(bt);
+                    globfree(&g);
+                    continue;
+                }
+                globfree(&g);
+            }
+            seg->argv[argc++] = bt;
+        }
+        free(btoks);
     }
 
     if (argc > 0 && strcmp(seg->argv[argc-1], "&") == 0) {

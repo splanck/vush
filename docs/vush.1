@@ -12,7 +12,7 @@ environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
 \fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
-wildcard matching for '*' and '?', input and output redirection with
+wildcard matching for '*' and '?', brace expansion like \fB{foo,bar}\fP or \fB{1..3}\fP, input and output redirection with
 \'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", process substitution using \fB<(cmd)\fP and \fB>(cmd)\fP, and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
