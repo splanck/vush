@@ -39,7 +39,8 @@ When executing a script file, the remaining command line words become
 positional parameters.  \$0 expands to the script path and \$1, \$2 and
 so on expand to subsequent parameters. Indexes beyond nine may be
 referenced using the full number such as \$10 or \$11.  \$@ expands to
-all parameters separated by spaces and \$# expands to the number of
+all parameters separated by spaces while \$* joins them using the first
+character of \fBIFS\fP (space by default).  \$# expands to the number of
 parameters.  The \fBshift\fP builtin discards the first parameter and
 moves the rest down.
 
