@@ -43,7 +43,8 @@ typedef enum {
     CMD_UNTIL,
     CMD_CASE,
     CMD_SUBSHELL,
-    CMD_GROUP
+    CMD_GROUP,
+    CMD_COND
 } CmdType;
 
 typedef struct CaseItem {
@@ -61,7 +62,7 @@ typedef struct Command {
     struct Command *body;     /* then/do body */
     struct Command *else_part;/* else or elif chain */
     char *var;                /* for for loop variable */
-    char **words;             /* for for loop word list */
+    char **words;             /* for loop word list or [[ expression ]] */
     int word_count;
     char *text;               /* function body as text */
     CaseItem *cases;          /* for case clause items */

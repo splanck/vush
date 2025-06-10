@@ -24,6 +24,7 @@ and a few built-in commands.
 - Subshells using `( ... )` to group commands
 - Brace groups using `{ ... ; }` executed in the current shell
 - Shell functions using `name() { ... }` syntax and a `return` builtin
+- Conditional expressions using `[[ ... ]]` with pattern matching
 - `case` selection statements with optional fall-through using `;&`
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
@@ -284,6 +285,8 @@ vush> popd
 ```
 vush> if test 1 -eq 1; then echo yes; else echo no; fi
 yes
+vush> x=foo; if [[ $x == f* ]]; then echo match; fi
+match
 vush> for x in a b c; do echo $x; done
 a
 b

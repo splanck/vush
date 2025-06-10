@@ -32,6 +32,7 @@ extern int builtin_let(char **);
 extern int builtin_set(char **);
 extern int builtin_trap(char **);
 extern int builtin_test(char **);
+extern int builtin_cond(char **);
 extern int builtin_type(char **);
 extern int builtin_source(char **);
 extern int builtin_help(char **);
@@ -63,6 +64,7 @@ const struct builtin builtin_table[] = {
     {"trap", builtin_trap},
     {"test", builtin_test},
     {"[", builtin_test},
+    {"[[", builtin_cond},
     {"type", builtin_type},
     {"eval", builtin_eval},
     {"exec", builtin_exec},
