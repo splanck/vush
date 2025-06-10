@@ -9,10 +9,11 @@ Current version: 0.1.0
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
- - Built-in commands: `alias`, `bg`, `break`, `cd`, `continue`, `dirs`, `eval`,
-  `exec`, `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
-  `popd`, `printf`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
-  `trap`, `type`, `unalias`, and `unset`
+ - Built-in commands: `alias`, `bg`, `break`, `cd`, `command`, `continue`,
+  `dirs`, `eval`, `exec`, `exit`, `export`, `false`, `fg`, `getopts`, `hash`,
+  `help`, `history`, `jobs`, `kill`, `let`, `local`, `popd`, `printf`, `pushd`,
+  `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
+  `time`, `trap`, `true`, `type`, `umask`, `unalias`, `unset`, `wait`, and `:`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR%pat}` and
   `${#VAR}`
