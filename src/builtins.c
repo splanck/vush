@@ -35,6 +35,7 @@ extern int builtin_printf(char **);
 extern int builtin_exec(char **);
 extern int builtin_command(char **);
 extern int builtin_time(char **);
+extern int builtin_umask(char **);
 extern int builtin_return(char **);
 extern int builtin_break(char **);
 extern int builtin_continue(char **);
@@ -84,6 +85,7 @@ const struct builtin builtin_table[] = {
     {"eval", builtin_eval},
     {"exec", builtin_exec},
     {"time", builtin_time},
+    {"umask", builtin_umask},
     {"source", builtin_source},
     {".", builtin_source},
     {"help", builtin_help},

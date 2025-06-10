@@ -246,6 +246,11 @@ Replace the shell with the specified command.
 .B time \fIcommand [args...]\fP
 Run the command and print the elapsed real time in seconds.
 .TP
+.B umask [mode]
+Print or set the file creation mask. Without an argument the current mask
+is printed in octal. When MODE is supplied it is interpreted as an octal
+number and becomes the new mask.
+.TP
 .B source \fIfile [args...]\fP
 Read commands from \fIfile\fP using \fIargs\fP as positional parameters.
 .TP
