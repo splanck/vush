@@ -1,4 +1,12 @@
-/* File system related builtins */
+/*
+ * Builtins that operate on the file system are implemented here.  This
+ * includes commands such as cd, pushd, popd, dirs and pwd that change or
+ * display the current working directory.  They are grouped together because
+ * they all manipulate the shell's idea of the working directory and rely on
+ * the directory stack helpers in dirstack.c.  Each builtin updates PWD and
+ * OLDPWD as needed so other parts of the shell and any child processes see
+ * the correct directory.
+ */
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "dirstack.h"
@@ -9,6 +17,11 @@
 #include <unistd.h>
 #include <limits.h>
 
+/*
+ * builtin_cd - implement the cd command.  Changes the current directory and
+ * sets PWD and OLDPWD.  When CDPATH is used the resolved directory is printed
+ * to stdout.
+ */
 int builtin_cd(char **args) {
     char prev[PATH_MAX];
     if (!getcwd(prev, sizeof(prev))) {
@@ -78,6 +91,11 @@ int builtin_cd(char **args) {
     return 1;
 }
 
+/*
+ * builtin_pushd - push the current directory onto the directory stack and
+ * change to the one supplied.  Updates PWD and OLDPWD and prints the new
+ * stack after the change.
+ */
 int builtin_pushd(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: pushd dir\n");
@@ -104,6 +122,10 @@ int builtin_pushd(char **args) {
     return 1;
 }
 
+/*
+ * builtin_popd - remove the top directory from the directory stack and change
+ * to it.  PWD and OLDPWD are updated and the resulting stack is printed.
+ */
 int builtin_popd(char **args) {
     (void)args;
     char *dir = dirstack_pop();
@@ -132,6 +154,11 @@ int builtin_popd(char **args) {
     return 1;
 }
 
+/*
+ * builtin_dirs - display the contents of the directory stack.  This builtin
+ * does not modify the environment or current directory; it simply prints the
+ * stack managed by dirstack.c.
+ */
 int builtin_dirs(char **args) {
     if (args[1]) {
         fprintf(stderr, "usage: dirs\n");
@@ -141,6 +168,10 @@ int builtin_dirs(char **args) {
     return 1;
 }
 
+/*
+ * builtin_pwd - print the current working directory.  This command simply
+ * queries getcwd and writes the result to stdout; it has no side effects.
+ */
 int builtin_pwd(char **args) {
     (void)args;
     char cwd[1024];
