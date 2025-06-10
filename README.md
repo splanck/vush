@@ -41,7 +41,7 @@ and a few built-in commands.
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
- - Shell options toggled with `set -e`, `set -u`, `set -x` and `set -o OPTION`
+- Shell options toggled with `set -e`, `set -u`, `set -x` and `set -o OPTION` such as `pipefail` or `noclobber`
 
 ## Building
 
@@ -221,6 +221,12 @@ one
 two
 three
 ```
+### Shell Options
+
+Use the `set` builtin to toggle behavior. `set -e` exits on command failure,
+`set -u` errors on undefined variables and `set -x` prints each command before execution.
+The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` prevents `>` from overwriting existing files. Use `set +o OPTION` to disable an option.
+
 
 ## Built-in Commands
 
