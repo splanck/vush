@@ -231,7 +231,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
   `OPTIND`.
 - `let EXPR` - evaluate an arithmetic expression.
-- `set [options]` - set shell options or positional parameters.
+- `set [options] [-- args...]` - set shell options or replace positional parameters.
 - `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.
 - `[[ EXPR ]]` - evaluate a conditional expression with pattern matching.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default

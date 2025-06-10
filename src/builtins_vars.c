@@ -343,7 +343,12 @@ int builtin_shift(char **args) {
  * result in an error message.  The function always returns 1.
  */
 int builtin_set(char **args) {
-    for (int i = 1; args[i]; i++) {
+    int i = 1;
+    for (; args[i]; i++) {
+        if (strcmp(args[i], "--") == 0) {
+            i++;
+            break;
+        }
         if (strcmp(args[i], "-e") == 0)
             opt_errexit = 1;
         else if (strcmp(args[i], "-u") == 0)
@@ -378,10 +383,42 @@ int builtin_set(char **args) {
             }
             i++;
         }
-        else {
+        else if (args[i][0] == '-' || args[i][0] == '+') {
             fprintf(stderr, "set: unknown option %s\n", args[i]);
             return 1;
+        } else {
+            break;
         }
+    }
+
+    if (args[i]) {
+        int count = 0;
+        for (int j = i; args[j]; j++)
+            count++;
+
+        char *zero = script_argv ? script_argv[0] : NULL;
+        char **newv = calloc(count + 2, sizeof(char *));
+        if (!newv)
+            return 1;
+        newv[0] = zero;
+        for (int j = 0; j < count; j++) {
+            newv[j + 1] = strdup(args[i + j]);
+            if (!newv[j + 1]) {
+                for (int k = 1; k <= j; k++)
+                    free(newv[k]);
+                free(newv);
+                return 1;
+            }
+        }
+        newv[count + 1] = NULL;
+
+        if (script_argv) {
+            for (int j = 1; j <= script_argc; j++)
+                free(script_argv[j]);
+            free(script_argv);
+        }
+        script_argv = newv;
+        script_argc = count;
     }
     return 1;
 }
