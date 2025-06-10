@@ -1,4 +1,14 @@
-/* Alias builtins and helpers */
+/*
+ * Alias builtins and helpers.
+ *
+ * Aliases are stored in a simple linked list of `struct alias_entry`
+ * nodes.  At startup `load_aliases()` reads the file specified by the
+ * `VUSH_ALIASFILE` environment variable or `~/.vush_aliases` when the
+ * variable is unset.  Each line in the file contains a single
+ * `name=value` pair.  When the shell terminates `free_aliases()` writes
+ * the current list back with `save_aliases()` so aliases persist across
+ * sessions.
+ */
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "parser.h" /* for MAX_LINE */
@@ -18,6 +28,7 @@ static struct alias_entry *aliases = NULL;
 
 static int set_alias(const char *name, const char *value);
 
+/* Return the path of the alias file or NULL if $HOME is not set. */
 static const char *aliasfile_path(void)
 {
     const char *env = getenv("VUSH_ALIASFILE");
@@ -31,6 +42,7 @@ static const char *aliasfile_path(void)
     return path;
 }
 
+/* Write the current alias list to the file returned by aliasfile_path(). */
 static void save_aliases(void)
 {
     const char *path = aliasfile_path();
@@ -44,6 +56,7 @@ static void save_aliases(void)
     fclose(f);
 }
 
+/* Populate the alias list from the alias file if it exists. */
 void load_aliases(void)
 {
     const char *path = aliasfile_path();
@@ -69,6 +82,7 @@ void load_aliases(void)
     fclose(f);
 }
 
+/* Find the value for NAME or return NULL if it is not defined. */
 const char *get_alias(const char *name)
 {
     for (struct alias_entry *a = aliases; a; a = a->next) {
@@ -78,6 +92,7 @@ const char *get_alias(const char *name)
     return NULL;
 }
 
+/* Create or update an alias.  Returns 0 on success, -1 on allocation failure. */
 static int set_alias(const char *name, const char *value)
 {
     for (struct alias_entry *a = aliases; a; a = a->next) {
@@ -111,6 +126,7 @@ static int set_alias(const char *name, const char *value)
     return 0;
 }
 
+/* Remove NAME from the alias list if present. */
 static void remove_alias(const char *name)
 {
     struct alias_entry *prev = NULL;
@@ -128,12 +144,14 @@ static void remove_alias(const char *name)
     }
 }
 
+/* Print all defined aliases to stdout. */
 static void list_aliases(void)
 {
     for (struct alias_entry *a = aliases; a; a = a->next)
         printf("%s='%s'\n", a->name, a->value);
 }
 
+/* Save aliases and free all alias list entries. */
 void free_aliases(void)
 {
     save_aliases();
@@ -148,6 +166,7 @@ void free_aliases(void)
     aliases = NULL;
 }
 
+/* builtin_alias - list aliases or define name=value pairs. */
 int builtin_alias(char **args)
 {
     if (!args[1]) {
@@ -172,6 +191,7 @@ int builtin_alias(char **args)
     return 1;
 }
 
+/* builtin_unalias - remove each NAME argument from the alias list. */
 int builtin_unalias(char **args)
 {
     if (!args[1]) {
