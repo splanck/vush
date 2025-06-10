@@ -35,6 +35,8 @@ char **script_argv = NULL;
 int opt_errexit = 0;
 int opt_nounset = 0;
 int opt_xtrace = 0;
+int opt_pipefail = 0;
+int opt_noclobber = 0;
 
 void trap_handler(int sig)
 {

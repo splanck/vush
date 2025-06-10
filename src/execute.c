@@ -183,6 +183,8 @@ void setup_redirections(PipelineSegment *seg) {
     if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
         seg->append == seg->err_append) {
         int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
+        if (opt_noclobber && !seg->append)
+            flags |= O_EXCL;
         int fd = open(seg->out_file, flags, 0644);
         if (fd < 0) {
             perror(seg->out_file);
@@ -194,6 +196,8 @@ void setup_redirections(PipelineSegment *seg) {
     } else {
         if (seg->out_file) {
             int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
+            if (opt_noclobber && !seg->append)
+                flags |= O_EXCL;
             int fd = open(seg->out_file, flags, 0644);
             if (fd < 0) {
                 perror(seg->out_file);
@@ -204,6 +208,8 @@ void setup_redirections(PipelineSegment *seg) {
         }
         if (seg->err_file) {
             int flags = O_WRONLY | O_CREAT | (seg->err_append ? O_APPEND : O_TRUNC);
+            if (opt_noclobber && !seg->err_append)
+                flags |= O_EXCL;
             int fd = open(seg->err_file, flags, 0644);
             if (fd < 0) {
                 perror(seg->err_file);

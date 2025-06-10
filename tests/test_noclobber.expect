@@ -1,0 +1,24 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo orig >nc.tmp\r"
+expect "vush> "
+send "set -o noclobber\r"
+expect "vush> "
+send "echo hi >nc.tmp\r"
+expect "vush> "
+send "echo $?\r"
+expect {
+    -re "[\r\n]+1[\r\n]+vush> " {}
+    timeout { send_user "noclobber status mismatch\n"; exit 1 }
+}
+send "cat nc.tmp\r"
+expect {
+    -re "[\r\n]+orig[\r\n]+vush> " {}
+    timeout { send_user "noclobber overwrite\n"; exit 1 }
+}
+send "rm nc.tmp\r"
+expect "vush> "
+send "exit\r"
+expect eof

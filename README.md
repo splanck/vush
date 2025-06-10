@@ -41,7 +41,7 @@ and a few built-in commands.
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
-- Shell options toggled with `set -e`, `set -u` and `set -x`
+ - Shell options toggled with `set -e`, `set -u`, `set -x` and `set -o OPTION`
 
 ## Building
 
