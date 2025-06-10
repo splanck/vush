@@ -31,6 +31,18 @@ static int apply_temp_assignments(PipelineSegment *pipeline);
 void setup_redirections(PipelineSegment *seg);
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);
+static int exec_pipeline(Command *cmd, const char *line);
+static int exec_funcdef(Command *cmd, const char *line);
+static int exec_if(Command *cmd, const char *line);
+static int exec_while(Command *cmd, const char *line);
+static int exec_until(Command *cmd, const char *line);
+static int exec_for(Command *cmd, const char *line);
+static int exec_select(Command *cmd, const char *line);
+static int exec_for_arith(Command *cmd, const char *line);
+static int exec_case(Command *cmd, const char *line);
+static int exec_subshell(Command *cmd, const char *line);
+static int exec_cond(Command *cmd, const char *line);
+static int exec_group(Command *cmd, const char *line);
 /*
  * Apply temporary variable assignments before running a pipeline.
  * Builtins and functions are executed directly while environment
@@ -303,132 +315,181 @@ int run_command_list(Command *cmds, const char *line) {
     return last_status;
 }
 
+static int exec_pipeline(Command *cmd, const char *line) {
+    return run_pipeline_internal(cmd->pipeline, cmd->background, line);
+}
+
+static int exec_funcdef(Command *cmd, const char *line) {
+    (void)line;
+    define_function(cmd->var, cmd->body, cmd->text);
+    cmd->body = NULL;
+    return last_status;
+}
+
+static int exec_if(Command *cmd, const char *line) {
+    run_command_list(cmd->cond, line);
+    if (last_status == 0)
+        run_command_list(cmd->body, line);
+    else if (cmd->else_part)
+        run_command_list(cmd->else_part, line);
+    return last_status;
+}
+
+static int exec_while(Command *cmd, const char *line) {
+    while (1) {
+        run_command_list(cmd->cond, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+        if (last_status != 0)
+            break;
+        run_command_list(cmd->body, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+    }
+    return last_status;
+}
+
+static int exec_until(Command *cmd, const char *line) {
+    while (1) {
+        run_command_list(cmd->cond, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+        if (last_status == 0)
+            break;
+        run_command_list(cmd->body, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+    }
+    return last_status;
+}
+
+static int exec_for(Command *cmd, const char *line) {
+    for (int i = 0; i < cmd->word_count; i++) {
+        if (cmd->var)
+            setenv(cmd->var, cmd->words[i], 1);
+        run_command_list(cmd->body, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+    }
+    return last_status;
+}
+
+static int exec_select(Command *cmd, const char *line) {
+    char input[MAX_LINE];
+    while (1) {
+        for (int i = 0; i < cmd->word_count; i++)
+            printf("%d) %s\n", i + 1, cmd->words[i]);
+        fputs("? ", stdout);
+        fflush(stdout);
+        if (!fgets(input, sizeof(input), stdin))
+            break;
+        int choice = atoi(input);
+        if (choice < 1 || choice > cmd->word_count) {
+            continue;
+        }
+        if (cmd->var)
+            setenv(cmd->var, cmd->words[choice - 1], 1);
+        run_command_list(cmd->body, line);
+        if (loop_break) { loop_break = 0; break; }
+        if (loop_continue) { loop_continue = 0; continue; }
+    }
+    return last_status;
+}
+
+static int exec_for_arith(Command *cmd, const char *line) {
+    (void)line;
+    eval_arith(cmd->arith_init ? cmd->arith_init : "0");
+    while (1) {
+        long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1");
+        if (cond == 0)
+            break;
+        run_command_list(cmd->body, line);
+        if (loop_break) { loop_break = 0; break; }
+        eval_arith(cmd->arith_update ? cmd->arith_update : "0");
+        if (loop_continue) { loop_continue = 0; continue; }
+    }
+    return last_status;
+}
+
+static int exec_case(Command *cmd, const char *line) {
+    for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
+        int matched = 0;
+        for (int i = 0; i < ci->pattern_count; i++) {
+            if (fnmatch(ci->patterns[i], cmd->var, 0) == 0) {
+                matched = 1;
+                break;
+            }
+        }
+        if (matched) {
+            run_command_list(ci->body, line);
+            if (!ci->fall_through)
+                break;
+        }
+    }
+    return last_status;
+}
+
+static int exec_subshell(Command *cmd, const char *line) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        signal(SIGINT, SIG_DFL);
+        run_command_list(cmd->group, line);
+        exit(last_status);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status))
+            last_status = WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            last_status = 128 + WTERMSIG(status);
+        return last_status;
+    } else {
+        perror("fork");
+        last_status = 1;
+        return 1;
+    }
+}
+
+static int exec_cond(Command *cmd, const char *line) {
+    (void)line;
+    builtin_cond(cmd->words);
+    return last_status;
+}
+
+static int exec_group(Command *cmd, const char *line) {
+    run_command_list(cmd->group, line);
+    return last_status;
+}
+
 int run_pipeline(Command *cmd, const char *line) {
     if (!cmd)
         return 0;
 
     switch (cmd->type) {
     case CMD_PIPELINE:
-        return run_pipeline_internal(cmd->pipeline, cmd->background, line);
+        return exec_pipeline(cmd, line);
     case CMD_FUNCDEF:
-        define_function(cmd->var, cmd->body, cmd->text);
-        cmd->body = NULL;
-        return last_status;
+        return exec_funcdef(cmd, line);
     case CMD_IF:
-        run_command_list(cmd->cond, line);
-        if (last_status == 0)
-            run_command_list(cmd->body, line);
-        else if (cmd->else_part)
-            run_command_list(cmd->else_part, line);
-        return last_status;
+        return exec_if(cmd, line);
     case CMD_WHILE:
-        while (1) {
-            run_command_list(cmd->cond, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-            if (last_status != 0)
-                break;
-            run_command_list(cmd->body, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-        }
-        return last_status;
+        return exec_while(cmd, line);
     case CMD_UNTIL:
-        while (1) {
-            run_command_list(cmd->cond, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-            if (last_status == 0)
-                break;
-            run_command_list(cmd->body, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-        }
-        return last_status;
+        return exec_until(cmd, line);
     case CMD_FOR:
-        for (int i = 0; i < cmd->word_count; i++) {
-            if (cmd->var)
-                setenv(cmd->var, cmd->words[i], 1);
-            run_command_list(cmd->body, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-        }
-        return last_status;
-    case CMD_SELECT: {
-        char input[MAX_LINE];
-        while (1) {
-            for (int i = 0; i < cmd->word_count; i++)
-                printf("%d) %s\n", i + 1, cmd->words[i]);
-            fputs("? ", stdout);
-            fflush(stdout);
-            if (!fgets(input, sizeof(input), stdin))
-                break;
-            int choice = atoi(input);
-            if (choice < 1 || choice > cmd->word_count) {
-                continue;
-            }
-            if (cmd->var)
-                setenv(cmd->var, cmd->words[choice - 1], 1);
-            run_command_list(cmd->body, line);
-            if (loop_break) { loop_break = 0; break; }
-            if (loop_continue) { loop_continue = 0; continue; }
-        }
-        return last_status;
-    }
+        return exec_for(cmd, line);
+    case CMD_SELECT:
+        return exec_select(cmd, line);
     case CMD_FOR_ARITH:
-        eval_arith(cmd->arith_init ? cmd->arith_init : "0");
-        while (1) {
-            long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1");
-            if (cond == 0)
-                break;
-            run_command_list(cmd->body, line);
-            if (loop_break) { loop_break = 0; break; }
-            eval_arith(cmd->arith_update ? cmd->arith_update : "0");
-            if (loop_continue) { loop_continue = 0; continue; }
-        }
-        return last_status;
+        return exec_for_arith(cmd, line);
     case CMD_CASE:
-        for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
-            int matched = 0;
-            for (int i = 0; i < ci->pattern_count; i++) {
-                if (fnmatch(ci->patterns[i], cmd->var, 0) == 0) {
-                    matched = 1;
-                    break;
-                }
-            }
-            if (matched) {
-                run_command_list(ci->body, line);
-                if (!ci->fall_through)
-                    break;
-            }
-        }
-        return last_status;
-    case CMD_SUBSHELL: {
-        pid_t pid = fork();
-        if (pid == 0) {
-            signal(SIGINT, SIG_DFL);
-            run_command_list(cmd->group, line);
-            exit(last_status);
-        } else if (pid > 0) {
-            int status;
-            waitpid(pid, &status, 0);
-            if (WIFEXITED(status))
-                last_status = WEXITSTATUS(status);
-            else if (WIFSIGNALED(status))
-                last_status = 128 + WTERMSIG(status);
-            return last_status;
-        } else {
-            perror("fork");
-            last_status = 1;
-            return 1;
-        }
-    }
+        return exec_case(cmd, line);
+    case CMD_SUBSHELL:
+        return exec_subshell(cmd, line);
     case CMD_COND:
-        builtin_cond(cmd->words);
-        return last_status;
+        return exec_cond(cmd, line);
     case CMD_GROUP:
-        run_command_list(cmd->group, line);
-        return last_status;
+        return exec_group(cmd, line);
     default:
         return 0;
     }
