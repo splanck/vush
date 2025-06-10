@@ -82,6 +82,7 @@ make uninstall
 ## Usage
 
 Run `./vush` for an interactive shell or pass a script file or `-c` string.
+Run `vush --version` (or `vush -V`) to print the version.
 See [docs/vushdoc.md](docs/vushdoc.md) for full usage details and examples.
 
 ## Documentation
