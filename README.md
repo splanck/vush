@@ -45,6 +45,10 @@ Current version: 0.1.0
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
 - Shell options toggled with `set -e`, `set -u`, `set -x` and `set -o OPTION` such as `pipefail` or `noclobber`
+- Array assignments and `${name[index]}` access
+- Here-documents (`<<`) and here-strings (`<<<`)
+- History expansion with `!!`, `!n`, `!prefix`, `!$`, `!*`
+- Extended parameter expansion for pattern replacement `${var/pat/repl}` and substrings `${var:off[:len]}`
 
 ## Building
 
