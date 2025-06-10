@@ -262,14 +262,88 @@ int builtin_exec(char **args) {
 
 /* Execute a command ignoring any shell aliases or functions. */
 int builtin_command(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: command name [args...]\n");
+    int i = 1;
+    int opt_v = 0, opt_V = 0;
+
+    if (args[i] && args[i][0] == '-' && !args[i][2]) {
+        if (args[i][1] == 'v') { opt_v = 1; i++; }
+        else if (args[i][1] == 'V') { opt_V = 1; i++; }
+    }
+
+    if (!args[i]) {
+        fprintf(stderr, "usage: command [-v|-V] name [args...]\n");
         return 1;
     }
+
+    if (opt_v || opt_V) {
+        int status = 0;
+        for (; args[i]; i++) {
+            const char *alias = get_alias(args[i]);
+            if (alias) {
+                if (opt_V)
+                    printf("%s is an alias for '%s'\n", args[i], alias);
+                else
+                    printf("alias %s='%s'\n", args[i], alias);
+                continue;
+            }
+            Command *fn = get_function(args[i]);
+            if (fn) {
+                if (opt_V)
+                    printf("%s is a function\n", args[i]);
+                else
+                    printf("%s\n", args[i]);
+                continue;
+            }
+            int is_builtin = 0;
+            for (int j = 0; builtin_table[j].name; j++) {
+                if (strcmp(args[i], builtin_table[j].name) == 0) {
+                    if (opt_V)
+                        printf("%s is a builtin\n", args[i]);
+                    else
+                        printf("%s\n", args[i]);
+                    is_builtin = 1;
+                    break;
+                }
+            }
+            if (is_builtin)
+                continue;
+            const char *pathenv = getenv("PATH");
+            if (!pathenv)
+                pathenv = "/bin:/usr/bin";
+            char *paths = strdup(pathenv);
+            if (!paths)
+                continue;
+            char *saveptr = NULL;
+            char *dir = strtok_r(paths, ":", &saveptr);
+            int found = 0;
+            while (dir) {
+                char full[PATH_MAX];
+                snprintf(full, sizeof(full), "%s/%s", dir, args[i]);
+                if (access(full, X_OK) == 0) {
+                    if (opt_V)
+                        printf("%s is %s\n", args[i], full);
+                    else
+                        printf("%s\n", full);
+                    found = 1;
+                    break;
+                }
+                dir = strtok_r(NULL, ":", &saveptr);
+            }
+            free(paths);
+            if (!found) {
+                if (opt_V)
+                    printf("%s not found\n", args[i]);
+                status = 1;
+            }
+        }
+        last_status = status;
+        return 1;
+    }
+
     pid_t pid = fork();
     if (pid == 0) {
-        execvp(args[1], &args[1]);
-        perror(args[1]);
+        execvp(args[i], &args[i]);
+        perror(args[i]);
         _exit(127);
     } else if (pid > 0) {
         int status;

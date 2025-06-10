@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "alias ll='echo hi'\r"
+expect "vush> "
+send "command -v ll cd ls\r"
+expect {
+    -re "[\r\n]+alias ll='echo hi'[\r\n]+cd[\r\n]+.*/ls[\r\n]+vush> " {}
+    timeout { send_user "command -v output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect eof
