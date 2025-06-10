@@ -181,10 +181,11 @@ one two
 ### Positional Parameters
 
 When a script file is executed, the remaining command line arguments are stored
-as positional parameters.  `$0` expands to the script path while `$1` through
-`$9` contain subsequent arguments.  `$@` expands to all parameters separated by
-spaces and `$#` gives the count of arguments.  The `shift` builtin discards the
-first parameter and shifts the rest down.
+as positional parameters.  `$0` expands to the script path and `$1`, `$2`, and
+so on expand to subsequent parameters.  Indexes beyond nine can be referenced
+using the full number such as `$10` or `$11`.  `$@` expands to all parameters
+separated by spaces and `$#` gives the count of arguments.  The `shift` builtin
+discards the first parameter and shifts the rest down.
 
 ## Assignments
 
