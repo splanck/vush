@@ -24,6 +24,7 @@
 #include "pipeline.h"
 #include "jobs.h"
 #include "options.h"
+#include "hash.h"
 extern int last_status;
 
 extern void setup_redirections(PipelineSegment *seg);
@@ -87,6 +88,11 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
             }
         }
 
+        const char *hpath = NULL;
+        if (!strchr(seg->argv[0], '/'))
+            hpath = hash_lookup(seg->argv[0]);
+        if (hpath)
+            execv(hpath, seg->argv);
         execvp(seg->argv[0], seg->argv);
         if (errno == ENOENT)
             fprintf(stderr, "%s: command not found\n", seg->argv[0]);

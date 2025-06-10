@@ -9,6 +9,7 @@ SRCS := src/builtins.c src/builtins_fs.c src/builtins_jobs.c \
        src/jobs.c src/lineedit.c src/history_search.c src/completion.c \
        src/parser.c src/lexer.c src/arith.c \
        src/dirstack.c src/util.c src/pipeline.c src/func_exec.c \
+       src/hash.c \
        src/main.c
 
 vush: $(SRCS)

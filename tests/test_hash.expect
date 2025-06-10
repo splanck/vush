@@ -1,0 +1,34 @@
+#!/usr/bin/expect -f
+set timeout 5
+set dir [exec mktemp -d]
+set f [open "$dir/foo" "w"]
+puts $f "#!/bin/sh"
+puts $f "echo hashed1"
+close $f
+exec chmod +x "$dir/foo"
+set env(PATH) "$dir:$env(PATH)"
+spawn ../vush
+expect "vush> "
+send "foo\r"
+expect {
+    -re "[\r\n]+hashed1[\r\n]+vush> " {}
+    timeout { send_user "first run failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "hash foo\r"
+expect "vush> "
+exec mv "$dir/foo" "$dir/foo2"
+send "foo\r"
+expect {
+    -re "[\r\n]+hashed1[\r\n]+vush> " {}
+    timeout { send_user "hash not used\n"; exec rm -rf $dir; exit 1 }
+}
+send "hash -r\r"
+expect "vush> "
+send "foo\r"
+expect {
+    -re "[\r\n]+foo: command not found[\r\n]+vush> " {}
+    timeout { send_user "hash -r failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $dir
