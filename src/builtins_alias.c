@@ -17,7 +17,7 @@ struct alias_entry {
 
 static struct alias_entry *aliases = NULL;
 
-static void set_alias(const char *name, const char *value);
+static int set_alias(const char *name, const char *value);
 
 static const char *aliasfile_path(void)
 {
@@ -62,7 +62,10 @@ void load_aliases(void)
         if (!eq)
             continue;
         *eq = '\0';
-        set_alias(line, eq + 1);
+        if (set_alias(line, eq + 1) < 0) {
+            fclose(f);
+            return;
+        }
     }
     fclose(f);
 }
@@ -76,24 +79,37 @@ const char *get_alias(const char *name)
     return NULL;
 }
 
-static void set_alias(const char *name, const char *value)
+static int set_alias(const char *name, const char *value)
 {
     for (struct alias_entry *a = aliases; a; a = a->next) {
         if (strcmp(a->name, name) == 0) {
+            char *dup = strdup(value);
+            if (!dup)
+                return -1;
             free(a->value);
-            a->value = strdup(value);
-            return;
+            a->value = dup;
+            return 0;
         }
     }
     struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
     if (!new_alias) {
         perror("malloc");
-        return;
+        return -1;
     }
     new_alias->name = strdup(name);
+    if (!new_alias->name) {
+        free(new_alias);
+        return -1;
+    }
     new_alias->value = strdup(value);
+    if (!new_alias->value) {
+        free(new_alias->name);
+        free(new_alias);
+        return -1;
+    }
     new_alias->next = aliases;
     aliases = new_alias;
+    return 0;
 }
 
 static void remove_alias(const char *name)
@@ -146,7 +162,11 @@ int builtin_alias(char **args)
             continue;
         }
         *eq = '\0';
-        set_alias(args[i], eq + 1);
+        if (set_alias(args[i], eq + 1) < 0) {
+            *eq = '=';
+            fprintf(stderr, "alias: failed to set %s\n", args[i]);
+            continue;
+        }
         *eq = '=';
     }
     save_aliases();
