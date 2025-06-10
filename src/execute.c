@@ -347,6 +347,27 @@ int run_pipeline(Command *cmd, const char *line) {
             if (loop_continue) { loop_continue = 0; continue; }
         }
         return last_status;
+    case CMD_SELECT: {
+        char input[MAX_LINE];
+        while (1) {
+            for (int i = 0; i < cmd->word_count; i++)
+                printf("%d) %s\n", i + 1, cmd->words[i]);
+            fputs("? ", stdout);
+            fflush(stdout);
+            if (!fgets(input, sizeof(input), stdin))
+                break;
+            int choice = atoi(input);
+            if (choice < 1 || choice > cmd->word_count) {
+                continue;
+            }
+            if (cmd->var)
+                setenv(cmd->var, cmd->words[choice - 1], 1);
+            run_command_list(cmd->body, line);
+            if (loop_break) { loop_break = 0; break; }
+            if (loop_continue) { loop_continue = 0; continue; }
+        }
+        return last_status;
+    }
     case CMD_FOR_ARITH:
         eval_arith(cmd->arith_init ? cmd->arith_init : "0");
         while (1) {

@@ -28,6 +28,7 @@ and a few built-in commands.
 - Shell functions using `name() { ... }` syntax and a `return` builtin
 - Conditional expressions using `[[ ... ]]` with pattern matching
 - `case` selection statements with optional fall-through using `;&`
+- `select` loops presenting a numbered menu of choices
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file`
 - Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
@@ -326,6 +327,11 @@ vush> i=0; while true; do echo $i; break; done
 vush> case 1 in 1) echo one ;& 2) echo two ;; esac
 one
 two
+vush> select x in foo bar; do echo $x; break; done
+1) foo
+2) bar
+? 2
+bar
 ```
 
 ## Function Example

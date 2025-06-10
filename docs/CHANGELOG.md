@@ -2,6 +2,9 @@
 
 All notable changes to **vush** will be documented in this file.
 
+## 1.1.0 - Menu selection loop
+- Added `select` command for interactive menus
+
 ## 1.0.0 - Feature complete shell
 - `alias` and `unalias` builtins with definitions persisted to `~/.vush_aliases`
 - Shell functions stored in `~/.vush_funcs`
