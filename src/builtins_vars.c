@@ -19,7 +19,9 @@ extern int last_status;
 
 struct var_entry {
     char *name;
-    char *value;
+    char *value;        /* scalar value or NULL when array is used */
+    char **array;       /* NULL for scalar variables */
+    int array_len;
     struct var_entry *next;
 };
 
@@ -29,15 +31,38 @@ static struct var_entry *shell_vars = NULL;
 
 const char *get_shell_var(const char *name) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
-        if (strcmp(v->name, name) == 0)
-            return v->value;
+        if (strcmp(v->name, name) == 0) {
+            if (v->value)
+                return v->value;
+            if (v->array && v->array_len > 0)
+                return v->array[0];
+            return NULL;
+        }
     }
+    return NULL;
+}
+
+char **get_shell_array(const char *name, int *len) {
+    for (struct var_entry *v = shell_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0 && v->array) {
+            if (len) *len = v->array_len;
+            return v->array;
+        }
+    }
+    if (len) *len = 0;
     return NULL;
 }
 
 void set_shell_var(const char *name, const char *value) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
+            if (v->array) {
+                for (int i = 0; i < v->array_len; i++)
+                    free(v->array[i]);
+                free(v->array);
+                v->array = NULL;
+                v->array_len = 0;
+            }
             free(v->value);
             v->value = strdup(value);
             return;
@@ -47,6 +72,43 @@ void set_shell_var(const char *name, const char *value) {
     if (!v) { perror("malloc"); return; }
     v->name = strdup(name);
     v->value = strdup(value);
+    v->array = NULL;
+    v->array_len = 0;
+    v->next = shell_vars;
+    shell_vars = v;
+}
+
+void set_shell_array(const char *name, char **values, int count) {
+    for (struct var_entry *v = shell_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0) {
+            if (v->value) {
+                free(v->value);
+                v->value = NULL;
+            }
+            if (v->array) {
+                for (int i = 0; i < v->array_len; i++)
+                    free(v->array[i]);
+                free(v->array);
+            }
+            v->array = calloc(count, sizeof(char *));
+            if (v->array) {
+                for (int i = 0; i < count; i++)
+                    v->array[i] = strdup(values[i]);
+            }
+            v->array_len = count;
+            return;
+        }
+    }
+    struct var_entry *v = calloc(1, sizeof(struct var_entry));
+    if (!v) { perror("malloc"); return; }
+    v->name = strdup(name);
+    v->value = NULL;
+    v->array = calloc(count, sizeof(char *));
+    if (v->array) {
+        for (int i = 0; i < count; i++)
+            v->array[i] = strdup(values[i]);
+    }
+    v->array_len = count;
     v->next = shell_vars;
     shell_vars = v;
 }
@@ -61,6 +123,11 @@ void unset_shell_var(const char *name) {
                 shell_vars = v->next;
             free(v->name);
             free(v->value);
+            if (v->array) {
+                for (int i = 0; i < v->array_len; i++)
+                    free(v->array[i]);
+                free(v->array);
+            }
             free(v);
             return;
         }
@@ -73,6 +140,11 @@ void free_shell_vars(void) {
         struct var_entry *n = v->next;
         free(v->name);
         free(v->value);
+        if (v->array) {
+            for (int i = 0; i < v->array_len; i++)
+                free(v->array[i]);
+            free(v->array);
+        }
         free(v);
         v = n;
     }
@@ -120,8 +192,15 @@ int builtin_read(char **args) {
         raw = 1;
         idx++;
     }
+    int array_mode = 0;
+    const char *array_name = NULL;
+    if (args[idx] && strcmp(args[idx], "-a") == 0 && args[idx+1]) {
+        array_mode = 1;
+        array_name = args[idx+1];
+        idx += 2;
+    }
     if (!args[idx]) {
-        fprintf(stderr, "usage: read [-r] NAME...\n");
+        fprintf(stderr, "usage: read [-r] [-a NAME] NAME...\n");
         last_status = 1;
         return 1;
     }
@@ -150,24 +229,43 @@ int builtin_read(char **args) {
         *dst = '\0';
     }
 
-    int var_count = 0;
-    for (int i = idx; args[i]; i++)
-        var_count++;
-
-    char *p = line;
-    for (int i = 0; i < var_count; i++) {
-        while (*p == ' ' || *p == '\t')
-            p++;
-        char *val = p;
-        if (i < var_count - 1) {
-            while (*p && *p != ' ' && *p != '\t')
-                p++;
-            if (*p)
-                *p++ = '\0';
-        } else {
-            /* last variable gets the rest of the line */
+    if (array_mode) {
+        int count = 0;
+        char **vals = NULL;
+        char *p = line;
+        while (*p) {
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p == '\0') break;
+            char *start = p;
+            while (*p && *p != ' ' && *p != '\t') p++;
+            if (*p) *p++ = '\0';
+            vals = realloc(vals, sizeof(char*)*(count+1));
+            vals[count++] = strdup(start);
         }
-        set_shell_var(args[idx + i], val);
+        if (!vals) { count = 0; }
+        set_shell_array(array_name, vals, count);
+        for (int i=0;i<count;i++) free(vals[i]);
+        free(vals);
+    } else {
+        int var_count = 0;
+        for (int i = idx; args[i]; i++)
+            var_count++;
+
+        char *p = line;
+        for (int i = 0; i < var_count; i++) {
+            while (*p == ' ' || *p == '\t')
+                p++;
+            char *val = p;
+            if (i < var_count - 1) {
+                while (*p && *p != ' ' && *p != '\t')
+                    p++;
+                if (*p)
+                    *p++ = '\0';
+            } else {
+                /* last variable gets the rest of the line */
+            }
+            set_shell_var(args[idx + i], val);
+        }
     }
     last_status = 0;
     return 1;
@@ -195,8 +293,30 @@ int builtin_unset(char **args) {
         return 1;
     }
     for (int i = 1; args[i]; i++) {
-        unsetenv(args[i]);
-        unset_shell_var(args[i]);
+        char *name = args[i];
+        char *lb = strchr(name, '[');
+        if (lb && name[strlen(name)-1] == ']') {
+            char *endptr;
+            int idx = strtol(lb+1, &endptr, 10);
+            if (*endptr == ']') {
+                *lb = '\0';
+                int len = 0;
+                char **arr = get_shell_array(name, &len);
+                if (arr && idx >=0 && idx < len) {
+                    char **tmp = NULL;
+                    if (len > 1)
+                        tmp = malloc(sizeof(char*)*(len-1));
+                    int j=0;
+                    for(int k=0;k<len;k++) if(k!=idx) tmp[j++]=arr[k];
+                    set_shell_array(name, tmp, len-1);
+                    free(tmp);
+                }
+                *lb = '[';
+            }
+        } else {
+            unsetenv(name);
+            unset_shell_var(name);
+        }
     }
     return 1;
 }

@@ -46,10 +46,31 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             if (!eq)
                 continue;
             char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-            if (name) {
-                set_shell_var(name, eq + 1);
-                free(name);
+            if (!name)
+                continue;
+            char *val = eq + 1;
+            size_t vlen = strlen(val);
+            if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
+                char *body = strndup(val+1, vlen-2);
+                char *p = body;
+                char **vals = NULL; int count=0;
+                while (*p) {
+                    while (*p==' '||*p=='\t') p++;
+                    if (*p=='\0') break;
+                    char *start=p;
+                    while (*p && *p!=' ' && *p!='\t') p++;
+                    if (*p) *p++='\0';
+                    vals = realloc(vals,sizeof(char*)*(count+1));
+                    vals[count++] = strdup(start);
+                }
+                set_shell_array(name, vals, count);
+                for(int j=0;j<count;j++) free(vals[j]);
+                free(vals);
+                free(body);
+            } else {
+                set_shell_var(name, val);
             }
+            free(name);
         }
         last_status = 0;
         return 1;
@@ -79,8 +100,41 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
         const char *ov = get_shell_var(backs[i].name);
         backs[i].had_var = ov != NULL;
         backs[i].var = ov ? strdup(ov) : NULL;
-        setenv(backs[i].name, eq + 1, 1);
-        set_shell_var(backs[i].name, eq + 1);
+        char *val = eq + 1;
+        size_t vlen = strlen(val);
+        if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
+            char *body = strndup(val+1, vlen-2);
+            char *p = body;
+            char **vals = NULL; int count=0;
+            size_t joinlen = 0;
+            while (*p) {
+                while (*p==' '||*p=='\t') p++;
+                if (*p=='\0') break;
+                char *start=p;
+                while (*p && *p!=' ' && *p!='\t') p++;
+                if (*p) *p++='\0';
+                vals = realloc(vals,sizeof(char*)*(count+1));
+                vals[count++] = strdup(start);
+                joinlen += strlen(start) + 1;
+            }
+            char *joined = malloc(joinlen+1);
+            if (joined) {
+                joined[0] = '\0';
+                for (int j=0;j<count;j++) {
+                    strcat(joined, vals[j]);
+                    if (j < count-1) strcat(joined, " ");
+                }
+            }
+            setenv(backs[i].name, joined ? joined : "", 1);
+            set_shell_array(backs[i].name, vals, count);
+            free(joined);
+            for(int j=0;j<count;j++) free(vals[j]);
+            free(vals);
+            free(body);
+        } else {
+            setenv(backs[i].name, val, 1);
+            set_shell_var(backs[i].name, val);
+        }
     }
 
     int handled = 0;

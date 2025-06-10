@@ -205,6 +205,21 @@ vush> echo $BAR
 baz
 ```
 
+### Arrays
+
+Arrays are defined using `NAME=(word ...)` and expanded with `${NAME[index]}` or
+`${NAME[@]}`:
+
+```sh
+vush> nums=(one two three)
+vush> echo ${nums[1]}
+two
+vush> for n in ${nums[@]}; do echo $n; done
+one
+two
+three
+```
+
 ## Built-in Commands
 
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.

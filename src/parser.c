@@ -873,9 +873,25 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         if (!tok) { free_pipeline(seg_head); return NULL; }
 
         if (!quoted && argc == 0 && is_assignment(tok)) {
+            char *eq = strchr(tok, '=');
+            if (eq && eq[1] == '(' && tok[strlen(tok)-1] != ')') {
+                char *assign = strdup(tok);
+                char *tmp;
+                do {
+                    int q2 = 0;
+                    tmp = read_token(p, &q2);
+                    if (!tmp) { free(assign); free_pipeline(seg_head); return NULL; }
+                    char *old = assign;
+                    asprintf(&assign, "%s %s", assign, tmp);
+                    free(old);
+                    free(tmp);
+                } while (assign[strlen(assign)-1] != ')');
+                free(tok);
+                tok = assign;
+                eq = strchr(tok, '=');
+            }
             seg->assigns = realloc(seg->assigns, sizeof(char *) * (seg->assign_count + 1));
             seg->assigns[seg->assign_count++] = tok;
-            char *eq = strchr(tok, '=');
             if (eq) {
                 char *name = strndup(tok, eq - tok);
                 if (name) { set_temp_var(name, eq + 1); free(name); }
