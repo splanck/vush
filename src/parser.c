@@ -740,7 +740,7 @@ static void collect_alias_tokens(const char *name, char **out, int *count,
     free(dup);
 }
 
-static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
+static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok) {
     const char *alias = get_alias(tok);
     if (!alias)
         return 0; /* no alias, leave token untouched */
@@ -760,7 +760,7 @@ static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
 }
 
 /* Collect a here-doc into a temporary file */
-static int collect_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
+static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted || strncmp(tok, "<<", 2) != 0)
         return 0;
     if ((tok[2] == '<') || (**p == '<'))
@@ -804,7 +804,7 @@ static int collect_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
 }
 
 /* Handle <, >, 2>, &> style redirections */
-static int handle_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
+static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted)
         return 0;
     if ((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0) {
@@ -1003,17 +1003,17 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         }
 
         if (!quoted && argc == 0) {
-            if (expand_aliases(seg, &argc, tok))
+            if (expand_aliases_in_segment(seg, &argc, tok))
                 continue;
         }
 
-        int handled = collect_here_doc(seg, p, tok, quoted);
+        int handled = process_here_doc(seg, p, tok, quoted);
         if (handled == -1) { free_pipeline(seg_head); return NULL; }
         if (handled == 1) {
             continue;
         }
 
-        handled = handle_redirection(seg, p, tok, quoted);
+        handled = parse_redirection(seg, p, tok, quoted);
         if (handled == -1) { free_pipeline(seg_head); return NULL; }
         if (handled == 1) {
             continue;
