@@ -207,16 +207,20 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (opt_xtrace && line)
         fprintf(stderr, "+ %s\n", line);
 
-    if (apply_temp_assignments(pipeline))
+    if (apply_temp_assignments(pipeline)) {
+        cleanup_proc_subs();
         return last_status;
+    }
 
     if (!pipeline->argv[0] || pipeline->argv[0][0] == '\0') {
         fprintf(stderr, "syntax error: missing command\n");
         last_status = 1;
+        cleanup_proc_subs();
         return last_status;
     }
-
-    return spawn_pipeline_segments(pipeline, background, line);
+    int r = spawn_pipeline_segments(pipeline, background, line);
+    cleanup_proc_subs();
+    return r;
 }
 
 int run_command_list(Command *cmds, const char *line) {

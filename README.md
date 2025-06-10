@@ -20,6 +20,7 @@ and a few built-in commands.
 - Arithmetic expansion using `$((...))` and a `let` builtin
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
+- Process substitution using `<(cmd)` and `>(cmd)`
 - Command chaining with `;`, `&&`, and `||`
 - Subshells using `( ... )` to group commands
 - Brace groups using `{ ... ; }` executed in the current shell
