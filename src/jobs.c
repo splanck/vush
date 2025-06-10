@@ -1,10 +1,16 @@
 /*
  * vush - a simple UNIX shell
  * Licensed under the GNU GPLv3.
- */
-
-/*
- * Linked list based job tracking for background processes.
+ *
+ * Job control helpers
+ * -------------------
+ *
+ * Background processes started by the shell are stored in a simple
+ * singly linked list.  Each list entry keeps the job's process ID,
+ * a unique job number and the command line that was executed.  This
+ * allows builtins such as `jobs`, `fg`, `bg` and `kill` to keep track
+ * of active tasks and to notify the user when a background job
+ * completes.
  */
 #define _GNU_SOURCE
 #include "jobs.h"
@@ -26,6 +32,10 @@ typedef struct Job {
 static Job *jobs = NULL;
 static int next_job_id = 1;
 
+/*
+ * Record a child process that was started in the background.
+ * Called by the executor whenever a command is launched with '&'.
+ */
 void add_job(pid_t pid, const char *cmd) {
     Job *job = malloc(sizeof(Job));
     if (!job) return;
@@ -37,6 +47,10 @@ void add_job(pid_t pid, const char *cmd) {
     jobs = job;
 }
 
+/*
+ * Delete a job entry once the process has terminated or has been
+ * brought to the foreground.  The PID must match the job to remove.
+ */
 void remove_job(pid_t pid) {
     Job **curr = &jobs;
     while (*curr) {
@@ -50,9 +64,10 @@ void remove_job(pid_t pid) {
     }
 }
 /*
- * Reap any finished background processes and report their status.
+ * Reap finished background processes and print a message when they
+ * exit.  This function is typically invoked before displaying a new
+ * prompt so that completed jobs are noticed.
  */
-
 void check_jobs(void) {
     int status;
     pid_t pid;
@@ -68,6 +83,10 @@ void check_jobs(void) {
     }
 }
 
+/*
+ * Display the list of active background jobs.  Used by the `jobs`
+ * builtin to show the user what is currently running.
+ */
 void print_jobs(void) {
     Job *j = jobs;
     while (j) {
@@ -76,6 +95,10 @@ void print_jobs(void) {
     }
 }
 
+/*
+ * Bring the specified job to the foreground and wait for it to finish.
+ * Implements the `fg` builtin.
+ */
 int wait_job(int id) {
     Job **curr = &jobs;
     while (*curr) {
@@ -93,6 +116,10 @@ int wait_job(int id) {
     return -1;
 }
 
+/*
+ * Send the given signal to a job.  Used by the `kill` builtin to
+ * terminate or control background processes.
+ */
 int kill_job(int id, int sig) {
     Job *curr = jobs;
     while (curr) {
@@ -109,6 +136,10 @@ int kill_job(int id, int sig) {
     return -1;
 }
 
+/*
+ * Resume a stopped job and keep it running in the background.  This
+ * mirrors the behaviour of the `bg` builtin found in other shells.
+ */
 int bg_job(int id) {
     Job *curr = jobs;
     while (curr) {
