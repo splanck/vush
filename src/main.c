@@ -2,6 +2,14 @@
  * vush - a simple UNIX shell
  * Licensed under the GNU GPLv3.
  * Main entry point and REPL loop.
+ *
+ * Command line arguments are parsed to either execute a single command
+ * with `-c` or to run a script file.  Additional arguments become
+ * `script_argv` so scripts can access them.
+ *
+ * After initialization the shell enters a read‑eval‑print loop that reads
+ * lines from the chosen input, performs history expansion and parsing,
+ * then executes the resulting pipelines while tracking their exit status.
  */
 
 
@@ -42,6 +50,11 @@ static void process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
 static void repl_loop(FILE *input);
 
+/*
+ * Execute the command registered for a trapped signal. The trap string
+ * is parsed and run with stdin as the input source. `parse_input` is
+ * restored after execution.
+ */
 void trap_handler(int sig)
 {
     if (sig <= 0 || sig >= NSIG)
@@ -71,6 +84,11 @@ void trap_handler(int sig)
     parse_input = prev;
 }
 
+/*
+ * Source the user's ~/.vushrc file if present. Each line is expanded,
+ * parsed and executed before starting the main loop. The commands are
+ * added to history and `parse_input` is temporarily set to the rc file.
+ */
 static void process_startup_file(FILE *input)
 {
     const char *home = getenv("HOME");
@@ -119,6 +137,11 @@ static void process_startup_file(FILE *input)
     parse_input = input;
 }
 
+/*
+ * Execute a command string supplied via the -c option. The string
+ * undergoes history expansion, is parsed into pipelines and then
+ * executed as if typed interactively. The command is added to history.
+ */
 static void run_command_string(const char *cmd)
 {
     char linebuf[MAX_LINE];
@@ -154,6 +177,12 @@ static void run_command_string(const char *cmd)
         free(expanded);
 }
 
+/*
+ * Primary read‑eval‑print loop. Reads a line from the given input (stdin
+ * or a script), expands history, parses and executes it. In interactive
+ * mode a prompt is displayed and background jobs are checked each
+ * iteration. Loop terminates on EOF or line_edit returning NULL.
+ */
 static void repl_loop(FILE *input)
 {
     char linebuf[MAX_LINE];
