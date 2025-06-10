@@ -996,6 +996,40 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     }
 }
 
+/* Start a new pipeline segment when encountering a pipe character */
+static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
+    PipelineSegment *seg = *seg_ptr;
+    seg->argv[*argc] = NULL;
+
+    PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+    next->dup_out = -1;
+    next->dup_err = -1;
+    next->assigns = NULL;
+    next->assign_count = 0;
+
+    seg->next = next;
+    *seg_ptr = next;
+    *argc = 0;
+    (*p)++;
+    clear_temp_vars();
+}
+
+/* Expand braces for a token, returning an array like expand_braces */
+static char **expand_token_braces(char *tok, int quoted, int *count) {
+    char **btoks = NULL;
+    if (!quoted)
+        btoks = expand_braces(tok, count);
+    if (!btoks) {
+        btoks = malloc(2 * sizeof(char *));
+        btoks[0] = tok;
+        btoks[1] = NULL;
+        if (count) *count = 1;
+    } else {
+        free(tok);
+    }
+    return btoks;
+}
+
 static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc,
                                   CmdOp *op_out) {
     PipelineSegment *seg = *seg_ptr;
@@ -1010,18 +1044,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; break; }
 
         if (**p == '|') {
-            seg->argv[*argc] = NULL;
-            PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
-            next->dup_out = -1;
-            next->dup_err = -1;
-            next->assigns = NULL;
-            next->assign_count = 0;
-            seg->next = next;
-            seg = next;
-            *seg_ptr = seg;
-            *argc = 0;
-            (*p)++;
-            clear_temp_vars();
+            start_new_segment(p, &seg, argc);
             continue;
         }
 
@@ -1059,18 +1082,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         if (h == -1) { free(tok); return -1; }
         if (h == 1) continue;
 
-        char **btoks = NULL;
         int bcount = 0;
-        if (!quoted)
-            btoks = expand_braces(tok, &bcount);
-        if (!btoks) {
-            btoks = malloc(2 * sizeof(char *));
-            btoks[0] = tok;
-            btoks[1] = NULL;
-            bcount = 1;
-        } else {
-            free(tok);
-        }
+        char **btoks = expand_token_braces(tok, quoted, &bcount);
 
         for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
             char *bt = btoks[bi];
