@@ -19,6 +19,7 @@
 #include "options.h"
 #include "pipeline.h"
 #include "func_exec.h"
+#include "arith.h"
 
 extern int last_status;
 
