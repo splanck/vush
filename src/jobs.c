@@ -95,6 +95,17 @@ void print_jobs(void) {
     }
 }
 
+/* Return the PID for a job ID or -1 when not found */
+pid_t get_job_pid(int id) {
+    Job *curr = jobs;
+    while (curr) {
+        if (curr->id == id)
+            return curr->pid;
+        curr = curr->next;
+    }
+    return -1;
+}
+
 /*
  * Bring the specified job to the foreground and wait for it to finish.
  * Implements the `fg` builtin.

@@ -21,6 +21,7 @@ extern int builtin_jobs(char **);
 extern int builtin_fg(char **);
 extern int builtin_bg(char **);
 extern int builtin_kill(char **);
+extern int builtin_wait(char **);
 extern int builtin_export(char **);
 extern int builtin_local(char **);
 extern int builtin_unset(char **);
@@ -59,6 +60,7 @@ const struct builtin builtin_table[] = {
     {"fg", builtin_fg},
     {"bg", builtin_bg},
     {"kill", builtin_kill},
+    {"wait", builtin_wait},
     {"export", builtin_export},
     {"local", builtin_local},
     {"unset", builtin_unset},

@@ -261,6 +261,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `fg ID` - wait for background job `ID`.
 - `bg ID` - resume a stopped background job `ID`.
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
+- `wait [ID|PID]` - wait for the given job or process to finish.
 - `trap 'cmd' SIGNAL` - execute `cmd` when `SIGNAL` is received. Use `trap SIGNAL` to clear.
 - `export NAME=value` - set an environment variable for the shell.
 - `unset NAME` - remove an environment variable.
