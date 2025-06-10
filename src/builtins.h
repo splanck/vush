@@ -41,6 +41,9 @@ void set_shell_var(const char *name, const char *value);
 void set_shell_array(const char *name, char **values, int count);
 void unset_shell_var(const char *name);
 void free_shell_vars(void);
+void push_local_scope(void);
+void pop_local_scope(void);
+int builtin_local(char **args);
 
 int builtin_break(char **args);
 int builtin_continue(char **args);
