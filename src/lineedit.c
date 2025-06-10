@@ -1,5 +1,9 @@
 /*
- * Minimal interactive line editor used for the shell prompt.
+ * Interactive line editor for the shell prompt.
+ * Input is read in raw terminal mode so keypresses are delivered
+ * immediately, allowing the editor to interpret arrow keys, history
+ * search and completion without the usual line buffering.  Various
+ * control sequences update the buffer and cursor position.
  */
 #define _GNU_SOURCE
 #include "lineedit.h"
@@ -34,6 +38,7 @@ static int process_keypress(char c, const char *prompt, char *buf,
 static char *read_raw_line(const char *prompt);
 
 
+/* Redraw the prompt and buffer after edits, leaving the cursor at pos. */
 static void redraw_line(const char *prompt, const char *buf, int prev_len, int pos) {
     int len = strlen(buf);
     printf("\r%s%s", prompt, buf);
@@ -47,6 +52,7 @@ static void redraw_line(const char *prompt, const char *buf, int prev_len, int p
     fflush(stdout);
 }
 
+/* Remove the character before the cursor. */
 static void handle_backspace(char *buf, int *lenp, int *posp) {
     if (*posp > 0) {
         memmove(&buf[*posp - 1], &buf[*posp], *lenp - *posp);
@@ -61,6 +67,7 @@ static void handle_backspace(char *buf, int *lenp, int *posp) {
     }
 }
 
+/* Erase from the start of the line up to the cursor. */
 static void handle_line_start_erase(const char *prompt, char *buf, int *lenp,
                                     int *posp, int *disp_lenp) {
     if (*posp > 0) {
@@ -72,6 +79,7 @@ static void handle_line_start_erase(const char *prompt, char *buf, int *lenp,
     }
 }
 
+/* Erase the word immediately before the cursor. */
 static void handle_word_erase(const char *prompt, char *buf, int *lenp, int *posp,
                               int *disp_lenp) {
     if (*posp > 0) {
@@ -88,6 +96,7 @@ static void handle_word_erase(const char *prompt, char *buf, int *lenp, int *pos
     }
 }
 
+/* Erase from the cursor to the end of the line. */
 static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
                                   int *posp, int *disp_lenp) {
     if (*posp < *lenp) {
@@ -99,6 +108,7 @@ static void handle_line_end_erase(const char *prompt, char *buf, int *lenp,
 }
 
 
+/* Insert character c at the cursor position. */
 static void handle_insert(char *buf, int *lenp, int *posp, char c,
                           int *disp_lenp) {
     if (*lenp < MAX_LINE - 1) {
@@ -115,6 +125,7 @@ static void handle_insert(char *buf, int *lenp, int *posp, char c,
     }
 }
 
+/* Handle Ctrl-based editing commands.  Returns 1 if handled. */
 static int handle_ctrl_commands(char c, const char *prompt, char *buf,
                                 int *lenp, int *posp, int *disp_lenp) {
     switch (c) {
@@ -154,6 +165,7 @@ static int handle_ctrl_commands(char c, const char *prompt, char *buf,
     }
 }
 
+/* Interpret escape sequences for arrow and home/end keys. */
 static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
                               int *posp, int *disp_lenp) {
     char seq[3];
@@ -214,10 +226,9 @@ static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
 }
 
 /*
- * Read a line using raw terminal mode and handle basic editing
- * keys, history search and completion.
+ * Process a single input character and update the editing state.
+ * Returns 1 when the line is complete or should be aborted.
  */
-
 static int process_keypress(char c, const char *prompt, char *buf,
                             int *lenp, int *posp, int *disp_lenp) {
     if (c == '\r' || c == '\n') {
@@ -249,6 +260,9 @@ static int process_keypress(char c, const char *prompt, char *buf,
     return 0;
 }
 
+/*
+ * Read characters in raw mode until Enter is pressed, building the line.
+ */
 static char *read_raw_line(const char *prompt) {
     struct termios orig, raw;
     if (tcgetattr(STDIN_FILENO, &orig) == -1)
@@ -285,6 +299,7 @@ static char *read_raw_line(const char *prompt) {
     return strdup(buf);
 }
 
+/* Read a line using the editor and return it as a new string. */
 char *line_edit(const char *prompt) {
     return read_raw_line(prompt);
 }
