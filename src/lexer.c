@@ -334,179 +334,206 @@ char *read_token(char **p, int *quoted) {
     return res;
 }
 
-char *expand_var(const char *token) {
+/* -- Expansion helper functions --------------------------------------- */
+
+static char *expand_tilde(const char *token) {
+    const char *rest = token + 1;
+    const char *home = NULL;
+    if (*rest == '/' || *rest == '\0') {
+        home = getenv("HOME");
+    } else {
+        const char *slash = strchr(rest, '/');
+        size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
+        char *user = strndup(rest, len);
+        if (user) {
+            struct passwd *pw = getpwnam(user);
+            if (pw) home = pw->pw_dir;
+            free(user);
+        }
+        rest = slash ? slash : rest + len;
+    }
+    if (!home) home = getenv("HOME");
+    if (!home) home = "";
+    char *ret = malloc(strlen(home) + strlen(rest) + 1);
+    if (!ret) return NULL;
+    strcpy(ret, home);
+    strcat(ret, rest);
+    return ret;
+}
+
+static char *expand_arith(const char *token) {
+    size_t tlen = strlen(token);
+    if (!(tlen > 4 && strncmp(token, "$((", 3) == 0 &&
+          token[tlen-2] == ')' && token[tlen-1] == ')'))
+        return NULL;
+    char *expr = strndup(token + 3, tlen - 5);
+    if (!expr) return strdup("");
+    long val = eval_arith(expr);
+    free(expr);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%ld", val);
+    return strdup(buf);
+}
+
+static char *expand_array_element(const char *name, const char *idxstr) {
+    if (strcmp(idxstr, "@") == 0) {
+        int alen = 0; char **arr = get_shell_array(name, &alen);
+        if (arr) {
+            size_t tlen = 0;
+            for (int ai = 0; ai < alen; ai++)
+                tlen += strlen(arr[ai]) + 1;
+            char *joined = malloc(tlen + 1);
+            if (joined) {
+                joined[0] = '\0';
+                for (int ai = 0; ai < alen; ai++) {
+                    strcat(joined, arr[ai]);
+                    if (ai < alen - 1)
+                        strcat(joined, " ");
+                }
+            }
+            return joined ? joined : strdup("");
+        }
+        const char *val = getenv(name);
+        if (!val) val = "";
+        return strdup(val);
+    } else {
+        int idx = atoi(idxstr);
+        int alen = 0; char **arr = get_shell_array(name, &alen);
+        if (arr && idx >= 0 && idx < alen)
+            return strdup(arr[idx]);
+        const char *val = getenv(name);
+        if (!val) val = "";
+        return strdup(val);
+    }
+}
+
+static char *apply_modifier(const char *name, const char *val, const char *p) {
+    if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
+        char op = p[1];
+        const char *word = p + 2;
+        char *wexp = strdup(word ? word : "");
+        if (!wexp) wexp = strdup("");
+
+        int use_word = (!val || val[0] == '\0');
+        if (op == '+')
+            use_word = (val && val[0] != '\0');
+        if (op == '=') {
+            if (!val || val[0] == '\0') {
+                set_shell_var(name, wexp);
+                if (getenv(name))
+                    setenv(name, wexp, 1);
+                val = wexp;
+            }
+        }
+
+        if (use_word)
+            return wexp;
+
+        free(wexp);
+        if (!val) {
+            if (opt_nounset) {
+                fprintf(stderr, "%s: unbound variable\n", name);
+                last_status = 1;
+            }
+            val = "";
+        }
+        return strdup(val);
+    } else if (*p == '#' || *p == '%') {
+        char op = *p;
+        const char *pattern = p + 1;
+        if (!val) val = "";
+        size_t vlen = strlen(val);
+        if (op == '#') {
+            for (size_t i = 0; i <= vlen; i++) {
+                char *pref = strndup(val, i);
+                if (!pref) break;
+                int m = fnmatch(pattern, pref, 0);
+                free(pref);
+                if (m == 0)
+                    return strdup(val + i);
+            }
+            return strdup(val);
+        } else {
+            for (size_t i = 0; i <= vlen; i++) {
+                char *suf = strdup(val + vlen - i);
+                if (!suf) break;
+                int m = fnmatch(pattern, suf, 0);
+                free(suf);
+                if (m == 0) {
+                    char *res = strndup(val, vlen - i);
+                    return res ? res : strdup("");
+                }
+            }
+            return strdup(val);
+        }
+    } else {
+        if (!val) {
+            if (opt_nounset) {
+                fprintf(stderr, "%s: unbound variable\n", name);
+                last_status = 1;
+            }
+            val = "";
+        }
+        return strdup(val);
+    }
+}
+
+static char *expand_length(const char *name) {
+    const char *val = get_shell_var(name);
+    if (!val) val = getenv(name);
+    if (!val) {
+        if (opt_nounset) {
+            fprintf(stderr, "%s: unbound variable\n", name);
+            last_status = 1;
+        }
+        val = "";
+    }
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%zu", strlen(val));
+    return strdup(buf);
+}
+
+static char *expand_braced(const char *inner) {
+    if (inner[0] == '#')
+        return expand_length(inner + 1);
+
+    char name[MAX_LINE];
+    int n = 0;
+    const char *p = inner;
+    while (*p && *p != ':' && *p != '#' && *p != '%' && n < MAX_LINE - 1)
+        name[n++] = *p++;
+    name[n] = '\0';
+
+    const char *val = NULL;
+    char *lb = strchr(name, '[');
+    if (lb && name[strlen(name) - 1] == ']') {
+        *lb = '\0';
+        char *idxstr = lb + 1;
+        idxstr[strlen(idxstr) - 1] = '\0';
+        return expand_array_element(name, idxstr);
+    } else {
+        val = get_shell_var(name);
+        if (!val) val = getenv(name);
+    }
+
+    if (*p)
+        return apply_modifier(name, val, p);
+
+    if (!val) {
+        if (opt_nounset) {
+            fprintf(stderr, "%s: unbound variable\n", name);
+            last_status = 1;
+        }
+        val = "";
+    }
+    return strdup(val);
+}
+
+static char *expand_special(const char *token) {
     if (strcmp(token, "$?") == 0) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%d", last_status);
         return strdup(buf);
-    }
-    if (token[0] == '~') {
-        const char *rest = token + 1;
-        const char *home = NULL;
-        if (*rest == '/' || *rest == '\0') {
-            home = getenv("HOME");
-        } else {
-            const char *slash = strchr(rest, '/');
-            size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
-            char *user = strndup(rest, len);
-            if (user) {
-                struct passwd *pw = getpwnam(user);
-                if (pw) home = pw->pw_dir;
-                free(user);
-            }
-            rest = slash ? slash : rest + len;
-        }
-        if (!home) home = getenv("HOME");
-        if (!home) home = "";
-        char *ret = malloc(strlen(home) + strlen(rest) + 1);
-        if (!ret) return NULL;
-        strcpy(ret, home);
-        strcat(ret, rest);
-        return ret;
-    }
-    if (token[0] != '$') return strdup(token);
-    size_t tlen = strlen(token);
-    if (tlen > 4 && strncmp(token, "$((", 3) == 0 && token[tlen-2] == ')' && token[tlen-1] == ')') {
-        char *expr = strndup(token + 3, tlen - 5);
-        if (!expr) return strdup("");
-        long val = eval_arith(expr);
-        free(expr);
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%ld", val);
-        return strdup(buf);
-    }
-    if (token[1] == '{') {
-        const char *end = strchr(token + 2, '}');
-        if (end && end[1] == '\0') {
-            char inner[MAX_LINE];
-            size_t ilen = (size_t)(end - (token + 2));
-            if (ilen >= sizeof(inner)) ilen = sizeof(inner) - 1;
-            memcpy(inner, token + 2, ilen);
-            inner[ilen] = '\0';
-
-            if (inner[0] == '#') {
-                const char *name = inner + 1;
-                const char *val = get_shell_var(name);
-                if (!val) val = getenv(name);
-                if (!val) {
-                    if (opt_nounset) {
-                        fprintf(stderr, "%s: unbound variable\n", name);
-                        last_status = 1;
-                    }
-                    val = "";
-                }
-                char buf[32];
-                snprintf(buf, sizeof(buf), "%zu", strlen(val));
-                return strdup(buf);
-            }
-
-            char name[MAX_LINE];
-            int n = 0;
-            const char *p = inner;
-            while (*p && *p != ':' && *p != '#' && *p != '%' && n < MAX_LINE - 1)
-                name[n++] = *p++;
-            name[n] = '\0';
-
-            const char *val = NULL;
-            char *lb = strchr(name, '[');
-            if (lb && name[strlen(name)-1] == ']') {
-                *lb = '\0';
-                char *idxstr = lb + 1;
-                idxstr[strlen(idxstr)-1] = '\0';
-                if (strcmp(idxstr, "@") == 0) {
-                    int alen = 0; char **arr = get_shell_array(name, &alen);
-                    if (arr) {
-                        size_t tlen = 0; for(int ai=0; ai<alen; ai++) tlen += strlen(arr[ai]) + 1;
-                        char *joined = malloc(tlen+1); if(joined){ joined[0]='\0'; for(int ai=0; ai<alen; ai++){ strcat(joined, arr[ai]); if(ai<alen-1) strcat(joined, " "); }}
-                        return joined ? joined : strdup("");
-                    }
-                    val = getenv(name);
-                    if (!val) val = "";
-                    char *ret = strdup(val);
-                    return ret;
-                } else {
-                    int idx = atoi(idxstr);
-                    int alen = 0; char **arr = get_shell_array(name, &alen);
-                    if (arr && idx >=0 && idx < alen) return strdup(arr[idx]);
-                    val = getenv(name);
-                    if (!val) val = "";
-                    *lb='['; // restore
-                    return strdup(val);
-                }
-            } else {
-                val = get_shell_var(name);
-                if (!val) val = getenv(name);
-            }
-
-            if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
-                char op = p[1];
-                const char *word = p + 2;
-                char *wexp = strdup(word ? word : "");
-                if (!wexp) wexp = strdup("");
-
-                int use_word = (!val || val[0] == '\0');
-                if (op == '+')
-                    use_word = (val && val[0] != '\0');
-                if (op == '=') {
-                    if (!val || val[0] == '\0') {
-                        set_shell_var(name, wexp);
-                        if (getenv(name))
-                            setenv(name, wexp, 1);
-                        val = wexp;
-                    }
-                }
-
-                if (use_word)
-                    return wexp;
-
-                free(wexp);
-                if (!val) {
-                    if (opt_nounset) {
-                        fprintf(stderr, "%s: unbound variable\n", name);
-                        last_status = 1;
-                    }
-                    val = "";
-                }
-                return strdup(val);
-            } else if (*p == '#' || *p == '%') {
-                char op = *p;
-                const char *pattern = p + 1;
-                if (!val) val = "";
-                size_t vlen = strlen(val);
-                if (op == '#') {
-                    for (size_t i = 0; i <= vlen; i++) {
-                        char *pref = strndup(val, i);
-                        if (!pref) break;
-                        int m = fnmatch(pattern, pref, 0);
-                        free(pref);
-                        if (m == 0)
-                            return strdup(val + i);
-                    }
-                    return strdup(val);
-                } else {
-                    for (size_t i = 0; i <= vlen; i++) {
-                        char *suf = strdup(val + vlen - i);
-                        if (!suf) break;
-                        int m = fnmatch(pattern, suf, 0);
-                        free(suf);
-                        if (m == 0) {
-                            char *res = strndup(val, vlen - i);
-                            return res ? res : strdup("");
-                        }
-                    }
-                    return strdup(val);
-                }
-            } else {
-                if (!val) {
-                    if (opt_nounset) {
-                        fprintf(stderr, "%s: unbound variable\n", name);
-                        last_status = 1;
-                    }
-                    val = "";
-                }
-                return strdup(val);
-            }
-        }
     }
     if (strcmp(token, "$#") == 0) {
         char buf[16];
@@ -546,7 +573,7 @@ char *expand_var(const char *token) {
             if (i < script_argc) {
                 size_t l = strlen(res);
                 res[l] = sep;
-                res[l+1] = '\0';
+                res[l + 1] = '\0';
             }
         }
         return res;
@@ -572,16 +599,48 @@ char *expand_var(const char *token) {
             return strdup(val);
         }
     }
-    const char *val = get_shell_var(token + 1);
-    if (!val) val = getenv(token + 1);
+    return NULL;
+}
+
+static char *expand_plain_var(const char *name) {
+    const char *val = get_shell_var(name);
+    if (!val) val = getenv(name);
     if (!val) {
         if (opt_nounset) {
-            fprintf(stderr, "%s: unbound variable\n", token + 1);
+            fprintf(stderr, "%s: unbound variable\n", name);
             last_status = 1;
         }
         val = "";
     }
     return strdup(val);
+}
+
+char *expand_var(const char *token) {
+    char *s = expand_special(token);
+    if (s)
+        return s;
+    if (token[0] == '~')
+        return expand_tilde(token);
+    if (token[0] != '$')
+        return strdup(token);
+
+    s = expand_arith(token);
+    if (s)
+        return s;
+
+    if (token[1] == '{') {
+        const char *end = strchr(token + 2, '}');
+        if (end && end[1] == '\0') {
+            char inner[MAX_LINE];
+            size_t ilen = (size_t)(end - (token + 2));
+            if (ilen >= sizeof(inner)) ilen = sizeof(inner) - 1;
+            memcpy(inner, token + 2, ilen);
+            inner[ilen] = '\0';
+            return expand_braced(inner);
+        }
+    }
+
+    return expand_plain_var(token + 1);
 }
 
 char *expand_history(const char *line) {
