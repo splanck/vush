@@ -226,6 +226,9 @@ strings and allow wildcards like '*' and '?'.
 For each argument, print whether it is an alias, builtin or the full path of an
 executable found in \fB$PATH\fP.
 .TP
+.B command \fIname [args...]\fP
+Execute NAME directly, bypassing aliases and functions.
+.TP
 .B eval \fIargs...\fP
 Concatenate the arguments into a single command line and execute it in the
 current shell.

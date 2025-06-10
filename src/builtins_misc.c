@@ -212,6 +212,35 @@ int builtin_exec(char **args) {
     return 1;
 }
 
+/* Execute a command ignoring any shell aliases or functions. */
+int builtin_command(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: command name [args...]\n");
+        return 1;
+    }
+    pid_t pid = fork();
+    if (pid == 0) {
+        execvp(args[1], &args[1]);
+        perror(args[1]);
+        _exit(127);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status))
+            last_status = WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            last_status = 128 + WTERMSIG(status);
+        else
+            last_status = status;
+        return 1;
+    } else {
+        perror("fork");
+        last_status = 1;
+        return 1;
+    }
+}
+
+
 /* Run a command and report the elapsed real time. */
 int builtin_time(char **args) {
     if (!args[1]) {
