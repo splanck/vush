@@ -456,6 +456,30 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             val = "";
         }
         return strdup(val);
+    } else if (*p == ':' && isdigit((unsigned char)p[1])) {
+        if (!val) {
+            if (opt_nounset) {
+                fprintf(stderr, "%s: unbound variable\n", name);
+                last_status = 1;
+            }
+            val = "";
+        }
+        char *end;
+        long off = strtol(p + 1, &end, 10);
+        long len = -1;
+        if (*end == ':') {
+            len = strtol(end + 1, &end, 10);
+        }
+        size_t vlen = strlen(val);
+        if (off < 0) {
+            if ((size_t)(-off) > vlen) off = 0;
+            else off = vlen + off;
+        }
+        if ((size_t)off > vlen) off = vlen;
+        size_t avail = vlen - off;
+        size_t count = (len < 0 || (size_t)len > avail) ? avail : (size_t)len;
+        char *res = strndup(val + off, count);
+        return res ? res : strdup("");
     } else if (*p == '#' || *p == '%') {
         char op = *p;
         const char *pattern = p + 1;
