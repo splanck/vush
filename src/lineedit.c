@@ -29,6 +29,9 @@ static int handle_ctrl_commands(char c, const char *prompt, char *buf,
                                 int *lenp, int *posp, int *disp_lenp);
 static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
                               int *posp, int *disp_lenp);
+static int process_keypress(char c, const char *prompt, char *buf,
+                            int *lenp, int *posp, int *disp_lenp);
+static char *read_raw_line(const char *prompt);
 
 
 static void redraw_line(const char *prompt, const char *buf, int prev_len, int pos) {
@@ -215,7 +218,38 @@ static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
  * keys, history search and completion.
  */
 
-char *line_edit(const char *prompt) {
+static int process_keypress(char c, const char *prompt, char *buf,
+                            int *lenp, int *posp, int *disp_lenp) {
+    if (c == '\r' || c == '\n') {
+        write(STDOUT_FILENO, "\r\n", 2);
+        return 1;
+    }
+
+    if (c == 0x04 && *lenp == 0) { /* Ctrl-D */
+        *lenp = -1;
+        return 1;
+    }
+
+    if (handle_ctrl_commands(c, prompt, buf, lenp, posp, disp_lenp))
+        return 0;
+
+    int hs = handle_history_search(c, prompt, buf, lenp, posp, disp_lenp);
+    if (hs < 0) {
+        *lenp = -1;
+        return 1;
+    } else if (hs > 0) {
+        return 1;
+    } else if (c == '\t') {
+        handle_completion(prompt, buf, lenp, posp, disp_lenp);
+    } else if (c == '\033') {
+        handle_arrow_keys(prompt, buf, lenp, posp, disp_lenp);
+    } else if (c >= 32 && c < 127) {
+        handle_insert(buf, lenp, posp, c, disp_lenp);
+    }
+    return 0;
+}
+
+static char *read_raw_line(const char *prompt) {
     struct termios orig, raw;
     if (tcgetattr(STDIN_FILENO, &orig) == -1)
         return NULL;
@@ -239,32 +273,8 @@ char *line_edit(const char *prompt) {
             break;
         }
 
-        if (c == '\r' || c == '\n') {
-            write(STDOUT_FILENO, "\r\n", 2);
+        if (process_keypress(c, prompt, buf, &len, &pos, &disp_len))
             break;
-        }
-
-        if (c == 0x04 && len == 0) { /* Ctrl-D */
-            len = -1;
-            break;
-        }
-
-        if (handle_ctrl_commands(c, prompt, buf, &len, &pos, &disp_len))
-            continue;
-
-        int hs = handle_history_search(c, prompt, buf, &len, &pos, &disp_len);
-        if (hs < 0) {
-            len = -1;
-            break;
-        } else if (hs > 0) {
-            break;
-        } else if (c == '\t') {
-            handle_completion(prompt, buf, &len, &pos, &disp_len);
-        } else if (c == '\033') {
-            handle_arrow_keys(prompt, buf, &len, &pos, &disp_len);
-        } else if (c >= 32 && c < 127) {
-            handle_insert(buf, &len, &pos, c, &disp_len);
-        }
     }
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig);
@@ -273,5 +283,9 @@ char *line_edit(const char *prompt) {
         return NULL;
     buf[len] = '\0';
     return strdup(buf);
+}
+
+char *line_edit(const char *prompt) {
+    return read_raw_line(prompt);
 }
 
