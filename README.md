@@ -9,7 +9,7 @@ and a few built-in commands.
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias`, `bg`, `break`, `cd`, `continue`, `dirs`, `eval`,
   `exec`, `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
-  `popd`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
+  `popd`, `printf`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
   `trap`, `type`, `unalias`, and `unset`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR%pat}` and
@@ -387,6 +387,13 @@ INT received
 vush> export cmd='echo hi'
 vush> eval $cmd there
 hi there
+```
+
+## Printf Example
+
+```
+vush> printf "%s %04d %x\n" foo 5 255
+foo 0005 ff
 ```
 
 ## Documentation

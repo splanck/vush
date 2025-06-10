@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <fnmatch.h>
+#include <stdint.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -144,6 +145,7 @@ int builtin_help(char **args) {
     printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
     printf("  pushd DIR  Push current directory and switch to DIR\n");
     printf("  popd       Switch to directory from stack\n");
+    printf("  printf FORMAT [ARGS]  Print formatted text\n");
     printf("  dirs       Display the directory stack\n");
     printf("  exit [status]  Exit the shell with optional status\n");
     printf("  pwd        Print the current working directory\n");
@@ -394,6 +396,77 @@ int builtin_continue(char **args)
 {
     (void)args;
     loop_continue = 1;
+    return 1;
+}
+
+int builtin_printf(char **args)
+{
+    const char *fmt = args[1] ? args[1] : "";
+    int ai = 2;
+    for (const char *p = fmt; *p; ) {
+        if (*p != '%') {
+            putchar(*p++);
+            continue;
+        }
+        p++;
+        if (*p == '%') {
+            putchar('%');
+            p++;
+            continue;
+        }
+        char spec[32];
+        int si = 0;
+        spec[si++] = '%';
+        while (*p && strchr("-+ #0", *p)) spec[si++] = *p++;
+        while (*p && isdigit((unsigned char)*p)) spec[si++] = *p++;
+        if (*p == '.') {
+            spec[si++] = *p++;
+            while (*p && isdigit((unsigned char)*p)) spec[si++] = *p++;
+        }
+        if (strchr("hlLjzt", *p)) {
+            spec[si++] = *p++;
+            if ((*p == 'h' && spec[si-1]=='h') || (*p == 'l' && spec[si-1]=='l'))
+                spec[si++] = *p++;
+        }
+        char conv = *p ? *p : '\0';
+        if (!conv) break;
+        spec[si++] = conv;
+        spec[si] = '\0';
+        p++;
+
+        char *arg = args[ai] ? args[ai] : "";
+        switch (conv) {
+        case 'd': case 'i':
+            printf(spec, (long long)strtoll(arg, NULL, 0));
+            if (args[ai]) ai++;
+            break;
+        case 'u': case 'o': case 'x': case 'X':
+            printf(spec, (unsigned long long)strtoull(arg, NULL, 0));
+            if (args[ai]) ai++;
+            break;
+        case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
+            printf(spec, strtod(arg, NULL));
+            if (args[ai]) ai++;
+            break;
+        case 'c':
+            printf(spec, arg[0]);
+            if (args[ai]) ai++;
+            break;
+        case 's':
+            printf(spec, arg);
+            if (args[ai]) ai++;
+            break;
+        case 'p':
+            printf(spec, (void *)(uintptr_t)strtoull(arg, NULL, 0));
+            if (args[ai]) ai++;
+            break;
+        default:
+            fputs(spec, stdout);
+            break;
+        }
+    }
+    fflush(stdout);
+    last_status = 0;
     return 1;
 }
 

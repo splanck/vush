@@ -23,6 +23,7 @@ extern int builtin_unalias(char **);
 extern int builtin_read(char **);
 extern int builtin_getopts(char **);
 extern int builtin_eval(char **);
+extern int builtin_printf(char **);
 extern int builtin_exec(char **);
 extern int builtin_return(char **);
 extern int builtin_break(char **);
@@ -41,6 +42,7 @@ const struct builtin builtin_table[] = {
     {"cd", builtin_cd},
     {"pushd", builtin_pushd},
     {"popd", builtin_popd},
+    {"printf", builtin_printf},
     {"dirs", builtin_dirs},
     {"exit", builtin_exit},
     {"pwd", builtin_pwd},
