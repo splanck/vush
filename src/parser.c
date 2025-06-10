@@ -575,6 +575,8 @@ static int expand_aliases(PipelineSegment *seg, int *argc, char *tok) {
 static int collect_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted || strncmp(tok, "<<", 2) != 0)
         return 0;
+    if ((tok[2] == '<') || (**p == '<'))
+        return 0; /* here-string handled elsewhere */
     char *delim;
     if (tok[2]) {
         delim = strdup(tok + 2);
@@ -617,6 +619,37 @@ static int collect_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
 static int handle_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted)
         return 0;
+    if ((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0) {
+        if (strncmp(tok, "<<<", 3) == 0 && tok[3] == '<') {
+            free(tok);
+            return -1; /* malformed */
+        }
+        if (strcmp(tok, "<<") == 0 && **p == '<')
+            (*p)++; /* skip third '<' */
+        while (**p == ' ' || **p == '\t') (*p)++;
+        char *word = NULL;
+        if (strncmp(tok, "<<<", 3) == 0 && tok[3]) {
+            word = strdup(tok + 3);
+        } else if (**p) {
+            int q = 0;
+            word = read_token(p, &q);
+            if (!word) { free(tok); return -1; }
+        } else {
+            word = strdup("");
+        }
+        char template[] = "/tmp/vushXXXXXX";
+        int fd = mkstemp(template);
+        if (fd < 0) { perror("mkstemp"); free(word); free(tok); return -1; }
+        FILE *tf = fdopen(fd, "w");
+        if (!tf) { perror("fdopen"); close(fd); unlink(template); free(word); free(tok); return -1; }
+        fprintf(tf, "%s", word);
+        fclose(tf);
+        seg->in_file = strdup(template);
+        seg->here_doc = 1;
+        free(word);
+        free(tok);
+        return 1;
+    }
     if (strcmp(tok, "<") == 0) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (**p) {
