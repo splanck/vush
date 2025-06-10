@@ -41,6 +41,7 @@ void free_shell_vars(void);
 
 int builtin_break(char **args);
 int builtin_continue(char **args);
+int builtin_cond(char **args);
 
 extern char *trap_cmds[NSIG];
 int builtin_trap(char **args);

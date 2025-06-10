@@ -325,6 +325,9 @@ int run_pipeline(Command *cmd, const char *line) {
             return 1;
         }
     }
+    case CMD_COND:
+        builtin_cond(cmd->words);
+        return last_status;
     case CMD_GROUP:
         run_command_list(cmd->group, line);
         return last_status;

@@ -14,6 +14,7 @@
 #include <linux/limits.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <fnmatch.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -228,6 +229,31 @@ int builtin_test(char **args) {
             res = (atoi(av[0]) >= atoi(av[2])) ? 0 : 1;
         else if (strcmp(av[1], "-le") == 0)
             res = (atoi(av[0]) <= atoi(av[2])) ? 0 : 1;
+    }
+    last_status = res;
+    return 1;
+}
+
+int builtin_cond(char **args) {
+    int count = 0;
+    while (args[count]) count++;
+    char **av = args + 1;
+    count--;
+    int res = 1;
+    if (count == 1) {
+        res = av[0][0] ? 0 : 1;
+    } else if (count == 3) {
+        if (strcmp(av[1], "==") == 0 || strcmp(av[1], "=") == 0) {
+            if (strpbrk(av[2], "*?"))
+                res = fnmatch(av[2], av[0], 0) == 0 ? 0 : 1;
+            else
+                res = strcmp(av[0], av[2]) == 0 ? 0 : 1;
+        } else if (strcmp(av[1], "!=") == 0) {
+            if (strpbrk(av[2], "*?"))
+                res = fnmatch(av[2], av[0], 0) != 0 ? 0 : 1;
+            else
+                res = strcmp(av[0], av[2]) != 0 ? 0 : 1;
+        }
     }
     last_status = res;
     return 1;

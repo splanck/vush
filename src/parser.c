@@ -431,6 +431,47 @@ static Command *parse_brace_group(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Parse a [[ expression ]] conditional */
+static Command *parse_conditional(char **p, CmdOp *op_out) {
+    if (strncmp(*p, "[[", 2) != 0)
+        return NULL;
+    *p += 2;
+    char **words = NULL;
+    int count = 0;
+    while (**p) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (!**p)
+            break;
+        int q = 0;
+        char *tok = read_token(p, &q);
+        if (!tok) {
+            for (int i=0;i<count;i++) free(words[i]);
+            free(words);
+            return NULL;
+        }
+        if (!q && strcmp(tok, "]]") == 0) {
+            free(tok);
+            break;
+        }
+        words = realloc(words, sizeof(char*)*(count+1));
+        words[count++] = tok;
+    }
+    if (!words && count==0)
+        words = NULL; /* nothing */
+    while (**p == ' ' || **p == '\t') (*p)++;
+    CmdOp op = OP_NONE;
+    if (**p == ';') { op = OP_SEMI; (*p)++; }
+    else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
+    else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_COND;
+    cmd->words = words;
+    cmd->word_count = count;
+    cmd->op = op;
+    if (op_out) *op_out = op;
+    return cmd;
+}
+
 /* Parse top-level control clauses such as if, while, for and case. */
 static Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
@@ -782,6 +823,8 @@ Command *parse_line(char *line) {
         if (!cmd)
             cmd = parse_control_clause(&p, &op);
         if (!cmd)
+            cmd = parse_conditional(&p, &op);
+        if (!cmd)
             cmd = parse_pipeline(&p, &op);
         if (!cmd) {
             free_commands(head);
@@ -846,6 +889,10 @@ void free_commands(Command *c) {
         free_commands(c->body);
     } else if (c->type == CMD_SUBSHELL || c->type == CMD_GROUP) {
         free_commands(c->group);
+    } else if (c->type == CMD_COND) {
+        for (int i = 0; i < c->word_count; i++)
+            free(c->words[i]);
+        free(c->words);
     }
         free(c);
         c = next;
