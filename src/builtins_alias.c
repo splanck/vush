@@ -7,7 +7,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <linux/limits.h>
 
 struct alias_entry {
     char *name;
