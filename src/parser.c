@@ -376,6 +376,68 @@ static Command *parse_for_clause(char **p) {
     return cmd;
 }
 
+static char *trim_ws(const char *s) {
+    while (*s && isspace((unsigned char)*s)) s++;
+    const char *end = s + strlen(s);
+    while (end > s && isspace((unsigned char)*(end-1))) end--;
+    return strndup(s, end - s);
+}
+
+static char *gather_dbl_parens(char **p) {
+    if (strncmp(*p, "((", 2) != 0)
+        return NULL;
+    *p += 2;
+    char *start = *p;
+    int depth = 0;
+    while (**p) {
+        if (**p == '(')
+            depth++;
+        else if (**p == ')') {
+            if (depth == 0 && *(*p + 1) == ')') {
+                char *res = strndup(start, *p - start);
+                *p += 2;
+                return res;
+            }
+            if (depth > 0)
+                depth--;
+        }
+        (*p)++;
+    }
+    return NULL;
+}
+
+static Command *parse_for_arith_clause(char **p) {
+    while (**p == ' ' || **p == '\t') (*p)++;
+    char *exprs = gather_dbl_parens(p);
+    if (!exprs) return NULL;
+    char *s1 = strchr(exprs, ';');
+    if (!s1) { free(exprs); return NULL; }
+    char *s2 = strchr(s1 + 1, ';');
+    if (!s2) { free(exprs); return NULL; }
+    char *init = strndup(exprs, s1 - exprs);
+    char *cond = strndup(s1 + 1, s2 - (s1 + 1));
+    char *incr = strdup(s2 + 1);
+    free(exprs);
+    char *ti = trim_ws(init); free(init); init = ti;
+    char *tc = trim_ws(cond); free(cond); cond = tc;
+    char *tu = trim_ws(incr); free(incr); incr = tu;
+    while (**p == ' ' || **p == '\t') (*p)++;
+    int q = 0; char *tok = read_token(p, &q);
+    if (!tok || strcmp(tok, "do") != 0) { free(init); free(cond); free(incr); free(tok); return NULL; }
+    free(tok);
+    const char *stop[] = {"done"};
+    char *body = gather_until(p, stop, 1, NULL);
+    if (!body) { free(init); free(cond); free(incr); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_FOR_ARITH;
+    cmd->arith_init = init;
+    cmd->arith_cond = cond;
+    cmd->arith_update = incr;
+    cmd->body = body_cmd;
+    return cmd;
+}
+
 static void free_case_items(CaseItem *ci) {
     while (ci) {
         CaseItem *n = ci->next;
@@ -571,7 +633,11 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
         cmd = parse_until_clause(p);
     } else if (strncmp(*p, "for", 3) == 0 && isspace((unsigned char)(*p)[3])) {
         *p += 3;
-        cmd = parse_for_clause(p);
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (strncmp(*p, "((", 2) == 0)
+            cmd = parse_for_arith_clause(p);
+        else
+            cmd = parse_for_clause(p);
     } else if (strncmp(*p, "case", 4) == 0 && isspace((unsigned char)(*p)[4])) {
         *p += 4;
         cmd = parse_case_clause(p);
@@ -1044,6 +1110,11 @@ void free_commands(Command *c) {
         for (int i = 0; i < c->word_count; i++)
             free(c->words[i]);
         free(c->words);
+        free_commands(c->body);
+    } else if (c->type == CMD_FOR_ARITH) {
+        free(c->arith_init);
+        free(c->arith_cond);
+        free(c->arith_update);
         free_commands(c->body);
     } else if (c->type == CMD_CASE) {
         free(c->var);

@@ -39,6 +39,7 @@ typedef enum {
     CMD_FUNCDEF,
     CMD_IF,
     CMD_FOR,
+    CMD_FOR_ARITH,
     CMD_WHILE,
     CMD_UNTIL,
     CMD_CASE,
@@ -64,6 +65,9 @@ typedef struct Command {
     char *var;                /* for for loop variable */
     char **words;             /* for loop word list or [[ expression ]] */
     int word_count;
+    char *arith_init;         /* for arithmetic for loop */
+    char *arith_cond;
+    char *arith_update;
     char *text;               /* function body as text */
     CaseItem *cases;          /* for case clause items */
     struct Command *group;    /* commands for subshell or group */
