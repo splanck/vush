@@ -1,3 +1,8 @@
+/*
+ * Directory stack API.
+ * Exposes a simple push/pop interface for maintaining the shell's directory stack.
+ */
+
 #ifndef DIRSTACK_H
 #define DIRSTACK_H
 
