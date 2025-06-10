@@ -432,6 +432,51 @@ int builtin_continue(char **args)
     return 1;
 }
 
+static const char *next_format_spec(const char *p, char spec[32], char *conv)
+{
+    int si = 0;
+    if (*p != '%') {
+        spec[0] = '\0';
+        *conv = '\0';
+        return p;
+    }
+
+    spec[si++] = *p++;
+
+    if (*p == '%') {
+        spec[si++] = *p++;
+        spec[si] = '\0';
+        *conv = '%';
+        return p;
+    }
+
+    while (*p && strchr("-+ #0", *p))
+        spec[si++] = *p++;
+    while (*p && isdigit((unsigned char)*p))
+        spec[si++] = *p++;
+    if (*p == '.') {
+        spec[si++] = *p++;
+        while (*p && isdigit((unsigned char)*p))
+            spec[si++] = *p++;
+    }
+    if (strchr("hlLjzt", *p)) {
+        spec[si++] = *p++;
+        if ((*p == 'h' && spec[si-1] == 'h') ||
+            (*p == 'l' && spec[si-1] == 'l'))
+            spec[si++] = *p++;
+    }
+
+    if (*p) {
+        *conv = *p;
+        spec[si++] = *p++;
+    } else {
+        *conv = '\0';
+    }
+
+    spec[si] = '\0';
+    return p;
+}
+
 int builtin_printf(char **args)
 {
     const char *fmt = args[1] ? args[1] : "";
@@ -441,31 +486,15 @@ int builtin_printf(char **args)
             putchar(*p++);
             continue;
         }
-        p++;
-        if (*p == '%') {
+        char spec[32];
+        char conv;
+        p = next_format_spec(p, spec, &conv);
+        if (!conv)
+            break;
+        if (conv == '%') {
             putchar('%');
-            p++;
             continue;
         }
-        char spec[32];
-        int si = 0;
-        spec[si++] = '%';
-        while (*p && strchr("-+ #0", *p)) spec[si++] = *p++;
-        while (*p && isdigit((unsigned char)*p)) spec[si++] = *p++;
-        if (*p == '.') {
-            spec[si++] = *p++;
-            while (*p && isdigit((unsigned char)*p)) spec[si++] = *p++;
-        }
-        if (strchr("hlLjzt", *p)) {
-            spec[si++] = *p++;
-            if ((*p == 'h' && spec[si-1]=='h') || (*p == 'l' && spec[si-1]=='l'))
-                spec[si++] = *p++;
-        }
-        char conv = *p ? *p : '\0';
-        if (!conv) break;
-        spec[si++] = conv;
-        spec[si] = '\0';
-        p++;
 
         char *arg = args[ai] ? args[ai] : "";
         switch (conv) {
