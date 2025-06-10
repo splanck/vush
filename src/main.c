@@ -33,6 +33,7 @@
 #include "scriptargs.h"
 #include "options.h"
 #include "util.h"
+#include "version.h"
 
 extern FILE *parse_input;
 extern char *trap_cmds[NSIG];
@@ -252,7 +253,10 @@ int main(int argc, char **argv) {
     char *dash_c = NULL;
 
     if (argc > 1) {
-        if (strcmp(argv[1], "-c") == 0) {
+        if (strcmp(argv[1], "-V") == 0 || strcmp(argv[1], "--version") == 0) {
+            printf("vush %s\n", VUSH_VERSION);
+            return 0;
+        } else if (strcmp(argv[1], "-c") == 0) {
             if (argc < 3) {
                 fprintf(stderr, "usage: %s -c command\n", argv[0]);
                 return 1;

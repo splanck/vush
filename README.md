@@ -3,6 +3,8 @@
 `vush` is a simple UNIX shell written in C. It supports basic command execution
 and a few built-in commands.
 
+Current version: 0.1.0
+
 ## Features
 
 - Command line parsing with rudimentary quoting support
