@@ -39,6 +39,7 @@ typedef enum {
     CMD_FUNCDEF,
     CMD_IF,
     CMD_FOR,
+    CMD_SELECT,
     CMD_FOR_ARITH,
     CMD_WHILE,
     CMD_UNTIL,

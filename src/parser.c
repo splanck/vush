@@ -376,6 +376,40 @@ static Command *parse_for_clause(char **p) {
     return cmd;
 }
 
+static Command *parse_select_clause(char **p) {
+    while (**p == ' ' || **p == '\t') (*p)++;
+    int q = 0;
+    char *var = read_token(p, &q);
+    if (!var || q) { free(var); return NULL; }
+    while (**p == ' ' || **p == '\t') (*p)++;
+    q = 0;
+    char *tok = read_token(p, &q);
+    if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
+    free(tok);
+    char **words = NULL; int count = 0;
+    while (1) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '\0') { free(var); free(words); return NULL; }
+        q = 0;
+        char *w = read_token(p, &q);
+        if (!w) { free(var); free(words); return NULL; }
+        if (!q && strcmp(w, "do") == 0) { free(w); break; }
+        words = realloc(words, sizeof(char *) * (count + 1));
+        words[count++] = w;
+    }
+    const char *stop2[] = {"done"};
+    char *body = gather_until(p, stop2, 1, NULL);
+    if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
+    Command *body_cmd = parse_line(body); free(body);
+    Command *cmd = calloc(1, sizeof(Command));
+    cmd->type = CMD_SELECT;
+    cmd->var = var;
+    cmd->words = words;
+    cmd->word_count = count;
+    cmd->body = body_cmd;
+    return cmd;
+}
+
 static char *trim_ws(const char *s) {
     while (*s && isspace((unsigned char)*s)) s++;
     const char *end = s + strlen(s);
@@ -638,6 +672,9 @@ static Command *parse_control_clause(char **p, CmdOp *op_out) {
             cmd = parse_for_arith_clause(p);
         else
             cmd = parse_for_clause(p);
+    } else if (strncmp(*p, "select", 6) == 0 && isspace((unsigned char)(*p)[6])) {
+        *p += 6;
+        cmd = parse_select_clause(p);
     } else if (strncmp(*p, "case", 4) == 0 && isspace((unsigned char)(*p)[4])) {
         *p += 4;
         cmd = parse_case_clause(p);
@@ -1106,6 +1143,12 @@ void free_commands(Command *c) {
         free_commands(c->cond);
         free_commands(c->body);
     } else if (c->type == CMD_FOR) {
+        free(c->var);
+        for (int i = 0; i < c->word_count; i++)
+            free(c->words[i]);
+        free(c->words);
+        free_commands(c->body);
+    } else if (c->type == CMD_SELECT) {
         free(c->var);
         for (int i = 0; i < c->word_count; i++)
             free(c->words[i]);
