@@ -1,3 +1,7 @@
+/*
+ * This header centralizes common definitions and portability helpers.
+ * It provides fallbacks like PATH_MAX when the system lacks them.
+ */
 #ifndef VUSH_COMMON_H
 #define VUSH_COMMON_H
 
