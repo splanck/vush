@@ -72,6 +72,9 @@ echo ${#TMP}
 TMP=hello
 echo ${TMP/l/1}
 echo ${TMP//l/1}
+TMP=abcdef
+echo ${TMP:3}
+echo ${TMP:3:2}
 .EE
 .SH CONTROL STRUCTURES
 The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
