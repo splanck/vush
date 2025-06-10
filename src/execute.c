@@ -1,5 +1,8 @@
 /*
- * Execution engine handling pipelines and control flow.
+ * Execution engine for running parsed command lists.
+ *
+ * This module drives pipelines, builtins, functions and handles all
+ * shell control flow constructs such as loops and conditionals.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -45,6 +48,11 @@ static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
 
+/*
+ * Duplicate the given descriptor onto another descriptor and close the
+ * original.  Used internally when applying redirections.  Does not
+ * modify last_status.
+ */
 static void redirect_fd(int fd, int dest) {
     dup2(fd, dest);
     close(fd);
@@ -235,8 +243,9 @@ void setup_redirections(PipelineSegment *seg) {
 
 
 /*
- * Fork and execute each segment of a pipeline, wiring up pipes
- * between processes and waiting as needed.
+ * Fork and execute each segment of a pipeline, wiring up pipes between
+ * processes.  wait_for_pipeline() is used to collect child statuses when
+ * running in the foreground.  Returns the value assigned to last_status.
  */
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line) {
@@ -309,10 +318,18 @@ int run_command_list(Command *cmds, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute a simple or composed pipeline.  This wraps
+ * run_pipeline_internal() and returns its resulting status.
+ */
 static int exec_pipeline(Command *cmd, const char *line) {
     return run_pipeline_internal(cmd->pipeline, cmd->background, line);
 }
 
+/*
+ * Define a shell function.  The body of the command becomes the new
+ * function definition and last_status is preserved.
+ */
 static int exec_funcdef(Command *cmd, const char *line) {
     (void)line;
     define_function(cmd->var, cmd->body, cmd->text);
@@ -320,6 +337,11 @@ static int exec_funcdef(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute an if/else construct.  The condition list is run first and
+ * the body or else part is selected based on its exit status.  Returns
+ * the status of the last command executed.
+ */
 static int exec_if(Command *cmd, const char *line) {
     run_command_list(cmd->cond, line);
     if (last_status == 0)
@@ -329,6 +351,11 @@ static int exec_if(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute a while loop.  The condition list is repeatedly evaluated
+ * and the body executed while it returns success.  Loop control flags
+ * loop_break and loop_continue are honored.  Returns last_status.
+ */
 static int exec_while(Command *cmd, const char *line) {
     while (1) {
         run_command_list(cmd->cond, line);
@@ -343,6 +370,11 @@ static int exec_while(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute an until loop.  This is the inverse of a while loop: the
+ * body runs repeatedly until the condition list succeeds.  Loop
+ * control flags are processed and the final last_status is returned.
+ */
 static int exec_until(Command *cmd, const char *line) {
     while (1) {
         run_command_list(cmd->cond, line);
@@ -357,6 +389,11 @@ static int exec_until(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute a for loop over a list of words.  The variable specified by
+ * cmd->var is set to each word in turn before the body is executed.
+ * Returns last_status from the final iteration.
+ */
 static int exec_for(Command *cmd, const char *line) {
     for (int i = 0; i < cmd->word_count; i++) {
         if (cmd->var)
@@ -368,6 +405,11 @@ static int exec_for(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Implement the POSIX select loop.  A numbered menu is printed for the
+ * supplied words and user input chooses which value is assigned to the
+ * iteration variable.  The function returns the status of the body.
+ */
 static int exec_select(Command *cmd, const char *line) {
     char input[MAX_LINE];
     while (1) {
@@ -390,6 +432,11 @@ static int exec_select(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute a C-style for loop using arithmetic expressions.  The init,
+ * condition and update parts are evaluated with eval_arith().  The loop
+ * terminates when the condition evaluates to zero.  Returns last_status.
+ */
 static int exec_for_arith(Command *cmd, const char *line) {
     (void)line;
     eval_arith(cmd->arith_init ? cmd->arith_init : "0");
@@ -405,6 +452,11 @@ static int exec_for_arith(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Execute a case statement.  Each pattern list is matched against the
+ * supplied word using fnmatch().  The body of the first matching case
+ * is executed and last_status from that body is returned.
+ */
 static int exec_case(Command *cmd, const char *line) {
     for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
         int matched = 0;
@@ -423,6 +475,11 @@ static int exec_case(Command *cmd, const char *line) {
     return last_status;
 }
 
+/*
+ * Spawn a subshell running the provided command group.  The parent waits
+ * for the child to finish and propagates its exit status.  Returns that
+ * status or 1 on fork failure.
+ */
 static int exec_subshell(Command *cmd, const char *line) {
     pid_t pid = fork();
     if (pid == 0) {
@@ -444,12 +501,20 @@ static int exec_subshell(Command *cmd, const char *line) {
     }
 }
 
+/*
+ * Execute the [[ ... ]] conditional command.  This simply forwards to
+ * builtin_cond() and returns its result.
+ */
 static int exec_cond(Command *cmd, const char *line) {
     (void)line;
     builtin_cond(cmd->words);
     return last_status;
 }
 
+/*
+ * Execute a { ... } command group in the current shell.  Simply runs
+ * the contained command list and returns its status.
+ */
 static int exec_group(Command *cmd, const char *line) {
     run_command_list(cmd->group, line);
     return last_status;
