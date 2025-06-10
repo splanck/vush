@@ -1,5 +1,12 @@
 /*
  * Helpers for executing shell functions.
+ *
+ * Shell functions are stored as parsed command lists and are executed when
+ * the executor encounters their name in a pipeline.  The caller passes the
+ * function's command list along with the argument vector that invoked it.  The
+ * arguments are duplicated so that `$0`, `$1`, etc. within the body expand
+ * properly.  After the call returns these temporary values are discarded and
+ * the previous script arguments are restored.
  */
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -13,6 +20,21 @@ extern int last_status;
 
 int func_return = 0;
 
+/*
+ * Execute a shell function.
+ *
+ * body - parsed list of commands forming the function body
+ * args - argv array where args[0] is the function name and the rest are
+ *        parameters passed by the caller
+ *
+ * The current script arguments are saved and replaced with duplicates of
+ * 'args'. script_argc becomes the number of parameters so that positional
+ * expansions like $1 work. run_command_list() then executes 'body'. After it
+ * finishes, the original script_argv and script_argc values are restored.
+ *
+ * Returns the exit status of the function body or 1 if memory allocation
+ * fails during setup.
+ */
 int run_function(Command *body, char **args) {
     int argc = 0;
     while (args[argc]) argc++;
