@@ -529,6 +529,28 @@ char *expand_var(const char *token) {
         }
         return res;
     }
+    if (strcmp(token, "$*") == 0) {
+        if (!script_argv || script_argc == 0)
+            return strdup("");
+        const char *ifs = get_shell_var("IFS");
+        if (!ifs) ifs = getenv("IFS");
+        char sep = (ifs && *ifs) ? ifs[0] : ' ';
+        size_t len = 0;
+        for (int i = 1; i <= script_argc; i++)
+            len += strlen(script_argv[i]) + 1;
+        char *res = malloc(len);
+        if (!res) return NULL;
+        res[0] = '\0';
+        for (int i = 1; i <= script_argc; i++) {
+            strcat(res, script_argv[i]);
+            if (i < script_argc) {
+                size_t l = strlen(res);
+                res[l] = sep;
+                res[l+1] = '\0';
+            }
+        }
+        return res;
+    }
     if (token[1] >= '0' && token[1] <= '9') {
         char *end;
         long idx = strtol(token + 1, &end, 10);
