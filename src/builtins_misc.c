@@ -1,4 +1,13 @@
-/* Miscellaneous builtin commands */
+/*
+ * Miscellaneous builtin commands
+ *
+ * This file gathers builtins that don't fit the alias, variable,
+ * file system or job-control groups.  Keeping them here avoids
+ * cluttering those more focused modules.
+ *
+ * Some helpers, such as `source` and `eval`, invoke the parser and
+ * executor directly so they behave like normal command evaluation.
+ */
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "history.h"
@@ -25,6 +34,8 @@ extern FILE *parse_input;
 char *trap_cmds[NSIG];
 extern void trap_handler(int);
 
+/* Exit the shell, freeing resources and using the provided status
+ * or the status of the last command when none is given. */
 int builtin_exit(char **args) {
     int status = last_status;
     if (args[1]) {
@@ -43,6 +54,8 @@ int builtin_exit(char **args) {
     exit(status);
 }
 
+/* Display the command history or modify it with -c to clear or -d N to
+ * delete a specific entry. */
 int builtin_history(char **args) {
     if (args[1]) {
         if (strcmp(args[1], "-c") == 0 && !args[2]) {
@@ -130,6 +143,8 @@ static void execute_source_file(FILE *input)
     }
 }
 
+/* Read commands from a file and execute them in the current shell
+ * environment. Additional arguments become script parameters. */
 int builtin_source(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: source file [args...]\n");
@@ -158,6 +173,7 @@ int builtin_source(char **args) {
     return 1;
 }
 
+/* Concatenate all arguments into a single command line and execute it. */
 int builtin_eval(char **args) {
     if (!args[1])
         return 1;
@@ -184,6 +200,7 @@ int builtin_eval(char **args) {
     return 1;
 }
 
+/* Replace the current shell with the specified program using execvp. */
 int builtin_exec(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: exec command [args...]\n");
@@ -194,6 +211,7 @@ int builtin_exec(char **args) {
     return 1;
 }
 
+/* Print a usage summary of the available builtin commands. */
 int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
@@ -229,6 +247,7 @@ int builtin_help(char **args) {
     return 1;
 }
 
+/* POSIX test/['[' ] builtin for evaluating conditional expressions. */
 int builtin_test(char **args) {
     int count = 0;
     while (args[count]) count++;
@@ -291,6 +310,7 @@ int builtin_test(char **args) {
     return 1;
 }
 
+/* [[ ... ]] conditional expression evaluator with pattern matching. */
 int builtin_cond(char **args) {
     int count = 0;
     while (args[count]) count++;
@@ -316,6 +336,7 @@ int builtin_cond(char **args) {
     return 1;
 }
 
+/* Show how each argument would be resolved: alias, function, builtin or file. */
 int builtin_type(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: type name...\n");
@@ -408,6 +429,7 @@ static int sig_from_name(const char *name)
     return -1;
 }
 
+/* Assign commands to run when specified signals are received. */
 int builtin_trap(char **args)
 {
     if (!args[1]) {
@@ -440,6 +462,7 @@ int builtin_trap(char **args)
     return 1;
 }
 
+/* Signal a loop to terminate after the current iteration. */
 int builtin_break(char **args)
 {
     (void)args;
@@ -447,6 +470,7 @@ int builtin_break(char **args)
     return 1;
 }
 
+/* Skip directly to the next iteration of the innermost loop. */
 int builtin_continue(char **args)
 {
     (void)args;
@@ -499,6 +523,7 @@ static const char *next_format_spec(const char *p, char spec[32], char *conv)
     return p;
 }
 
+/* Formatted printing similar to printf(1); stores result in last_status. */
 int builtin_printf(char **args)
 {
     const char *fmt = args[1] ? args[1] : "";
