@@ -385,8 +385,7 @@ hi there
 
 ## Documentation
 
-See [docs/vush.1](docs/vush.1) for the manual page and
-[docs/CHANGELOG.md](docs/CHANGELOG.md) for the change history.
+See [docs/vush.1](docs/vush.1) for the manual page.
 
 ## Tests
 
