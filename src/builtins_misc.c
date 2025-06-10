@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <fnmatch.h>
 #include <stdint.h>
+#include <time.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -209,6 +210,41 @@ int builtin_exec(char **args) {
     execvp(args[1], &args[1]);
     perror(args[1]);
     return 1;
+}
+
+/* Run a command and report the elapsed real time. */
+int builtin_time(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: time command [args...]\n");
+        return 1;
+    }
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    pid_t pid = fork();
+    if (pid == 0) {
+        execvp(args[1], &args[1]);
+        perror(args[1]);
+        _exit(127);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        double elapsed = (end.tv_sec - start.tv_sec) +
+                         (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("real %.3f sec\n", elapsed);
+        if (WIFEXITED(status))
+            last_status = WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            last_status = 128 + WTERMSIG(status);
+        else
+            last_status = status;
+        return 1;
+    } else {
+        perror("fork");
+        last_status = 1;
+        return 1;
+    }
 }
 
 /* Print a usage summary of the available builtin commands. */
