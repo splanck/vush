@@ -314,6 +314,10 @@ vush> export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 vush> for x in a b c; do if test $x = b; then continue; fi; echo $x; done
 a
 c
+vush> for ((i=0; i<3; i++)); do echo $i; done
+0
+1
+2
 vush> j=2; until test $j -eq 0; do echo $j; j=$(expr $j - 1); done
 2
 1

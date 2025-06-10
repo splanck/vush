@@ -347,6 +347,18 @@ int run_pipeline(Command *cmd, const char *line) {
             if (loop_continue) { loop_continue = 0; continue; }
         }
         return last_status;
+    case CMD_FOR_ARITH:
+        eval_arith(cmd->arith_init ? cmd->arith_init : "0");
+        while (1) {
+            long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1");
+            if (cond == 0)
+                break;
+            run_command_list(cmd->body, line);
+            if (loop_break) { loop_break = 0; break; }
+            eval_arith(cmd->arith_update ? cmd->arith_update : "0");
+            if (loop_continue) { loop_continue = 0; continue; }
+        }
+        return last_status;
     case CMD_CASE:
         for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
             int matched = 0;

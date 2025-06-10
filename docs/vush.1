@@ -83,6 +83,7 @@ if test "$USER" = root; then echo admin; else echo user; fi
 for x in a b c; do echo $x; done
 export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
 for x in a b c; do if test $x = b; then continue; fi; echo $x; done
+for ((i=0; i<3; i++)); do echo $i; done
 while true; do echo done; break; done
 export j=2; until test $j -eq 0; do echo $j; export j=$(expr $j - 1); done
 case 1 in 1) echo one ;& 2) echo two ;; esac
