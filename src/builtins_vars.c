@@ -171,12 +171,34 @@ int builtin_set(char **args) {
             opt_nounset = 1;
         else if (strcmp(args[i], "-x") == 0)
             opt_xtrace = 1;
+        else if (strcmp(args[i], "-o") == 0 && args[i+1]) {
+            if (strcmp(args[i+1], "pipefail") == 0)
+                opt_pipefail = 1;
+            else if (strcmp(args[i+1], "noclobber") == 0)
+                opt_noclobber = 1;
+            else {
+                fprintf(stderr, "set: unknown option %s\n", args[i+1]);
+                return 1;
+            }
+            i++;
+        }
         else if (strcmp(args[i], "+e") == 0)
             opt_errexit = 0;
         else if (strcmp(args[i], "+u") == 0)
             opt_nounset = 0;
         else if (strcmp(args[i], "+x") == 0)
             opt_xtrace = 0;
+        else if (strcmp(args[i], "+o") == 0 && args[i+1]) {
+            if (strcmp(args[i+1], "pipefail") == 0)
+                opt_pipefail = 0;
+            else if (strcmp(args[i+1], "noclobber") == 0)
+                opt_noclobber = 0;
+            else {
+                fprintf(stderr, "set: unknown option %s\n", args[i+1]);
+                return 1;
+            }
+            i++;
+        }
         else {
             fprintf(stderr, "set: unknown option %s\n", args[i]);
             return 1;
