@@ -15,6 +15,7 @@
 #include "execute.h"
 #include "util.h"
 #include "scriptargs.h"
+#include "hash.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,6 +97,29 @@ int builtin_history(char **args) {
         }
     }
     print_history();
+    return 1;
+}
+
+/* Manage or display command hash table. */
+int builtin_hash(char **args) {
+    int i = 1;
+    int status = 0;
+    if (args[i] && strcmp(args[i], "-r") == 0) {
+        hash_clear();
+        i++;
+    }
+    if (!args[i]) {
+        hash_print();
+        last_status = 0;
+        return 1;
+    }
+    for (; args[i]; i++) {
+        if (hash_add(args[i]) < 0) {
+            fprintf(stderr, "%s: not found\n", args[i]);
+            status = 1;
+        }
+    }
+    last_status = status;
     return 1;
 }
 
@@ -322,6 +346,7 @@ int builtin_help(char **args) {
     printf("  readonly NAME[=VALUE]  Mark variable as read-only\n");
     printf("  unset NAME          Remove an environment variable\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
+    printf("  hash [-r] [name...]   Manage cached command paths\n");
     printf("  alias NAME=VALUE    Set an alias\n");
     printf("  unalias NAME        Remove an alias\n");
     printf("  read [-r] VAR...    Read a line into variables\n");
