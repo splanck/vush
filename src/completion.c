@@ -16,6 +16,65 @@ static int cmpstr(const void *a, const void *b) {
     return strcmp(aa, bb);
 }
 
+/* Collect builtin and filesystem matches for the given prefix. */
+static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
+    int count = 0;
+    int cap = 16;
+    char **matches = malloc(cap * sizeof(char *));
+    if (!matches)
+        matches = NULL;
+
+    const char **bn = get_builtin_names();
+    if (matches)
+    for (int i = 0; bn[i]; i++) {
+        if (strncmp(bn[i], prefix, prefix_len) == 0) {
+            if (count == cap) {
+                cap *= 2;
+                matches = realloc(matches, cap * sizeof(char *));
+                if (!matches) break;
+            }
+            matches[count++] = strdup(bn[i]);
+        }
+    }
+
+    DIR *d = opendir(".");
+    if (d && matches) {
+        struct dirent *de;
+        while ((de = readdir(d))) {
+            if (strncmp(de->d_name, prefix, prefix_len) == 0) {
+                if (count == cap) {
+                    cap *= 2;
+                    matches = realloc(matches, cap * sizeof(char *));
+                    if (!matches) break;
+                }
+                matches[count++] = strdup(de->d_name);
+            }
+        }
+        closedir(d);
+    }
+
+    if (countp)
+        *countp = matches ? count : 0;
+    return matches;
+}
+
+/* Insert the completed text into the buffer and redraw the line. */
+static void apply_completion(const char *match, char *buf, int *lenp, int *posp,
+                             int start, const char *prompt, int *disp_lenp) {
+    int mlen = strlen(match);
+    int prefix_len = *posp - start;
+    if (*lenp + mlen - prefix_len < MAX_LINE - 1) {
+        memmove(&buf[start + mlen], &buf[*posp], *lenp - *posp);
+        memcpy(&buf[start], match, mlen);
+        *lenp += mlen - prefix_len;
+        *posp = start + mlen;
+        buf[*lenp] = '\0';
+        printf("\r%s%s", prompt, buf);
+        if (*lenp > *disp_lenp)
+            *disp_lenp = *lenp;
+    }
+}
+
 void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
                        int *disp_lenp) {
     int start = *posp;
@@ -27,64 +86,24 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     prefix[*posp - start] = '\0';
 
     int mcount = 0;
-    int mcap = 16;
-    char **matches = malloc(mcap * sizeof(char *));
+    char **matches = collect_matches(prefix, *posp - start, &mcount);
     if (!matches)
-        matches = NULL;
-    const char **bn = get_builtin_names();
-    if (matches)
-    for (int i = 0; bn[i]; i++) {
-        if (strncmp(bn[i], prefix, *posp - start) == 0) {
-            if (mcount == mcap) {
-                mcap *= 2;
-                matches = realloc(matches, mcap * sizeof(char *));
-                if (!matches) break;
-            }
-            matches[mcount++] = strdup(bn[i]);
-        }
-    }
-    DIR *d = opendir(".");
-    if (d && matches) {
-        struct dirent *de;
-        while ((de = readdir(d))) {
-            if (strncmp(de->d_name, prefix, *posp - start) == 0) {
-                if (mcount == mcap) {
-                    mcap *= 2;
-                    matches = realloc(matches, mcap * sizeof(char *));
-                    if (!matches) break;
-                }
-                matches[mcount++] = strdup(de->d_name);
-            }
-        }
-        closedir(d);
-    }
-    if (matches) {
-        if (mcount == 1) {
-            const char *match = matches[0];
-            int mlen = strlen(match);
-            if (*lenp + mlen - (*posp - start) < MAX_LINE - 1) {
-                memmove(&buf[start + mlen], &buf[*posp], *lenp - *posp);
-                memcpy(&buf[start], match, mlen);
-                *lenp += mlen - (*posp - start);
-                *posp = start + mlen;
-                buf[*lenp] = '\0';
-                printf("\r%s%s", prompt, buf);
-                if (*lenp > *disp_lenp)
-                    *disp_lenp = *lenp;
-            }
-        } else if (mcount > 1) {
-            qsort(matches, mcount, sizeof(char *), cmpstr);
-            printf("\r\n");
-            for (int i = 0; i < mcount; i++)
-                printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
-            printf("\r\n");
-            printf("\r%s%s", prompt, buf);
-            if (*lenp > *disp_lenp)
-                *disp_lenp = *lenp;
-        }
+        return;
+
+    if (mcount == 1) {
+        apply_completion(matches[0], buf, lenp, posp, start, prompt, disp_lenp);
+    } else if (mcount > 1) {
+        qsort(matches, mcount, sizeof(char *), cmpstr);
+        printf("\r\n");
         for (int i = 0; i < mcount; i++)
-            free(matches[i]);
-        free(matches);
+            printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
+        printf("\r\n");
+        printf("\r%s%s", prompt, buf);
+        if (*lenp > *disp_lenp)
+            *disp_lenp = *lenp;
     }
+    for (int i = 0; i < mcount; i++)
+        free(matches[i]);
+    free(matches);
 }
 
