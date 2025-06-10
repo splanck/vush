@@ -529,23 +529,26 @@ char *expand_var(const char *token) {
         }
         return res;
     }
-    if (token[1] >= '0' && token[1] <= '9' && token[2] == '\0') {
-        int idx = token[1] - '0';
-        const char *val = NULL;
-        if (script_argv) {
-            if (idx == 0)
-                val = script_argv[0];
-            else if (idx <= script_argc)
-                val = script_argv[idx];
-        }
-        if (!val) {
-            if (opt_nounset) {
-                fprintf(stderr, "%c: unbound variable\n", token[1]);
-                last_status = 1;
+    if (token[1] >= '0' && token[1] <= '9') {
+        char *end;
+        long idx = strtol(token + 1, &end, 10);
+        if (*end == '\0') {
+            const char *val = NULL;
+            if (script_argv) {
+                if (idx == 0)
+                    val = script_argv[0];
+                else if (idx <= script_argc)
+                    val = script_argv[idx];
             }
-            val = "";
+            if (!val) {
+                if (opt_nounset) {
+                    fprintf(stderr, "%ld: unbound variable\n", idx);
+                    last_status = 1;
+                }
+                val = "";
+            }
+            return strdup(val);
         }
-        return strdup(val);
     }
     const char *val = get_shell_var(token + 1);
     if (!val) val = getenv(token + 1);

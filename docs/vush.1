@@ -36,10 +36,12 @@ Execute the provided command string non-interactively and exit with its
 status.
 .SH POSITIONAL PARAMETERS
 When executing a script file, the remaining command line words become
-positional parameters.  \$0 expands to the script path, \$1 through \$9
-refer to subsequent parameters, \$@ expands to all parameters separated
-by spaces and \$# expands to the number of parameters.  The
-\fBshift\fP builtin discards the first parameter and moves the rest down.
+positional parameters.  \$0 expands to the script path and \$1, \$2 and
+so on expand to subsequent parameters. Indexes beyond nine may be
+referenced using the full number such as \$10 or \$11.  \$@ expands to
+all parameters separated by spaces and \$# expands to the number of
+parameters.  The \fBshift\fP builtin discards the first parameter and
+moves the rest down.
 
 .SH ASSIGNMENTS
 .PP
