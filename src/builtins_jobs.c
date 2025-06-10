@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 /* builtin_jobs - usage: jobs
  * Print the list of background jobs recorded by jobs.c and return 1. */
@@ -66,6 +67,37 @@ int builtin_kill(char **args) {
     }
     int id = atoi(args[idx]);
     kill_job(id, sig);
+    return 1;
+}
+
+/* builtin_wait - usage: wait [ID|PID]...
+ * Wait for the given job IDs or process IDs to complete. Without
+ * arguments wait for all child processes. */
+int builtin_wait(char **args) {
+    int i = 1;
+    if (!args[1]) {
+        int status;
+        pid_t pid;
+        while ((pid = wait(&status)) > 0)
+            remove_job(pid);
+        return 1;
+    }
+    for (; args[i]; i++) {
+        char *end;
+        long val = strtol(args[i], &end, 10);
+        if (*end != '\0') {
+            fprintf(stderr, "usage: wait [ID|PID]...\n");
+            return 1;
+        }
+        pid_t pid = get_job_pid((int)val);
+        int status;
+        if (pid > 0) {
+            waitpid(pid, &status, 0);
+            remove_job(pid);
+        } else if (waitpid((pid_t)val, &status, 0) == -1) {
+            perror("wait");
+        }
+    }
     return 1;
 }
 

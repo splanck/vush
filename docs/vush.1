@@ -151,6 +151,10 @@ Continue job ID in the background.
 .B kill [-SIGNAL] ID
 Send a signal to job ID.
 .TP
+.B wait [ID|PID...]
+Wait for the specified job IDs or process IDs. With no arguments wait
+for all running jobs.
+.TP
 .B trap 'cmd' SIGNAL
 Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear.
 .TP
