@@ -543,6 +543,34 @@ int builtin_continue(char **args)
     return 1;
 }
 
+/* Display or modify the file creation mask. */
+int builtin_umask(char **args)
+{
+    mode_t mask = umask(0);
+    umask(mask);
+
+    if (!args[1]) {
+        printf("%04o\n", mask);
+        return 1;
+    }
+
+    if (args[2]) {
+        fprintf(stderr, "usage: umask [mode]\n");
+        return 1;
+    }
+
+    errno = 0;
+    char *end;
+    long val = strtol(args[1], &end, 8);
+    if (*end != '\0' || errno != 0 || val < 0 || val > 0777) {
+        fprintf(stderr, "umask: invalid mode\n");
+        return 1;
+    }
+
+    umask((mode_t)val);
+    return 1;
+}
+
 static const char *next_format_spec(const char *p, char spec[32], char *conv)
 {
     int si = 0;
