@@ -16,6 +16,9 @@ extern int builtin_pushd(char **);
 extern int builtin_popd(char **);
 extern int builtin_dirs(char **);
 extern int builtin_exit(char **);
+extern int builtin_colon(char **);
+extern int builtin_true(char **);
+extern int builtin_false(char **);
 extern int builtin_pwd(char **);
 extern int builtin_jobs(char **);
 extern int builtin_fg(char **);
@@ -56,6 +59,9 @@ const struct builtin builtin_table[] = {
     {"printf", builtin_printf},
     {"dirs", builtin_dirs},
     {"exit", builtin_exit},
+    {":", builtin_colon},
+    {"true", builtin_true},
+    {"false", builtin_false},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
     {"fg", builtin_fg},
