@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush --version
+expect {
+    -re "vush 0\.1\.0\r?\n" {}
+    timeout { send_user "version output mismatch\n"; exit 1 }
+}
+expect eof
