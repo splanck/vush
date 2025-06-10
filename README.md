@@ -186,7 +186,7 @@ so on expand to subsequent parameters.  Indexes beyond nine can be referenced
 using the full number such as `$10` or `$11`.  `$@` expands to all parameters
 separated by spaces while `$*` joins them using the first character of `IFS`
 (space by default).  `$#` gives the count of arguments.  The `shift` builtin
-discards the first parameter and shifts the rest down.
+discards the first *n* parameters (one if omitted) and shifts the rest down.
 
 ## Assignments
 
@@ -252,7 +252,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   `VUSH_HISTSIZE` environment variable (default 1000).
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
-- `shift` - drop the first positional parameter.
+- `shift [N]` - drop the first `N` positional parameters (default 1).
 - `break` - exit the nearest loop.
 - `continue` - start the next iteration of the nearest loop.
 - `getopts OPTSTRING VAR` - parse positional parameters, storing the

@@ -41,8 +41,8 @@ so on expand to subsequent parameters. Indexes beyond nine may be
 referenced using the full number such as \$10 or \$11.  \$@ expands to
 all parameters separated by spaces while \$* joins them using the first
 character of \fBIFS\fP (space by default).  \$# expands to the number of
-parameters.  The \fBshift\fP builtin discards the first parameter and
-moves the rest down.
+parameters.  The \fBshift\fP builtin discards the first \fIn\fP parameters
+(one if omitted) and moves the rest down.
 
 .SH ASSIGNMENTS
 .PP
@@ -170,8 +170,8 @@ backslashes are not treated specially.
 .B return [status]
 Return from a shell function with the given status (default 0).
 .TP
-.B shift
-Shift positional parameters down by one.
+.B shift [n]
+Shift positional parameters down by \fIn\fP (default 1).
 .TP
 .B break
 Exit the innermost loop.

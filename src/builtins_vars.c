@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <errno.h>
 
 extern int last_status;
 
@@ -151,14 +152,29 @@ void free_shell_vars(void) {
 }
 
 int builtin_shift(char **args) {
-    (void)args;
-    if (script_argc > 0) {
-        free(script_argv[1]);
-        for (int i = 2; i <= script_argc; i++)
-            script_argv[i - 1] = script_argv[i];
-        script_argc--;
-        script_argv[script_argc + 1] = NULL;
+    int n = 1;
+    if (args[1]) {
+        char *end;
+        errno = 0;
+        long val = strtol(args[1], &end, 10);
+        if (*end != '\0' || errno != 0 || val < 0) {
+            fprintf(stderr, "usage: shift [n]\n");
+            return 1;
+        }
+        n = (int)val;
     }
+
+    if (n > script_argc) {
+        fprintf(stderr, "shift: shift count out of range\n");
+        return 1;
+    }
+
+    for (int i = 1; i <= n; i++)
+        free(script_argv[i]);
+    for (int i = n + 1; i <= script_argc; i++)
+        script_argv[i - n] = script_argv[i];
+    script_argc -= n;
+    script_argv[script_argc + 1] = NULL;
     return 1;
 }
 
