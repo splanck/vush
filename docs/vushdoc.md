@@ -132,6 +132,24 @@ separated by spaces while `$*` joins them using the first character of `IFS`
 (space by default).  `$#` gives the count of arguments.  The `shift` builtin
 discards the first *n* parameters (one if omitted) and shifts the rest down.
 
+### History Expansion
+
+Previous commands can be reused with `!` expansions. `!!` recalls the last
+command. `!n` runs entry *n* from `history` while `!-n` looks *n* commands back.
+`!prefix` finds the most recent command starting with *prefix*. `!$` expands to
+the last word of the previous command and `!*` expands to all of its words.
+
+```sh
+vush> echo one two
+vush> !!
+echo one two
+one two
+vush> ls /tmp
+vush> echo !$
+echo /tmp
+/tmp
+```
+
 ## Assignments
 
 Words of the form `NAME=value` placed at the beginning of a command only affect
