@@ -220,10 +220,10 @@ current shell.
 .B exec \fIcommand [args...]\fP
 Replace the shell with the specified command.
 .TP
-.B source \fIfile\fP
-Read commands from \fIfile\fP.
+.B source \fIfile [args...]\fP
+Read commands from \fIfile\fP using \fIargs\fP as positional parameters.
 .TP
-.B . \fIfile\fP
+.B . \fIfile [args...]\fP
 Alias for \fBsource\fP.
 .TP
 .B help
