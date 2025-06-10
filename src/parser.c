@@ -826,9 +826,17 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         return 0;
     if ((tok[2] == '<') || (**p == '<'))
         return 0; /* here-string handled elsewhere */
+
+    int strip_tabs = 0;
+    char *rest = tok + 2;
+    if (*rest == '-') {
+        strip_tabs = 1;
+        rest++;
+    }
+
     char *delim;
-    if (tok[2]) {
-        delim = strdup(tok + 2);
+    if (*rest) {
+        delim = strdup(rest);
     } else {
         while (**p == ' ' || **p == '\t') (*p)++;
         int q = 0;
@@ -845,8 +853,12 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     while (fgets(buf, sizeof(buf), parse_input ? parse_input : stdin)) {
         size_t len = strlen(buf);
         if (len && buf[len-1] == '\n') buf[len-1] = '\0';
-        if (strcmp(buf, delim) == 0) { found = 1; break; }
-        fprintf(tf, "%s\n", buf);
+        char *line = buf;
+        if (strip_tabs) {
+            while (*line == '\t') line++;
+        }
+        if (strcmp(line, delim) == 0) { found = 1; break; }
+        fprintf(tf, "%s\n", line);
     }
     if (!found) {
         fclose(tf);
