@@ -410,6 +410,116 @@ int builtin_export(char **args) {
 
 static char *getopts_pos = NULL;
 
+/* ---- helpers for builtin_getopts -------------------------------------- */
+
+/* Return current OPTIND value, normalized to at least 1 */
+static int read_optind(void)
+{
+    const char *ind_s = get_shell_var("OPTIND");
+    int ind = ind_s ? atoi(ind_s) : 1;
+    if (ind < 1)
+        ind = 1;
+    if (!script_argv)
+        ind = 1;
+    return ind;
+}
+
+/* Set OPTIND shell variable */
+static void write_optind(int ind)
+{
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", ind);
+    set_shell_var("OPTIND", buf);
+}
+
+/* Wrapper for setting OPTARG */
+static void write_optarg(const char *val)
+{
+    set_shell_var("OPTARG", val ? val : "");
+}
+
+/* Set the result variable passed to getopts */
+static void write_result_var(const char *var, const char *val)
+{
+    set_shell_var(var, val);
+}
+
+enum {
+    OPT_OK,
+    OPT_DONE,
+    OPT_ILLEGAL,
+    OPT_MISSING
+};
+
+/* Scan for the next option character and update OPTARG as needed */
+static int getopts_next_option(const char *optstr, int silent, int *ind, char *opt)
+{
+    if (!script_argv || *ind > script_argc) {
+        getopts_pos = NULL;
+        return OPT_DONE;
+    }
+
+    if (!getopts_pos || *getopts_pos == '\0') {
+        char *arg = script_argv[*ind];
+        if (strcmp(arg, "--") == 0) {
+            (*ind)++;
+            getopts_pos = NULL;
+            return OPT_DONE;
+        }
+        if (arg[0] != '-' || arg[1] == '\0') {
+            getopts_pos = NULL;
+            return OPT_DONE;
+        }
+        getopts_pos = arg + 1;
+        (*ind)++;
+    }
+
+    *opt = *getopts_pos++;
+    if (!*opt || *opt == ':')
+        *opt = '?';
+
+    const char *p = strchr(optstr, *opt);
+    if (!p) {
+        if (!silent)
+            fprintf(stderr, "getopts: illegal option -- %c\n", *opt);
+        if (silent) {
+            char ob[2] = {*opt, '\0'};
+            write_optarg(ob);
+        } else {
+            write_optarg("");
+        }
+        if (!getopts_pos || *getopts_pos == '\0')
+            getopts_pos = NULL;
+        return OPT_ILLEGAL;
+    }
+
+    if (p[1] == ':') {
+        if (*getopts_pos != '\0') {
+            write_optarg(getopts_pos);
+            getopts_pos = NULL;
+        } else if (*ind <= script_argc) {
+            write_optarg(script_argv[*ind]);
+            (*ind)++;
+            getopts_pos = NULL;
+        } else {
+            if (!silent)
+                fprintf(stderr, "getopts: option requires an argument -- %c\n", *opt);
+            if (silent) {
+                char ob[2] = {*opt, '\0'};
+                write_optarg(ob);
+            } else {
+                write_optarg("");
+            }
+            return OPT_MISSING;
+        }
+    } else {
+        write_optarg("");
+        if (!getopts_pos || *getopts_pos == '\0')
+            getopts_pos = NULL;
+    }
+    return OPT_OK;
+}
+
 int builtin_getopts(char **args) {
     if (!args[1] || !args[2]) {
         fprintf(stderr, "usage: getopts optstring var\n");
@@ -425,113 +535,37 @@ int builtin_getopts(char **args) {
         optstr++;
     }
 
-    const char *ind_s = get_shell_var("OPTIND");
-    int ind = ind_s ? atoi(ind_s) : 1;
-    if (ind < 1)
-        ind = 1;
+    int ind = read_optind();
 
-    if (!script_argv)
-        ind = 1;
+    char opt = '\0';
+    int res = getopts_next_option(optstr, silent, &ind, &opt);
 
-    if (!script_argv || ind > script_argc) {
-        set_shell_var(var, "?");
-        set_shell_var("OPTARG", "");
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%d", ind);
-        set_shell_var("OPTIND", buf);
-        last_status = 1;
-        getopts_pos = NULL;
-        return 1;
-    }
-
-    if (!getopts_pos || *getopts_pos == '\0') {
-        char *arg = script_argv[ind];
-        if (strcmp(arg, "--") == 0) {
-            ind++;
-            set_shell_var(var, "?");
-            set_shell_var("OPTARG", "");
-            char buf[16];
-            snprintf(buf, sizeof(buf), "%d", ind);
-            set_shell_var("OPTIND", buf);
-            last_status = 1;
-            getopts_pos = NULL;
-            return 1;
-        }
-        if (arg[0] != '-' || arg[1] == '\0') {
-            set_shell_var(var, "?");
-            set_shell_var("OPTARG", "");
-            char buf[16];
-            snprintf(buf, sizeof(buf), "%d", ind);
-            set_shell_var("OPTIND", buf);
-            last_status = 1;
-            getopts_pos = NULL;
-            return 1;
-        }
-        getopts_pos = arg + 1;
-        ind++;
-    }
-
-    char opt = *getopts_pos++;
-    if (!opt || opt == ':') {
-        opt = '?';
-    }
-    const char *p = strchr(optstr, opt);
-    if (!p) {
-        if (!silent)
-            fprintf(stderr, "getopts: illegal option -- %c\n", opt);
-        set_shell_var(var, "?");
-        if (silent) {
-            char ob[2] = {opt, '\0'};
-            set_shell_var("OPTARG", ob);
-        } else {
-            set_shell_var("OPTARG", "");
-        }
-        if (!getopts_pos || *getopts_pos == '\0')
-            getopts_pos = NULL;
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%d", ind);
-        set_shell_var("OPTIND", buf);
+    switch (res) {
+    case OPT_OK: {
+        char val[2] = {opt, '\0'};
+        write_result_var(var, val);
         last_status = 0;
-        return 1;
+        break;
+    }
+    case OPT_DONE:
+        write_result_var(var, "?");
+        write_optarg("");
+        last_status = 1;
+        break;
+    case OPT_ILLEGAL:
+        write_result_var(var, "?");
+        last_status = 0;
+        break;
+    case OPT_MISSING:
+        if (silent)
+            write_result_var(var, ":");
+        else
+            write_result_var(var, "?");
+        last_status = 0;
+        break;
     }
 
-    if (p[1] == ':') {
-        if (*getopts_pos != '\0') {
-            set_shell_var("OPTARG", getopts_pos);
-            getopts_pos = NULL;
-        } else if (ind <= script_argc) {
-            set_shell_var("OPTARG", script_argv[ind]);
-            ind++;
-            getopts_pos = NULL;
-        } else {
-            if (!silent)
-                fprintf(stderr, "getopts: option requires an argument -- %c\n", opt);
-            if (silent) {
-                char ob[2] = {opt, '\0'};
-                set_shell_var(var, ":");
-                set_shell_var("OPTARG", ob);
-            } else {
-                set_shell_var(var, "?");
-                set_shell_var("OPTARG", "");
-            }
-            char buf[16];
-            snprintf(buf, sizeof(buf), "%d", ind);
-            set_shell_var("OPTIND", buf);
-            last_status = 0;
-            return 1;
-        }
-    } else {
-        set_shell_var("OPTARG", "");
-        if (!getopts_pos || *getopts_pos == '\0')
-            getopts_pos = NULL;
-    }
-
-    char val[2] = {opt, '\0'};
-    set_shell_var(var, val);
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%d", ind);
-    set_shell_var("OPTIND", buf);
-    last_status = 0;
+    write_optind(ind);
     return 1;
 }
 
