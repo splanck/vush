@@ -26,6 +26,7 @@ extern int builtin_bg(char **);
 extern int builtin_kill(char **);
 extern int builtin_wait(char **);
 extern int builtin_export(char **);
+extern int builtin_readonly(char **);
 extern int builtin_local(char **);
 extern int builtin_unset(char **);
 extern int builtin_history(char **);
@@ -69,6 +70,7 @@ const struct builtin builtin_table[] = {
     {"kill", builtin_kill},
     {"wait", builtin_wait},
     {"export", builtin_export},
+    {"readonly", builtin_readonly},
     {"local", builtin_local},
     {"unset", builtin_unset},
     {"history", builtin_history},

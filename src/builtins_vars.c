@@ -35,6 +35,38 @@ struct var_entry {
 
 static struct var_entry *shell_vars = NULL;
 
+struct readonly_entry {
+    char *name;
+    struct readonly_entry *next;
+};
+
+static struct readonly_entry *readonly_vars = NULL;
+
+static int is_readonly(const char *name)
+{
+    for (struct readonly_entry *r = readonly_vars; r; r = r->next) {
+        if (strcmp(r->name, name) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+static void add_readonly(const char *name)
+{
+    if (is_readonly(name))
+        return;
+    struct readonly_entry *r = malloc(sizeof(*r));
+    if (!r)
+        return;
+    r->name = strdup(name);
+    if (!r->name) {
+        free(r);
+        return;
+    }
+    r->next = readonly_vars;
+    readonly_vars = r;
+}
+
 struct local_var {
     char *name;
     char *value;
@@ -143,6 +175,10 @@ char **get_shell_array(const char *name, int *len) {
  * variable is left untouched.
  */
 void set_shell_var(const char *name, const char *value) {
+    if (is_readonly(name)) {
+        fprintf(stderr, "%s: readonly variable\n", name);
+        return;
+    }
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
             if (v->array) {
@@ -173,6 +209,10 @@ void set_shell_var(const char *name, const char *value) {
  * the number of elements in 'values'.
  */
 void set_shell_array(const char *name, char **values, int count) {
+    if (is_readonly(name)) {
+        fprintf(stderr, "%s: readonly variable\n", name);
+        return;
+    }
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
             if (v->value) {
@@ -212,6 +252,10 @@ void set_shell_array(const char *name, char **values, int count) {
  * with the variable is freed.  If the name does not exist nothing happens.
  */
 void unset_shell_var(const char *name) {
+    if (is_readonly(name)) {
+        fprintf(stderr, "%s: readonly variable\n", name);
+        return;
+    }
     struct var_entry *prev = NULL;
     for (struct var_entry *v = shell_vars; v; prev = v, v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -251,6 +295,15 @@ void free_shell_vars(void) {
         v = n;
     }
     shell_vars = NULL;
+
+    struct readonly_entry *r = readonly_vars;
+    while (r) {
+        struct readonly_entry *n = r->next;
+        free(r->name);
+        free(r);
+        r = n;
+    }
+    readonly_vars = NULL;
 }
 
 /*
@@ -549,6 +602,27 @@ int builtin_export(char **args) {
     }
     set_shell_var(pair, eq + 1);
     *eq = '=';
+    return 1;
+}
+
+int builtin_readonly(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: readonly NAME[=VALUE]...\n");
+        return 1;
+    }
+    for (int i = 1; args[i]; i++) {
+        char *arg = args[i];
+        char *eq = strchr(arg, '=');
+        if (eq) {
+            *eq = '\0';
+            set_shell_var(arg, eq + 1);
+            add_readonly(arg);
+            *eq = '=';
+        } else {
+            if (get_shell_var(arg) || get_shell_array(arg, NULL))
+                add_readonly(arg);
+        }
+    }
     return 1;
 }
 
