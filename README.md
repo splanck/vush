@@ -87,6 +87,24 @@ interactively or pass `-c` followed by a command string.
 When invoked without a script file, commands from `~/.vushrc` are executed
 before the first prompt if that file exists.
 
+### Shebang Scripts
+
+Scripts beginning with `#!/usr/bin/env vush` can be executed directly. Create a
+file `hello.vsh` with:
+
+```sh
+#!/usr/bin/env vush
+echo Hello from vush
+```
+
+Make it executable and run it:
+
+```sh
+$ chmod +x hello.vsh
+$ ./hello.vsh
+Hello from vush
+```
+
 Example interactive session:
 
 ```
