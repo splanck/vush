@@ -1,5 +1,17 @@
 /*
  * Command history management routines.
+ *
+ * History is kept in a doubly linked list of ``HistEntry`` nodes.  New
+ * commands are appended to ``tail`` and each entry is assigned an incrementing
+ * identifier.  When the number of stored entries exceeds ``max_history`` the
+ * oldest entry at ``head`` is discarded.  The history is optionally persisted
+ * to ``$VUSH_HISTFILE`` (or ``$HOME/.vush_history`` if unset) so entries can be
+ * reloaded across shell sessions.
+ *
+ * The interactive cursor (`cursor`) tracks navigation through the list for the
+ * up/down history commands while `search_cursor` remembers the last match when
+ * searching.  Searches walk the list in either direction looking for a command
+ * substring.
  */
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */
@@ -24,6 +36,11 @@ static int skip_next = 0;
 static int history_size = 0;
 static int max_history = MAX_HISTORY;
 
+/*
+ * Determine the path to the history file.  ``$VUSH_HISTFILE`` takes
+ * precedence over ``$HOME/.vush_history``.  Returns NULL if no path can
+ * be constructed.
+ */
 static const char *histfile_path(void) {
     const char *env = getenv("VUSH_HISTFILE");
     if (env && *env)
@@ -36,6 +53,10 @@ static const char *histfile_path(void) {
     return path;
 }
 
+/*
+ * Initialise history settings from environment variables.  This function is
+ * idempotent and may be called multiple times.
+ */
 static void history_init(void) {
     static int inited = 0;
     if (inited)
@@ -49,6 +70,10 @@ static void history_init(void) {
     inited = 1;
 }
 
+/*
+ * Internal helper to append an entry to the history list.  When
+ * ``save_file`` is non-zero the entry is also appended to the history file.
+ */
 static void add_history_entry(const char *cmd, int save_file) {
     history_init();
     HistEntry *e = malloc(sizeof(HistEntry));
@@ -90,6 +115,11 @@ static void add_history_entry(const char *cmd, int save_file) {
     }
 }
 
+/*
+ * Record a new command in the history file and in-memory list.
+ * Returns nothing.  If the global flag `skip_next` is set the command
+ * is ignored and the flag cleared.
+ */
 void add_history(const char *cmd) {
     if (skip_next) {
         skip_next = 0;
@@ -98,12 +128,20 @@ void add_history(const char *cmd) {
     add_history_entry(cmd, 1);
 }
 
+/*
+ * Print the entire command history to stdout.
+ * Returns nothing.
+ */
 void print_history(void) {
     for (HistEntry *e = head; e; e = e->next) {
         printf("%d %s\n", e->id, e->cmd);
     }
 }
 
+/*
+ * Load history entries from the history file into memory.
+ * Returns nothing if the file cannot be read.
+ */
 void load_history(void) {
     history_init();
     const char *path = histfile_path();
@@ -122,6 +160,10 @@ void load_history(void) {
     fclose(f);
 }
 
+/*
+ * Step backwards through history and return the previous command.
+ * Returns NULL when there is no earlier entry.
+ */
 const char *history_prev(void) {
     if (!tail)
         return NULL;
@@ -132,6 +174,10 @@ const char *history_prev(void) {
     return cursor ? cursor->cmd : NULL;
 }
 
+/*
+ * Move forward through history and return the next command.
+ * Returns NULL when there is no later entry.
+ */
 const char *history_next(void) {
     if (!cursor)
         return NULL;
@@ -142,10 +188,19 @@ const char *history_next(void) {
     return cursor ? cursor->cmd : NULL;
 }
 
+/*
+ * Reset the navigation cursor used by history_prev/history_next.
+ * Returns nothing.
+ */
 void history_reset_cursor(void) {
     cursor = NULL;
 }
 
+/*
+ * Search backward for a history entry containing 'term'.
+ * Returns the matched command or NULL if none is found.  Subsequent calls
+ * continue searching from the previous match.
+ */
 const char *history_search_prev(const char *term) {
     if (!term || !*term || !tail)
         return NULL;
@@ -159,6 +214,10 @@ const char *history_search_prev(const char *term) {
     return NULL;
 }
 
+/*
+ * Continue searching forward for 'term'.  Starts from the previous match
+ * if one exists.  Returns the matched command or NULL if none is found.
+ */
 const char *history_search_next(const char *term) {
     if (!term || !*term || !head)
         return NULL;
@@ -172,10 +231,18 @@ const char *history_search_next(const char *term) {
     return NULL;
 }
 
+/*
+ * Clear the search cursor used by history_search_prev/next.
+ * Returns nothing.
+ */
 void history_reset_search(void) {
     search_cursor = NULL;
 }
 
+/*
+ * Remove all history entries from memory and truncate the history file.
+ * Returns nothing.
+ */
 void clear_history(void) {
     HistEntry *e = head;
     while (e) {
@@ -195,6 +262,10 @@ void clear_history(void) {
     }
 }
 
+/*
+ * Delete the history entry with the given identifier.  The history file
+ * is rewritten to reflect the removal.  Returns nothing.
+ */
 void delete_history_entry(int id) {
     history_init();
     HistEntry *e = head;
@@ -232,10 +303,17 @@ void delete_history_entry(int id) {
     fclose(f);
 }
 
+/*
+ * Return the most recently added command or NULL if history is empty.
+ */
 const char *history_last(void) {
     return tail ? tail->cmd : NULL;
 }
 
+/*
+ * Search from the most recent entry backwards for one starting with 'prefix'.
+ * Returns the matched command or NULL if none is found.
+ */
 const char *history_find_prefix(const char *prefix) {
     if (!prefix || !*prefix)
         return NULL;
