@@ -484,6 +484,71 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             }
             return strdup(val);
         }
+    } else if (*p == '/') {
+        int global = 0;
+        p++;
+        if (*p == '/') {
+            global = 1;
+            p++;
+        }
+        const char *pat_start = p;
+        const char *slash = strchr(p, '/');
+        if (!slash) {
+            if (!val) val = "";
+            return strdup(val);
+        }
+        char *pattern = strndup(pat_start, slash - pat_start);
+        const char *repl = slash + 1;
+        if (!val) val = "";
+        size_t vlen = strlen(val);
+        size_t rlen = strlen(repl);
+        size_t cap = vlen * (rlen + 1) + 1;
+        char *res = malloc(cap);
+        size_t outlen = 0;
+        int replaced = 0;
+        for (size_t i = 0; i < vlen; ) {
+            size_t match_len = 0;
+            if (!replaced || global) {
+                for (size_t j = vlen - i; j > 0; j--) {
+                    char *sub = strndup(val + i, j);
+                    if (!sub) continue;
+                    int m = fnmatch(pattern, sub, 0);
+                    free(sub);
+                    if (m == 0) {
+                        match_len = j;
+                        break;
+                    }
+                }
+            }
+            if (match_len) {
+                if (outlen + rlen >= cap) {
+                    cap = cap * 2 + rlen;
+                    res = realloc(res, cap);
+                }
+                memcpy(res + outlen, repl, rlen);
+                outlen += rlen;
+                i += match_len;
+                replaced = 1;
+                if (!global) {
+                    if (outlen + vlen - i + 1 >= cap) {
+                        cap = outlen + vlen - i + 1;
+                        res = realloc(res, cap);
+                    }
+                    memcpy(res + outlen, val + i, vlen - i);
+                    outlen += vlen - i;
+                    break;
+                }
+            } else {
+                if (outlen + 1 >= cap) {
+                    cap = cap * 2 + 1;
+                    res = realloc(res, cap);
+                }
+                res[outlen++] = val[i++];
+            }
+        }
+        res[outlen] = '\0';
+        free(pattern);
+        return res;
     } else {
         if (!val) {
             if (opt_nounset) {

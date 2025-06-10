@@ -54,6 +54,10 @@ Arrays are created with \fBNAME=(word ...)\fP. Elements are referenced with
 \fB${NAME[index]}\fP and all elements with \fB${NAME[@]}\fP.
 .SH PARAMETER EXPANSION
 Several forms modify how variables are expanded:
+.PP
+The form \fB${VAR/pat/repl}\fP replaces the first portion of \fB$VAR\fP
+matching \fIpat\fP with \fIrepl\fP.  Doubling the slash with
+\fB${VAR//pat/repl}\fP performs the substitution globally.
 .EX
 unset TMP
 echo ${TMP:-default}
@@ -63,6 +67,9 @@ TMP=endings
 echo ${TMP#end}
 echo ${TMP%ings}
 echo ${#TMP}
+TMP=hello
+echo ${TMP/l/1}
+echo ${TMP//l/1}
 .EE
 .SH CONTROL STRUCTURES
 The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
