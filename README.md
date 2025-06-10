@@ -8,7 +8,7 @@ and a few built-in commands.
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias`, `bg`, `break`, `cd`, `continue`, `dirs`, `eval`,
-  `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
+  `exec`, `exit`, `export`, `fg`, `getopts`, `help`, `history`, `jobs`, `kill`, `let`,
   `popd`, `pushd`, `pwd`, `read`, `return`, `set`, `shift`, `source` (or `.`),
   `trap`, `type`, `unalias`, and `unset`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
@@ -210,6 +210,7 @@ baz
 - `popd` - return to the directory from the stack.
 - `dirs` - display the directory stack.
 - `exit [status]` - terminate the shell with an optional status code.
+- `exec command [args...]` - replace the shell with `command`.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
 - `fg ID` - wait for background job `ID`.

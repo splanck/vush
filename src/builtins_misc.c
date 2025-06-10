@@ -127,6 +127,16 @@ int builtin_eval(char **args) {
     return 1;
 }
 
+int builtin_exec(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: exec command [args...]\n");
+        return 1;
+    }
+    execvp(args[1], &args[1]);
+    perror(args[1]);
+    return 1;
+}
+
 int builtin_help(char **args) {
     (void)args;
     printf("Built-in commands:\n");
@@ -155,6 +165,7 @@ int builtin_help(char **args) {
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  test EXPR ([ EXPR ])  Evaluate a test expression\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
+    printf("  exec CMD [ARGS]  Replace the shell with CMD\n");
     printf("  source FILE (. FILE)   Execute commands from FILE\n");
     printf("  help       Display this help message\n");
     return 1;

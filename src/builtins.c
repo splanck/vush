@@ -23,6 +23,7 @@ extern int builtin_unalias(char **);
 extern int builtin_read(char **);
 extern int builtin_getopts(char **);
 extern int builtin_eval(char **);
+extern int builtin_exec(char **);
 extern int builtin_return(char **);
 extern int builtin_break(char **);
 extern int builtin_continue(char **);
@@ -64,6 +65,7 @@ const struct builtin builtin_table[] = {
     {"[", builtin_test},
     {"type", builtin_type},
     {"eval", builtin_eval},
+    {"exec", builtin_exec},
     {"source", builtin_source},
     {".", builtin_source},
     {"help", builtin_help},
