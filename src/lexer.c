@@ -700,9 +700,16 @@ char **expand_braces(const char *word, int *count_out) {
             for (long n = start; (step > 0 ? n <= end : n >= end) && count < MAX_TOKENS - 1; n += step) {
                 char num[32];
                 snprintf(num, sizeof(num), "%ld", n);
-                char tmp[MAX_LINE];
-                snprintf(tmp, sizeof(tmp), "%s%s%s", prefix, num, suffix);
-                res[count++] = strdup(tmp);
+                size_t len = strlen(prefix) + strlen(num) + strlen(suffix) + 1;
+                char *tmp = malloc(len);
+                if (!tmp) {
+                    for (int i = 0; i < count; i++)
+                        free(res[i]);
+                    free(res);
+                    return NULL;
+                }
+                snprintf(tmp, len, "%s%s%s", prefix, num, suffix);
+                res[count++] = tmp;
             }
             res[count] = NULL;
             if (count_out) *count_out = count;
@@ -718,14 +725,29 @@ char **expand_braces(const char *word, int *count_out) {
     char *sp = NULL;
     char *tok = strtok_r(dup, ",", &sp);
     while (tok && count < MAX_TOKENS - 1) {
-        char tmp[MAX_LINE];
-        snprintf(tmp, sizeof(tmp), "%s%s%s", prefix, tok, suffix);
-        res[count++] = strdup(tmp);
+        size_t len = strlen(prefix) + strlen(tok) + strlen(suffix) + 1;
+        char *tmp = malloc(len);
+        if (!tmp) {
+            free(dup);
+            for (int i = 0; i < count; i++)
+                free(res[i]);
+            free(res);
+            return NULL;
+        }
+        snprintf(tmp, len, "%s%s%s", prefix, tok, suffix);
+        res[count++] = tmp;
         tok = strtok_r(NULL, ",", &sp);
     }
     free(dup);
     if (count == 0) {
-        res[count++] = strdup(word);
+        res[count] = strdup(word);
+        if (!res[count]) {
+            for (int i = 0; i < count; i++)
+                free(res[i]);
+            free(res);
+            return NULL;
+        }
+        count++;
     }
     res[count] = NULL;
     if (count_out) *count_out = count;
