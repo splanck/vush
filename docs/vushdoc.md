@@ -349,3 +349,16 @@ vush> printf "%s %04d %x\n" foo 5 255
 foo 0005 ff
 ```
 
+## Environment Variables
+
+The shell responds to several variables that customize its behavior:
+
+- `PS1` controls the interactive prompt and is expanded like normal text.
+- `VUSH_HISTFILE` specifies where command history is saved while
+  `VUSH_HISTSIZE` limits how many entries are kept.
+- `VUSH_ALIASFILE` and `VUSH_FUNCFILE` hold persistent aliases and functions.
+- `CDPATH` provides a colon-separated list of directories searched by `cd`
+  when a relative path is used.
+
+See the manual page for more detail.
+
