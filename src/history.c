@@ -12,12 +12,14 @@
  * up/down history commands while `search_cursor` remembers the last match when
  * searching.  Searches walk the list in either direction looking for a command
  * substring.
- */
+*/
+#define _GNU_SOURCE
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "common.h"
 
 typedef struct HistEntry {
@@ -323,5 +325,73 @@ const char *history_find_prefix(const char *prefix) {
             return e->cmd;
     }
     return NULL;
+}
+
+/*
+ * Retrieve the command with identifier ID or NULL if no such entry exists.
+ */
+const char *history_get_by_id(int id) {
+    for (HistEntry *e = head; e; e = e->next) {
+        if (e->id == id)
+            return e->cmd;
+    }
+    return NULL;
+}
+
+/*
+ * Return the command OFFSET entries back from the most recent one.  OFFSET of
+ * 1 yields the last command, 2 the one before that and so on.  NULL is returned
+ * when the requested entry does not exist.
+ */
+const char *history_get_relative(int offset) {
+    if (offset <= 0)
+        return NULL;
+    HistEntry *e = tail;
+    while (e && --offset > 0)
+        e = e->prev;
+    return e ? e->cmd : NULL;
+}
+
+/* Internal helper to duplicate the last word of CMD. */
+static char *dup_last_word(const char *cmd) {
+    const char *end = cmd + strlen(cmd);
+    while (end > cmd && isspace((unsigned char)*(end - 1)))
+        end--;
+    const char *start = end;
+    while (start > cmd && !isspace((unsigned char)*(start - 1)))
+        start--;
+    size_t len = (size_t)(end - start);
+    char *res = malloc(len + 1);
+    if (!res)
+        return NULL;
+    memcpy(res, start, len);
+    res[len] = '\0';
+    return res;
+}
+
+/* Duplicate all arguments of CMD after the first word. */
+static char *dup_all_args(const char *cmd) {
+    const char *p = cmd;
+    while (*p && !isspace((unsigned char)*p))
+        p++;
+    while (isspace((unsigned char)*p))
+        p++;
+    return strdup(p);
+}
+
+/* Return the last argument from the most recent command or NULL. */
+char *history_last_word(void) {
+    const char *cmd = history_get_relative(1);
+    if (!cmd)
+        return NULL;
+    return dup_last_word(cmd);
+}
+
+/* Return all arguments from the most recent command or NULL. */
+char *history_all_words(void) {
+    const char *cmd = history_get_relative(1);
+    if (!cmd)
+        return NULL;
+    return dup_all_args(cmd);
 }
 

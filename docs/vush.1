@@ -25,7 +25,9 @@ the cursor to the start of the line, `Ctrl-E` or End moves to the end and
 `Ctrl-U` clears from the cursor back to the beginning.  `Ctrl-W` deletes
 the word before the cursor, `Ctrl-K` deletes from the cursor to the end
 of the line and `Ctrl-L` clears the screen and redraws the current line.
-Typing `!!` repeats the previous command while `!prefix` recalls the most
+Typing `!!` repeats the previous command. `!n` recalls command number `n` and
+`!-n` goes back `n` commands. `!$` expands to the last word of the previous
+command and `!*` expands to all of its arguments. `!prefix` recalls the most
 recent command beginning with `prefix`.
 If \fB~/.vushrc\fP exists, commands from this file are executed before
 the first prompt is shown.
