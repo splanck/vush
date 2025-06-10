@@ -1,4 +1,12 @@
-/* Builtins dealing with variables, aliases and functions */
+/*
+ * This module implements the builtins used to manipulate shell variables and
+ * arrays.  A small linked list stores all shell variables so that both
+ * builtins and expansion code share the same state.  Routines here are
+ * responsible for looking up variables, creating or deleting them and keeping
+ * array values in sync.  Builtin commands such as `set`, `export`, `read` and
+ * `getopts` rely on these helpers to manage their arguments and update the
+ * environment.
+ */
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "history.h"
@@ -27,8 +35,12 @@ struct var_entry {
 
 static struct var_entry *shell_vars = NULL;
 
-
-
+/*
+ * Look up a scalar or array variable by name.
+ * Returns a pointer to the stored value.  For arrays the first element is
+ * returned.  The returned string belongs to the shell and must not be freed.
+ * NULL is returned when the variable does not exist.
+ */
 const char *get_shell_var(const char *name) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -42,6 +54,11 @@ const char *get_shell_var(const char *name) {
     return NULL;
 }
 
+/*
+ * Retrieve the array stored under the given name.  The optional len argument
+ * is filled with the number of elements.  NULL is returned if no such array
+ * exists.
+ */
 char **get_shell_array(const char *name, int *len) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0 && v->array) {
@@ -53,6 +70,11 @@ char **get_shell_array(const char *name, int *len) {
     return NULL;
 }
 
+/*
+ * Store a scalar variable.  Existing values or arrays with the same name are
+ * freed and replaced.  Allocation failures result in a printed error and the
+ * variable is left untouched.
+ */
 void set_shell_var(const char *name, const char *value) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -78,6 +100,11 @@ void set_shell_var(const char *name, const char *value) {
     shell_vars = v;
 }
 
+/*
+ * Replace or create an array variable.  Existing scalar or array data is
+ * freed before the new values are duplicated.  The count parameter indicates
+ * the number of elements in 'values'.
+ */
 void set_shell_array(const char *name, char **values, int count) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -113,6 +140,10 @@ void set_shell_array(const char *name, char **values, int count) {
     shell_vars = v;
 }
 
+/*
+ * Remove a variable or array from the shell table.  All memory associated
+ * with the variable is freed.  If the name does not exist nothing happens.
+ */
 void unset_shell_var(const char *name) {
     struct var_entry *prev = NULL;
     for (struct var_entry *v = shell_vars; v; prev = v, v = v->next) {
@@ -134,6 +165,10 @@ void unset_shell_var(const char *name) {
     }
 }
 
+/*
+ * Free all variables stored by the shell.  This is used when exiting or
+ * reinitialising the interpreter.
+ */
 void free_shell_vars(void) {
     struct var_entry *v = shell_vars;
     while (v) {
@@ -151,6 +186,11 @@ void free_shell_vars(void) {
     shell_vars = NULL;
 }
 
+/*
+ * Implements the `shift` builtin which discards the first n positional
+ * parameters.  On error an explanatory message is printed and 1 is returned.
+ * Success also returns 1 since builtins signal the shell to continue.
+ */
 int builtin_shift(char **args) {
     int n = 1;
     if (args[1]) {
@@ -178,6 +218,10 @@ int builtin_shift(char **args) {
     return 1;
 }
 
+/*
+ * Change shell execution options such as -e or -u.  Unrecognised options
+ * result in an error message.  The function always returns 1.
+ */
 int builtin_set(char **args) {
     for (int i = 1; args[i]; i++) {
         if (strcmp(args[i], "-e") == 0)
@@ -224,6 +268,11 @@ int builtin_set(char **args) {
 
 /* ---- helper functions for builtin_read -------------------------------- */
 
+/*
+ * Parse options for the `read` builtin.  On success `idx` is set to the first
+ * variable argument and 0 is returned.  A return value of -1 indicates a
+ * usage error in the argument list.
+ */
 static int parse_read_options(char **args, int *raw, const char **array_name,
                               int *idx) {
     int i = 1;
@@ -247,6 +296,12 @@ static int parse_read_options(char **args, int *raw, const char **array_name,
     return 0;
 }
 
+/*
+ * Split a line read by the `read` builtin into words for array assignment.
+ * The returned array is heap allocated and must be freed by the caller.  The
+ * number of elements is stored in *count.  NULL is returned on allocation
+ * failure.
+ */
 static char **split_array_values(char *line, int *count) {
     char **vals = NULL;
     *count = 0;
@@ -270,6 +325,10 @@ static char **split_array_values(char *line, int *count) {
     return vals;
 }
 
+/*
+ * Helper used by `read` in variable mode.  Splits the line into words and
+ * assigns them to the provided variable names starting at index `idx`.
+ */
 static void assign_read_vars(char **args, int idx, char *line) {
     int var_count = 0;
     for (int i = idx; args[i]; i++)
@@ -290,6 +349,11 @@ static void assign_read_vars(char **args, int idx, char *line) {
     }
 }
 
+/*
+ * Implementation of the `read` builtin.  Reads a line from standard input and
+ * assigns it to shell variables or an array.  The return status is placed in
+ * `last_status` and the function itself always returns 1.
+ */
 int builtin_read(char **args) {
     int raw = 0;
     const char *array_name = NULL;
@@ -341,6 +405,10 @@ int builtin_read(char **args) {
     return 1;
 }
 
+/*
+ * Evaluate arithmetic expressions supplied to the `let` builtin.  The result
+ * is stored in `last_status` as zero/non-zero and the function returns 1.
+ */
 int builtin_let(char **args) {
     if (!args[1]) {
         last_status = 1;
@@ -357,6 +425,11 @@ int builtin_let(char **args) {
     return 1;
 }
 
+/*
+ * Implementation of the `unset` builtin.  Removes shell variables or array
+ * elements and unsets environment variables.  Always returns 1 and prints
+ * errors when the usage is incorrect.
+ */
 int builtin_unset(char **args) {
     if (!args[1]) {
         fprintf(stderr, "usage: unset NAME...\n");
@@ -391,6 +464,10 @@ int builtin_unset(char **args) {
     return 1;
 }
 
+/*
+ * Export a shell variable to the environment.  Expects NAME=value syntax and
+ * prints a usage message on error.  Always returns 1.
+ */
 int builtin_export(char **args) {
     if (!args[1] || !strchr(args[1], '=')) {
         fprintf(stderr, "usage: export NAME=value\n");
@@ -411,8 +488,10 @@ int builtin_export(char **args) {
 static char *getopts_pos = NULL;
 
 /* ---- helpers for builtin_getopts -------------------------------------- */
-
-/* Return current OPTIND value, normalized to at least 1 */
+/*
+ * Return the current OPTIND value as an integer.  Values less than 1 are
+ * normalised to 1 and a missing variable defaults to 1 as well.
+ */
 static int read_optind(void)
 {
     const char *ind_s = get_shell_var("OPTIND");
@@ -424,7 +503,9 @@ static int read_optind(void)
     return ind;
 }
 
-/* Set OPTIND shell variable */
+/*
+ * Update the OPTIND variable maintained in the shell's variable table.
+ */
 static void write_optind(int ind)
 {
     char buf[16];
@@ -432,13 +513,19 @@ static void write_optind(int ind)
     set_shell_var("OPTIND", buf);
 }
 
-/* Wrapper for setting OPTARG */
+/*
+ * Convenience wrapper to update the OPTARG variable.  NULL is written as an
+ * empty string.
+ */
 static void write_optarg(const char *val)
 {
     set_shell_var("OPTARG", val ? val : "");
 }
 
-/* Set the result variable passed to getopts */
+/*
+ * Helper used by getopts to place the resulting option character in the user
+ * supplied variable.
+ */
 static void write_result_var(const char *var, const char *val)
 {
     set_shell_var(var, val);
@@ -451,7 +538,10 @@ enum {
     OPT_MISSING
 };
 
-/* Scan for the next option character and update OPTARG as needed */
+/*
+ * Scan the argument list for the next option recognised by `getopts`.  Updates
+ * OPTARG as required and returns one of the OPT_* codes defined above.
+ */
 static int getopts_next_option(const char *optstr, int silent, int *ind, char *opt)
 {
     if (!script_argv || *ind > script_argc) {
@@ -520,6 +610,12 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
     return OPT_OK;
 }
 
+/*
+ * Shell builtin compatible with POSIX getopts.  Parses positional parameters
+ * according to the given option string and stores the result in the supplied
+ * variable.  The exit status is placed in `last_status` and the function
+ * returns 1.
+ */
 int builtin_getopts(char **args) {
     if (!args[1] || !args[2]) {
         fprintf(stderr, "usage: getopts optstring var\n");
