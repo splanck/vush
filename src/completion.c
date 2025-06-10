@@ -9,11 +9,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <limits.h>
 
 static int cmpstr(const void *a, const void *b) {
     const char *aa = *(const char **)a;
     const char *bb = *(const char **)b;
     return strcmp(aa, bb);
+}
+
+/* Check if name already exists in matches[0..count-1]. */
+static int has_match(char **matches, int count, const char *name) {
+    for (int i = 0; i < count; i++) {
+        if (strcmp(matches[i], name) == 0)
+            return 1;
+    }
+    return 0;
 }
 
 /* Collect builtin and filesystem matches for the given prefix. */
@@ -28,6 +39,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     if (matches)
     for (int i = 0; bn[i]; i++) {
         if (strncmp(bn[i], prefix, prefix_len) == 0) {
+            if (has_match(matches, count, bn[i]))
+                continue;
             if (count == cap) {
                 cap *= 2;
                 matches = realloc(matches, cap * sizeof(char *));
@@ -42,6 +55,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
         struct dirent *de;
         while ((de = readdir(d))) {
             if (strncmp(de->d_name, prefix, prefix_len) == 0) {
+                if (has_match(matches, count, de->d_name))
+                    continue;
                 if (count == cap) {
                     cap *= 2;
                     matches = realloc(matches, cap * sizeof(char *));
@@ -51,6 +66,42 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
             }
         }
         closedir(d);
+    }
+
+    const char *path = getenv("PATH");
+    if (path && matches) {
+        char *pdup = strdup(path);
+        if (pdup) {
+            char *saveptr = NULL;
+            char *dir = strtok_r(pdup, ":", &saveptr);
+            while (dir) {
+                DIR *pd = opendir(dir);
+                if (pd) {
+                    struct dirent *pe;
+                    while ((pe = readdir(pd))) {
+                        if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
+                            if (has_match(matches, count, pe->d_name))
+                                continue;
+                            char full[PATH_MAX];
+                            snprintf(full, sizeof(full), "%s/%s", dir, pe->d_name);
+                            if (access(full, X_OK) == 0) {
+                                if (count == cap) {
+                                    cap *= 2;
+                                    matches = realloc(matches, cap * sizeof(char *));
+                                    if (!matches) break;
+                                }
+                                matches[count++] = strdup(pe->d_name);
+                            }
+                        }
+                    }
+                    closedir(pd);
+                    if (!matches)
+                        break;
+                }
+                dir = strtok_r(NULL, ":", &saveptr);
+            }
+            free(pdup);
+        }
     }
 
     if (countp)

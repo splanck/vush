@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout 5
+set dir [exec mktemp -d]
+set f [open "$dir/foo" "w"]
+puts $f "#!/bin/sh"
+puts $f "echo pathcomplete"
+close $f
+exec chmod +x "$dir/foo"
+set env(PATH) "$dir:$env(PATH)"
+spawn ../vush
+expect "vush> "
+send "fo\t\r"
+expect {
+    -re "[\r\n]+pathcomplete[\r\n]+vush> " {}
+    timeout { send_user "PATH completion failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $dir
