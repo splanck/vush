@@ -35,6 +35,73 @@ struct var_entry {
 
 static struct var_entry *shell_vars = NULL;
 
+struct local_var {
+    char *name;
+    char *value;
+    char **array;
+    int array_len;
+    int had_shell;
+    int had_env;
+    char *env_val;
+    struct local_var *next;
+};
+
+struct local_frame {
+    struct local_var *vars;
+    struct local_frame *next;
+};
+
+static struct local_frame *local_stack = NULL;
+
+static struct local_var *find_local_var(struct local_frame *f, const char *name) {
+    for (struct local_var *v = f ? f->vars : NULL; v; v = v->next) {
+        if (strcmp(v->name, name) == 0)
+            return v;
+    }
+    return NULL;
+}
+
+void push_local_scope(void) {
+    struct local_frame *f = calloc(1, sizeof(*f));
+    if (!f)
+        return;
+    f->next = local_stack;
+    local_stack = f;
+}
+
+void pop_local_scope(void) {
+    if (!local_stack)
+        return;
+    struct local_frame *f = local_stack;
+    local_stack = f->next;
+    while (f->vars) {
+        struct local_var *v = f->vars;
+        f->vars = v->next;
+        if (v->had_shell) {
+            if (v->array)
+                set_shell_array(v->name, v->array, v->array_len);
+            else
+                set_shell_var(v->name, v->value ? v->value : "");
+        } else {
+            unset_shell_var(v->name);
+        }
+        if (v->had_env)
+            setenv(v->name, v->env_val ? v->env_val : "", 1);
+        else
+            unsetenv(v->name);
+        free(v->name);
+        free(v->value);
+        if (v->array) {
+            for (int i = 0; i < v->array_len; i++)
+                free(v->array[i]);
+            free(v->array);
+        }
+        free(v->env_val);
+        free(v);
+    }
+    free(f);
+}
+
 /*
  * Look up a scalar or array variable by name.
  * Returns a pointer to the stored value.  For arrays the first element is
@@ -482,6 +549,103 @@ int builtin_export(char **args) {
     }
     set_shell_var(pair, eq + 1);
     *eq = '=';
+    return 1;
+}
+
+static void record_local_var(const char *name) {
+    if (!local_stack)
+        return;
+    if (find_local_var(local_stack, name))
+        return;
+    struct local_var *lv = calloc(1, sizeof(*lv));
+    if (!lv)
+        return;
+    lv->name = strdup(name);
+    const char *val = get_shell_var(name);
+    int len = 0;
+    char **arr = get_shell_array(name, &len);
+    if (arr) {
+        lv->array = calloc(len, sizeof(char *));
+        if (lv->array)
+            for (int i = 0; i < len; i++)
+                lv->array[i] = strdup(arr[i]);
+        lv->array_len = len;
+        lv->had_shell = 1;
+    } else if (val) {
+        lv->value = strdup(val);
+        lv->had_shell = 1;
+    } else {
+        lv->had_shell = 0;
+    }
+    const char *e = getenv(name);
+    if (e) {
+        lv->env_val = strdup(e);
+        lv->had_env = 1;
+    } else {
+        lv->had_env = 0;
+    }
+    lv->next = local_stack->vars;
+    local_stack->vars = lv;
+}
+
+static char **parse_array_values(const char *val, int *count) {
+    *count = 0;
+    char *body = strndup(val + 1, strlen(val) - 2);
+    if (!body)
+        return NULL;
+    char **vals = NULL;
+    char *p = body;
+    while (*p) {
+        while (*p == ' ' || *p == '\t')
+            p++;
+        if (*p == '\0')
+            break;
+        char *start = p;
+        while (*p && *p != ' ' && *p != '\t')
+            p++;
+        if (*p)
+            *p++ = '\0';
+        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
+        if (!tmp)
+            break;
+        vals = tmp;
+        vals[*count] = strdup(start);
+        (*count)++;
+    }
+    free(body);
+    return vals;
+}
+
+int builtin_local(char **args) {
+    if (!args[1])
+        return 1;
+    for (int i = 1; args[i]; i++) {
+        char *arg = args[i];
+        char *eq = strchr(arg, '=');
+        char *name = eq ? strndup(arg, eq - arg) : strdup(arg);
+        if (!name)
+            continue;
+        record_local_var(name);
+        if (eq) {
+            char *val = eq + 1;
+            size_t vlen = strlen(val);
+            if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {
+                int count = 0;
+                char **vals = parse_array_values(val, &count);
+                if (!vals)
+                    count = 0;
+                set_shell_array(name, vals, count);
+                for (int j = 0; j < count; j++)
+                    free(vals[j]);
+                free(vals);
+            } else {
+                set_shell_var(name, val);
+            }
+        } else if (!get_shell_var(name) && !get_shell_array(name, NULL)) {
+            set_shell_var(name, "");
+        }
+        free(name);
+    }
     return 1;
 }
 

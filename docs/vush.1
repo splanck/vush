@@ -148,6 +148,10 @@ Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear.
 .B export NAME=value
 Set an environment variable for the shell.
 .TP
+.B local \fIname\fP[=value] ...
+Mark each variable as local to the current function. Previous values are
+restored when the function returns.
+.TP
 .B unset \fIname\fP
 Remove an environment variable.
 .TP

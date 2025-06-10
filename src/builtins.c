@@ -22,6 +22,7 @@ extern int builtin_fg(char **);
 extern int builtin_bg(char **);
 extern int builtin_kill(char **);
 extern int builtin_export(char **);
+extern int builtin_local(char **);
 extern int builtin_unset(char **);
 extern int builtin_history(char **);
 extern int builtin_alias(char **);
@@ -57,6 +58,7 @@ const struct builtin builtin_table[] = {
     {"bg", builtin_bg},
     {"kill", builtin_kill},
     {"export", builtin_export},
+    {"local", builtin_local},
     {"unset", builtin_unset},
     {"history", builtin_history},
     {"alias", builtin_alias},
