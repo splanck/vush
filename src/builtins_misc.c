@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "execute.h"
 #include "util.h"
+#include "scriptargs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,7 +63,7 @@ int builtin_history(char **args) {
 
 int builtin_source(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: source file\n");
+        fprintf(stderr, "usage: source file [args...]\n");
         return 1;
     }
 
@@ -72,6 +73,34 @@ int builtin_source(char **args) {
         perror(args[1]);
         return 1;
     }
+
+    int old_argc = script_argc;
+    char **old_argv = script_argv;
+    int argc = 0;
+    for (int i = 1; args[i]; i++)
+        argc++;
+    int new_argc = argc - 1;
+    script_argc = new_argc;
+    script_argv = calloc(argc + 1, sizeof(char *));
+    if (!script_argv) {
+        script_argc = old_argc;
+        script_argv = old_argv;
+        fclose(input);
+        return 1;
+    }
+    for (int i = 0; i < argc; i++) {
+        script_argv[i] = strdup(args[i + 1]);
+        if (!script_argv[i]) {
+            for (int j = 0; j < i; j++)
+                free(script_argv[j]);
+            free(script_argv);
+            script_argc = old_argc;
+            script_argv = old_argv;
+            fclose(input);
+            return 1;
+        }
+    }
+    script_argv[argc] = NULL;
 
     parse_input = input;
     char line[MAX_LINE];
@@ -98,6 +127,11 @@ int builtin_source(char **args) {
         free_commands(cmds);
     }
     fclose(input);
+    for (int i = 0; i <= new_argc; i++)
+        free(script_argv[i]);
+    free(script_argv);
+    script_argv = old_argv;
+    script_argc = old_argc;
     parse_input = prev_input;
     return 1;
 }
@@ -168,7 +202,7 @@ int builtin_help(char **args) {
     printf("  test EXPR ([ EXPR ])  Evaluate a test expression\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  exec CMD [ARGS]  Replace the shell with CMD\n");
-    printf("  source FILE (. FILE)   Execute commands from FILE\n");
+    printf("  source FILE [ARGS...] (. FILE [ARGS...])\n");
     printf("  help       Display this help message\n");
     return 1;
 }

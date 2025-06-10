@@ -262,7 +262,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
 - `type NAME...` - display how each NAME would be interpreted.
-- `source file` or `. file` - execute commands from a file.
+- `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
 - `help` - display information about built-in commands.
 
 ## Redirection Examples

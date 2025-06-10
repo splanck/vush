@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+set timeout 5
+set script [exec mktemp]
+set f [open $script "w"]
+puts $f "echo \"$0,$1,$2,$#,$@\""
+puts $f "shift"
+puts $f "echo \"$0,$1,$2,$#,$@\""
+close $f
+spawn ../vush
+expect "vush> "
+send "source $script foo bar\r"
+expect {
+    -re "[\r\n]+$script,foo,bar,2,foo bar[\r\n]+vush> " {}
+    timeout { send_user "source args failed\n"; exec rm $script; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm $script
