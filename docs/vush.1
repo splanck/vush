@@ -242,7 +242,9 @@ Both descriptors may be sent to the same file with '&>' or '>&file'.
 File descriptors can also be duplicated, e.g. '2>&1' or '>&2'.
 Here-documents can be created with '<<WORD'. Lines are read until a
 line containing only WORD is found and the intervening text becomes the
-command's standard input.
+command's standard input.  A single word may be used directly as input
+with the '<<<WORD' syntax which writes WORD to a temporary file and uses
+it as standard input.
 .SH SEE ALSO
 README.md
 .SH TESTING
