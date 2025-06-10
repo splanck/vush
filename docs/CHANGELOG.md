@@ -2,6 +2,9 @@
 
 All notable changes to **vush** will be documented in this file.
 
+## 1.4.0 - ANSI C quoting
+- Added support for the $'string' form with backslash escapes
+
 ## 1.2.0 - Additional shell options
 - Added `pipefail` and `noclobber` options via `set -o`
 

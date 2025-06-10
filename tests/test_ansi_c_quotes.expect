@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo $'one\\ntwo'\r"
+expect {
+    -re "[\r\n]+one\r?\ntwo[\r\n]+vush> " {}
+    timeout { send_user "ANSI C escape failed\n"; exit 1 }
+}
+send "echo 'one\\ntwo'\r"
+expect {
+    -re "[\r\n]+one\\ntwo[\r\n]+vush> " {}
+    timeout { send_user "regular quotes misinterpreted\n"; exit 1 }
+}
+send "exit\r"
+expect eof

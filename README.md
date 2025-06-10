@@ -131,6 +131,8 @@ expanding variables. Use a backslash to escape the next character. A `#` that
 appears outside of quotes starts a comment and everything after it on the line
 is ignored.
 
+The form `$'string'` interprets common backslash escapes like `\n` and `\t`.
+
 Unquoted words containing `*` or `?` are expanded to matching filenames.  If no
 files match, the pattern is left unchanged.
 

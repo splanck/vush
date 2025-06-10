@@ -17,6 +17,7 @@ wildcard matching for '*' and '?', brace expansion like \fB{foo,bar}\fP or \fB{1
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.
+A word of the form $'string' interprets backslash escapes like \n and \t.
 A function may be defined using \fIname\fP() {\fIcommands\fP} and invoked like a command.
 A trailing backslash joins the next line before parsing.
 When run interactively, arrow keys allow editing the current line and

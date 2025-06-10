@@ -277,11 +277,32 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
 }
 
 /*
- * Parse a single or double quoted word starting at *p.  The QUOTED flag is
- * set and DO_EXPAND_OUT receives whether expansion should occur.  Returns the
- * resulting allocated string or NULL on syntax errors.
+ * Parse a quoted word starting at *p.  Normal single quotes disable
+ * expansion entirely while double quotes allow variable and command
+ * substitution.  When ANSI_C is non-zero the quotes were prefixed with
+ * $ and common backslash escapes like \n and \t are interpreted.
+ * QUOTED is set and DO_EXPAND_OUT receives whether expansion should
+ * occur.  Returns the resulting allocated string or NULL on errors.
  */
-static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
+static char translate_escape(char c) {
+    switch (c) {
+    case 'n': return '\n';
+    case 't': return '\t';
+    case 'r': return '\r';
+    case 'a': return '\a';
+    case 'b': return '\b';
+    case 'e': return '\x1b';
+    case 'f': return '\f';
+    case 'v': return '\v';
+    case '\\': return '\\';
+    case '\'': return '\'';
+    case '"': return '"';
+    default: return c;
+    }
+}
+
+static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out,
+                               int ansi_c) {
     char buf[MAX_LINE];
     int len = 0;
     int do_expand = 1;
@@ -290,8 +311,19 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
     if (quote == '\'') {
         do_expand = 0;
         (*p)++;
-        while (**p && **p != quote && len < MAX_LINE - 1)
+        while (**p && **p != quote && len < MAX_LINE - 1) {
+            if (ansi_c && **p == '\\') {
+                (*p)++;
+                if (**p) {
+                    char esc = translate_escape(**p);
+                    if (len < MAX_LINE - 1)
+                        buf[len++] = esc;
+                    (*p)++;
+                }
+                continue;
+            }
             buf[len++] = *(*p)++;
+        }
         if (**p == quote) {
             (*p)++;
         } else {
@@ -327,8 +359,12 @@ char *read_token(char **p, int *quoted) {
     char *redir = parse_redirect_token(p);
     if (redir)
         return redir;
+    if (**p == '$' && *(*p + 1) == '\'') {
+        (*p)++;
+        return parse_quoted_word(p, quoted, &do_expand, 1);
+    }
     if (**p == '\'' || **p == '"') {
-        return parse_quoted_word(p, quoted, &do_expand);
+        return parse_quoted_word(p, quoted, &do_expand, 0);
     }
     if (read_simple_token(p, is_end_unquoted, buf, &len, &do_expand) < 0)
         return NULL;
