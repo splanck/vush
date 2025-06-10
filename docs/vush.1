@@ -36,6 +36,9 @@ the first prompt is shown.
 .BI -c " command"
 Execute the provided command string non-interactively and exit with its
 status.
+.TP
+.BR -V , --version
+Print the version and exit.
 .SH POSITIONAL PARAMETERS
 When executing a script file, the remaining command line words become
 positional parameters.  \$0 expands to the script path and \$1, \$2 and
@@ -139,6 +142,15 @@ Display the directory stack.
 .B exit [STATUS]
 Exit the shell with the given status (default 0).
 .TP
+.B :
+Do nothing and return success.
+.TP
+.B true
+Return success.
+.TP
+.B false
+Return failure.
+.TP
 .B pwd
 Print the current working directory.
 .TP
@@ -164,6 +176,9 @@ Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear.
 .B export NAME=value
 Set an environment variable for the shell.
 .TP
+.B readonly NAME[=VALUE]...
+Mark each variable as read-only and optionally assign VALUE.
+.TP
 .B local \fIname\fP[=value] ...
 Mark each variable as local to the current function. Previous values are
 restored when the function returns.
@@ -175,6 +190,9 @@ Remove an environment variable.
 Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB-d\fP.
 History is saved to the file specified by \fBVUSH_HISTFILE\fP (default \fB~/.vush_history\fP).
 The number of entries kept is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
+.TP
+.B hash [name...]
+Manage or display the command hash table.
 .TP
 .B alias \fIname\fP=\fIvalue\fP
 Set an alias or list aliases when used without arguments.
