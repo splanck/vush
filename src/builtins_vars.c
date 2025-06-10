@@ -13,7 +13,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <linux/limits.h>
 
 extern int last_status;
 

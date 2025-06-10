@@ -8,7 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <linux/limits.h>
 
 int builtin_cd(char **args) {
     char prev[PATH_MAX];
