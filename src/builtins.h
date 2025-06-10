@@ -27,6 +27,7 @@ int builtin_getopts(char **args);
 int builtin_eval(char **args);
 int builtin_printf(char **args);
 int builtin_exec(char **args);
+int builtin_command(char **args);
 const char **get_builtin_names(void);
 const char *get_alias(const char *name);
 void load_aliases(void);
