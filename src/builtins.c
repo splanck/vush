@@ -1,5 +1,11 @@
 /*
  * Builtin command table and dispatch helpers.
+ *
+ * The table below lists every builtin command by name along with the
+ * C function that implements it.  run_builtin() looks up a command in
+ * this table using the first argument as the key and then invokes the
+ * associated function.  If no entry matches, run_builtin() returns 0 so
+ * the caller can treat the command as external.
  */
 #include "builtins.h"
 #include <string.h>
@@ -76,6 +82,11 @@ const struct builtin builtin_table[] = {
     {NULL, NULL}
 };
 
+/*
+ * Search the builtin table for a command matching args[0] and invoke
+ * the associated function.  Returns the builtin's return value or 0 if
+ * no builtin is found.
+ */
 int run_builtin(char **args)
 {
     for (int i = 0; builtin_table[i].name; i++) {
@@ -85,6 +96,10 @@ int run_builtin(char **args)
     return 0;
 }
 
+/*
+ * Return a NULL-terminated list of all builtin command names.  The
+ * returned array points into static storage and must not be freed.
+ */
 const char **get_builtin_names(void)
 {
     static const char *names[sizeof(builtin_table) / sizeof(builtin_table[0])];
