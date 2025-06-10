@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "echo a{b,c}\r"
+expect {
+    -re "[\r\n]+ab ac[\r\n]+vush> " {}
+    timeout { send_user "brace expansion failed\n"; exit 1 }
+}
+send "echo {1..3}\r"
+expect {
+    -re "[\r\n]+1 2 3[\r\n]+vush> " {}
+    timeout { send_user "numeric brace expansion failed\n"; exit 1 }
+}
+send "exit\r"
+expect eof

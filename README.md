@@ -16,6 +16,7 @@ and a few built-in commands.
   `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
+- Brace expansion for patterns like `{foo,bar}` and `{1..3}`
 - Command substitution using backticks or `$(...)`
 - Arithmetic expansion using `$((...))` and a `let` builtin
 - Background job management using `&`
