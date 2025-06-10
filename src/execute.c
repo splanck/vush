@@ -20,6 +20,7 @@
 #include "pipeline.h"
 #include "func_exec.h"
 #include "arith.h"
+#include "util.h"
 
 extern int last_status;
 
@@ -43,6 +44,11 @@ static int exec_case(Command *cmd, const char *line);
 static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
+
+static void redirect_fd(int fd, int dest) {
+    dup2(fd, dest);
+    close(fd);
+}
 /*
  * Apply temporary variable assignments before running a pipeline.
  * Builtins and functions are executed directly while environment
@@ -189,16 +195,12 @@ void setup_redirections(PipelineSegment *seg) {
         }
         if (seg->here_doc)
             unlink(seg->in_file);
-        dup2(fd, STDIN_FILENO);
-        close(fd);
+        redirect_fd(fd, STDIN_FILENO);
     }
 
     if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
         seg->append == seg->err_append) {
-        int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
-        if (opt_noclobber && !seg->append)
-            flags |= O_EXCL;
-        int fd = open(seg->out_file, flags, 0644);
+        int fd = open_redirect(seg->out_file, seg->append);
         if (fd < 0) {
             perror(seg->out_file);
             exit(1);
@@ -208,28 +210,20 @@ void setup_redirections(PipelineSegment *seg) {
         close(fd);
     } else {
         if (seg->out_file) {
-            int flags = O_WRONLY | O_CREAT | (seg->append ? O_APPEND : O_TRUNC);
-            if (opt_noclobber && !seg->append)
-                flags |= O_EXCL;
-            int fd = open(seg->out_file, flags, 0644);
+            int fd = open_redirect(seg->out_file, seg->append);
             if (fd < 0) {
                 perror(seg->out_file);
                 exit(1);
             }
-            dup2(fd, STDOUT_FILENO);
-            close(fd);
+            redirect_fd(fd, STDOUT_FILENO);
         }
         if (seg->err_file) {
-            int flags = O_WRONLY | O_CREAT | (seg->err_append ? O_APPEND : O_TRUNC);
-            if (opt_noclobber && !seg->err_append)
-                flags |= O_EXCL;
-            int fd = open(seg->err_file, flags, 0644);
+            int fd = open_redirect(seg->err_file, seg->err_append);
             if (fd < 0) {
                 perror(seg->err_file);
                 exit(1);
             }
-            dup2(fd, STDERR_FILENO);
-            close(fd);
+            redirect_fd(fd, STDERR_FILENO);
         }
     }
 

@@ -3,6 +3,9 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include "options.h"
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
 /*
@@ -40,4 +43,11 @@ char *read_logical_line(FILE *f, char *buf, size_t size) {
         }
     }
     return buf;
+}
+
+int open_redirect(const char *path, int append) {
+    int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
+    if (opt_noclobber && !append)
+        flags |= O_EXCL;
+    return open(path, flags, 0644);
 }
