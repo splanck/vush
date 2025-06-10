@@ -233,8 +233,11 @@ strings and allow wildcards like '*' and '?'.
 For each argument, print whether it is an alias, builtin or the full path of an
 executable found in \fB$PATH\fP.
 .TP
-.B command \fIname [args...]\fP
-Execute NAME directly, bypassing aliases and functions.
+.B command [\-v|\-V] \fIname [args...]\fP
+Without options, execute NAME directly, bypassing aliases and functions.
+With \fB-v\fP or \fB-V\fP, display how NAME would be resolved.\
+\fB-v\fP prints only the resulting path or name while \fB-V\fP
+provides a verbose description similar to \fBtype\fP.
 .TP
 .B eval \fIargs...\fP
 Concatenate the arguments into a single command line and execute it in the
