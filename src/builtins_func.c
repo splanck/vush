@@ -1,4 +1,16 @@
-/* Shell function support */
+/*
+ * Shell function support
+ *
+ * Function definitions are kept in a linked list of struct func_entry
+ * records. Each entry stores the function name, the parsed command body
+ * and the original source text so it can be written back verbatim.
+ *
+ * On shell exit free_functions() serializes this list one definition per
+ * line and writes it to the file returned by funcfile_path().  The path
+ * defaults to ~/.vush_funcs but can be overridden with the VUSH_FUNCFILE
+ * environment variable.  load_functions() reads the same file at start up
+ * and recreates the in-memory list by parsing each saved line.
+ */
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "parser.h" /* for MAX_LINE */
@@ -20,6 +32,11 @@ struct func_entry {
 
 static struct func_entry *functions = NULL;
 
+/*
+ * Determine the file used to persist shell functions.  If the
+ * VUSH_FUNCFILE environment variable is set its value is returned,
+ * otherwise ~/.vush_funcs is used.
+ */
 static const char *funcfile_path(void)
 {
     const char *env = getenv("VUSH_FUNCFILE");
@@ -33,6 +50,11 @@ static const char *funcfile_path(void)
     return path;
 }
 
+/*
+ * Write the current list of functions to the persistence file.  Each
+ * function is saved on a single line in the same form it was defined so
+ * it can later be parsed by load_functions().
+ */
 static void save_functions(void)
 {
     const char *path = funcfile_path();
@@ -46,6 +68,10 @@ static void save_functions(void)
     fclose(f);
 }
 
+/*
+ * Read previously saved functions from the persistence file and rebuild
+ * the in-memory list by parsing each line.
+ */
 void load_functions(void)
 {
     const char *path = funcfile_path();
@@ -71,6 +97,10 @@ void load_functions(void)
     fclose(f);
 }
 
+/*
+ * Add or replace a function definition.  The original text of the
+ * function body is kept so save_functions() can write it back verbatim.
+ */
 void define_function(const char *name, Command *body, const char *text)
 {
     for (struct func_entry *f = functions; f; f = f->next) {
@@ -96,6 +126,7 @@ void define_function(const char *name, Command *body, const char *text)
     functions = fn;
 }
 
+/* Look up the parsed body of a function by name. */
 Command *get_function(const char *name)
 {
     for (struct func_entry *f = functions; f; f = f->next) {
@@ -105,6 +136,7 @@ Command *get_function(const char *name)
     return NULL;
 }
 
+/* Free all function entries without saving them. */
 static void free_function_entries(void)
 {
     struct func_entry *f = functions;
@@ -119,12 +151,17 @@ static void free_function_entries(void)
     functions = NULL;
 }
 
+/* Save functions and free memory at shell shutdown. */
 void free_functions(void)
 {
     save_functions();
     free_function_entries();
 }
 
+/*
+ * Implementation of the 'return' builtin for shell functions.  Sets the
+ * function's exit status and signals the executor to unwind to the caller.
+ */
 int builtin_return(char **args)
 {
     int status = 0;
