@@ -179,8 +179,12 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `cd [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
+- `printf FORMAT [args...]` - print formatted text.
 - `dirs` - display the directory stack.
 - `exit [status]` - terminate the shell with an optional status code.
+- `:` - do nothing and return success.
+- `true` - return a successful status.
+- `false` - return a failure status.
 - `exec command [args...]` - replace the shell with `command`.
 - `pwd` - print the current working directory.
 - `jobs` - list background jobs started with `&`.
@@ -190,25 +194,38 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `wait [ID|PID]` - wait for the given job or process to finish.
 - `trap 'cmd' SIGNAL` - execute `cmd` when `SIGNAL` is received. Use `trap SIGNAL` to clear.
 - `export NAME=value` - set an environment variable for the shell.
+- `readonly NAME[=VALUE]` - mark a variable as read-only.
+- `local NAME[=VALUE]` - define a variable scoped to the current function.
 - `unset NAME` - remove an environment variable.
 - `history [-c|-d NUMBER]` - show command history, clear it with `-c`, or delete a specific entry with `-d`.
   Entries are read from and written to the file specified by `VUSH_HISTFILE`
   (default `~/.vush_history`). History size is controlled by the
   `VUSH_HISTSIZE` environment variable (default 1000).
+- `hash [-r] [name...]` - manage cached command paths.
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
+- `read [-r] VAR...` - read a line of input into variables.
+- `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).
 - `break` - exit the nearest loop.
 - `continue` - start the next iteration of the nearest loop.
 - `getopts OPTSTRING VAR` - parse positional parameters, storing the
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
   `OPTIND`.
+- `let EXPR` - evaluate an arithmetic expression.
+- `set [options]` - set shell options or positional parameters.
+- `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.
+- `[[ EXPR ]]` - evaluate a conditional expression with pattern matching.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
 - `type NAME...` - display how each NAME would be interpreted.
+- `command NAME [args...]` - execute a command without shell function lookup.
+- `eval WORDS...` - concatenate arguments and execute the result.
 - `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
 - `help` - display information about built-in commands.
+- `time command [args...]` - run a command and print timing statistics.
+- `umask [mask]` - set or display the file creation mask.
 
 ## Redirection Examples
 
