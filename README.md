@@ -101,7 +101,7 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `pushd dir`, `popd`, `dirs` &ndash; manage the directory stack
 - `pwd [-L|-P]` &ndash; print the current directory
 - `umask [-S] [mask]` &ndash; set or display the file creation mask
-- `ulimit [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` &ndash; view or set resource limits
+- `ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` &ndash; view or set resource limits
 
 #### Command Execution and Utilities
 - `command [-p|-v|-V] NAME [args...]` &ndash; run a command without function lookup
@@ -220,6 +220,9 @@ echo "You typed $REPLY"
 # Limit core dumps and inspect limits
 ulimit -c 0
 ulimit -a
+# Set a hard file descriptor limit and view the soft stack limit
+ulimit -H -n 4096
+ulimit -S -s
 ```
 
 ## Usage
