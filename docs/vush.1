@@ -245,9 +245,9 @@ status is 0 while options are found and 1 when parsing ends.
 .B let expr
 Evaluate an arithmetic expression and return success if the result is non-zero.
 .TP
-\.B set [-e|-u|-x|-n|-f|-o \fIoption\fP|+o \fIoption\fP] [-- \fIarg ...\fP]
+\.B set [-e|-u|-x|-n|-f|-a|-o \fIoption\fP|+o \fIoption\fP] [-- \fIarg ...\fP]
 Toggle shell options. \-e exits on command failure, \-u errors on
-undefined variables, \-x prints each command before execution, -n parses commands without executing them, -f disables wildcard expansion,
+undefined variables, \-x prints each command before execution, -n parses commands without executing them, -f disables wildcard expansion, -a exports all assignments,
 \-o pipefail causes pipelines to return the status of the first failing
 command and \-o noclobber prevents `>` from overwriting existing files.
 Use \+o with the option name to disable it again.  If any arguments
