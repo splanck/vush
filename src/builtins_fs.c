@@ -29,10 +29,21 @@ int builtin_cd(char **args) {
         return 1;
     }
 
+    int physical = 0;        /* -P option */
+    int idx = 1;
+    if (args[idx] && args[idx][0] == '-' && args[idx][1] && !args[idx][2]) {
+        if (args[idx][1] == 'P') {
+            physical = 1;
+            idx++;
+        } else if (args[idx][1] == 'L') {
+            idx++;
+        }
+    }
+
     const char *target;
-    if (!args[1]) {
+    if (!args[idx]) {
         target = getenv("HOME");
-    } else if (strcmp(args[1], "-") == 0) {
+    } else if (strcmp(args[idx], "-") == 0) {
         target = getenv("OLDPWD");
         if (!target) {
             fprintf(stderr, "cd: OLDPWD not set\n");
@@ -40,14 +51,14 @@ int builtin_cd(char **args) {
         }
         printf("%s\n", target);
     } else {
-        target = args[1];
+        target = args[idx];
     }
 
     char used[PATH_MAX];
     const char *dir = target ? target : "";
     int searched = 0;
 
-    if (args[1] && strcmp(args[1], "-") != 0 && dir[0] != '/' && dir[0] != '.' &&
+    if (args[idx] && strcmp(args[idx], "-") != 0 && dir[0] != '/' && dir[0] != '.' &&
         strchr(dir, '/') == NULL) {
         const char *cdpath = getenv("CDPATH");
         if (cdpath && *cdpath) {
@@ -68,10 +79,23 @@ int builtin_cd(char **args) {
     }
 
     if (!searched) {
-        if (chdir(dir) != 0) {
+        const char *path = dir;
+        if (physical) {
+            if (!realpath(dir, used)) {
+                perror("cd");
+                return 1;
+            }
+            path = used;
+        }
+        if (chdir(path) != 0) {
             perror("cd");
             return 1;
         }
+        if (physical)
+            dir = path;
+    } else if (physical) {
+        if (realpath(".", used))
+            dir = used;
     }
 
     char newcwd[PATH_MAX];
@@ -84,7 +108,7 @@ int builtin_cd(char **args) {
         perror("getcwd");
     }
 
-    if (args[1] && strcmp(args[1], "-") != 0 && strcmp(dir, args[1]) != 0) {
+    if (searched) {
         printf("%s\n", dir);
     }
 

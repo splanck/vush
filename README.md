@@ -97,7 +97,9 @@ environment variables:
 - `PS2` is shown when more input is needed, such as for unmatched quotes.
 - `PS3` is the prompt used by the `select` builtin.
 - `PS4` prefixes trace output produced by `set -x`.
-- `CDPATH` provides directories searched by `cd` for relative paths.
+- `CDPATH` provides directories searched by `cd` for relative paths. `cd` also
+  accepts `-L` (logical, default) and `-P` (physical) to control how paths are
+  resolved.
 
 Examples:
 
@@ -112,6 +114,8 @@ export PS1='mysh> '
 # Search projects and /tmp when changing directories
 export CDPATH=~/projects:/tmp
 cd repo
+# Follow symlinks using -P
+cd -P /tmp/my_link
 ```
 
 ## Usage
