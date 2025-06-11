@@ -225,9 +225,10 @@ static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
 }
 
 static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
-    if (!(strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0))
+    if (!(strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0 || strcmp(tok, ">|") == 0))
         return 0;
     seg->append = (tok[1] == '>');
+    seg->force = (strcmp(tok, ">|") == 0);
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p == '&') {
         (*p)++;

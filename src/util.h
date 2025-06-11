@@ -11,6 +11,7 @@
 char *read_logical_line(FILE *f, char *buf, size_t size);
 /* Open PATH for output redirection.
  * APPEND non-zero opens in append mode.
+ * FORCE overrides the noclobber option when set.
  * Returns a file descriptor or -1 on failure. */
-int open_redirect(const char *path, int append);
+int open_redirect(const char *path, int append, int force);
 #endif /* VUSH_UTIL_H */

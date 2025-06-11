@@ -18,6 +18,7 @@ typedef struct PipelineSegment {
     int here_doc;     /* input file is temporary here-doc */
     char *out_file;
     int append;
+    int force;       /* >| force overwrite */
     int dup_out;      /* > &N duplication */
     int close_out;    /* >&- close descriptor */
     char *err_file;
