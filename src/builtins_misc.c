@@ -35,6 +35,33 @@ extern FILE *parse_input;
 #include <sys/wait.h>
 #include <signal.h>
 
+/* Map signal names to numbers for trap builtin. */
+static const struct { const char *n; int v; } sig_map[] = {
+    {"INT", SIGINT}, {"TERM", SIGTERM}, {"HUP", SIGHUP},
+#ifdef SIGQUIT
+    {"QUIT", SIGQUIT},
+#endif
+#ifdef SIGUSR1
+    {"USR1", SIGUSR1},
+#endif
+#ifdef SIGUSR2
+    {"USR2", SIGUSR2},
+#endif
+#ifdef SIGCHLD
+    {"CHLD", SIGCHLD},
+#endif
+#ifdef SIGCONT
+    {"CONT", SIGCONT},
+#endif
+#ifdef SIGSTOP
+    {"STOP", SIGSTOP},
+#endif
+#ifdef SIGALRM
+    {"ALRM", SIGALRM},
+#endif
+    {NULL, 0}
+};
+
 char *trap_cmds[NSIG];
 char *exit_trap_cmd;
 extern void trap_handler(int);
@@ -789,43 +816,47 @@ static int sig_from_name(const char *name)
         return atoi(name);
     if (strncasecmp(name, "SIG", 3) == 0)
         name += 3;
-    struct { const char *n; int v; } map[] = {
-        {"INT", SIGINT}, {"TERM", SIGTERM}, {"HUP", SIGHUP},
-#ifdef SIGQUIT
-        {"QUIT", SIGQUIT},
-#endif
-#ifdef SIGUSR1
-        {"USR1", SIGUSR1},
-#endif
-#ifdef SIGUSR2
-        {"USR2", SIGUSR2},
-#endif
-#ifdef SIGCHLD
-        {"CHLD", SIGCHLD},
-#endif
-#ifdef SIGCONT
-        {"CONT", SIGCONT},
-#endif
-#ifdef SIGSTOP
-        {"STOP", SIGSTOP},
-#endif
-#ifdef SIGALRM
-        {"ALRM", SIGALRM},
-#endif
-        {NULL, 0}
-    };
-    for (int i = 0; map[i].n; i++) {
-        if (strcasecmp(name, map[i].n) == 0)
-            return map[i].v;
+    for (int i = 0; sig_map[i].n; i++) {
+        if (strcasecmp(name, sig_map[i].n) == 0)
+            return sig_map[i].v;
     }
     return -1;
+}
+
+static const char *name_from_sig(int sig)
+{
+    for (int i = 0; sig_map[i].n; i++) {
+        if (sig_map[i].v == sig)
+            return sig_map[i].n;
+    }
+    return NULL;
 }
 
 /* Assign commands to run when specified signals are received. */
 int builtin_trap(char **args)
 {
     if (!args[1]) {
-        fprintf(stderr, "usage: trap [command] SIGNAL...\n");
+        fprintf(stderr, "usage: trap [-p] [command] SIGNAL...\n");
+        return 1;
+    }
+
+    if (strcmp(args[1], "-p") == 0) {
+        if (args[2]) {
+            fprintf(stderr, "usage: trap -p\n");
+            return 1;
+        }
+        if (exit_trap_cmd)
+            printf("trap '%s' EXIT\n", exit_trap_cmd);
+        for (int s = 1; s < NSIG; s++) {
+            if (trap_cmds[s]) {
+                const char *name = name_from_sig(s);
+                if (name)
+                    printf("trap '%s' %s\n", trap_cmds[s], name);
+                else
+                    printf("trap '%s' %d\n", trap_cmds[s], s);
+            }
+        }
+        last_status = 0;
         return 1;
     }
 
