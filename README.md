@@ -42,6 +42,9 @@ Current version: 0.1.0
 - Brace groups using `{ ... ; }` executed in the current shell
 - Shell functions using `name() { ... }` syntax and a `return` builtin
 - Conditional expressions using `[[ ... ]]` with pattern matching
+- POSIX `test` builtin supporting string, numeric and file operators
+  like `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`,
+  `-O`, `-G`, `-u`, `-g`, `-k`, `-S` and `-t`
 - `case` selection statements with optional fall-through using `;&`
 - `select` loops presenting a numbered menu of choices
 - Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
@@ -134,6 +137,12 @@ cd -P /tmp/my_link
 # Mark a variable for export without changing its value
 MYVAR=example
 export MYVAR
+```
+
+```sh
+# Simple file tests
+test -d /tmp && echo "tmp exists"
+test -h /bin/sh && echo "linked shell"
 ```
 
 ## Usage

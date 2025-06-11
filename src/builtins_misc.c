@@ -509,6 +509,42 @@ int builtin_test(char **args) {
         } else if (strcmp(av[0], "-d") == 0) {
             struct stat st;
             res = stat(av[1], &st) == 0 && S_ISDIR(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-b") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISBLK(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-c") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISCHR(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-p") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISFIFO(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-S") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && S_ISSOCK(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-h") == 0 || strcmp(av[0], "-L") == 0) {
+            struct stat st;
+            res = lstat(av[1], &st) == 0 && S_ISLNK(st.st_mode) ? 0 : 1;
+        } else if (strcmp(av[0], "-s") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && st.st_size > 0 ? 0 : 1;
+        } else if (strcmp(av[0], "-g") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && (st.st_mode & S_ISGID) ? 0 : 1;
+        } else if (strcmp(av[0], "-u") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && (st.st_mode & S_ISUID) ? 0 : 1;
+        } else if (strcmp(av[0], "-k") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && (st.st_mode & S_ISVTX) ? 0 : 1;
+        } else if (strcmp(av[0], "-O") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && st.st_uid == geteuid() ? 0 : 1;
+        } else if (strcmp(av[0], "-G") == 0) {
+            struct stat st;
+            res = stat(av[1], &st) == 0 && st.st_gid == getegid() ? 0 : 1;
+        } else if (strcmp(av[0], "-t") == 0) {
+            int fd = atoi(av[1]);
+            res = isatty(fd) ? 0 : 1;
         } else if (strcmp(av[0], "-r") == 0) {
             res = access(av[1], R_OK) == 0 ? 0 : 1;
         } else if (strcmp(av[0], "-w") == 0) {
