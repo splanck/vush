@@ -11,7 +11,8 @@ interactively or pass `-c` followed by a command string.
 ```
 
 When invoked without a script file, commands from `~/.vushrc` are executed
-before the first prompt if that file exists.
+before the first prompt if that file exists.  If the `ENV` environment
+variable is set, its file is processed afterwards.
 
 ### Shebang Scripts
 
@@ -458,6 +459,7 @@ Several environment variables and a startup file influence the shell:
 - `CDPATH` provides a colon-separated list of directories searched by `cd` for
   relative paths.
 - `~/.vushrc` is executed before the first prompt if it exists.
+- `ENV` names an additional file executed after `~/.vushrc` when set.
 
 Example configuration:
 
@@ -481,5 +483,6 @@ export VUSH_FUNCFILE=~/.config/vush/functions
 
 By default history is saved to `~/.vush_history`, aliases to `~/.vush_aliases`,
 functions to `~/.vush_funcs`, and startup commands are read from `~/.vushrc`.
+An additional startup file may be specified with the `ENV` variable.
 See the manual page for more detail.
 
