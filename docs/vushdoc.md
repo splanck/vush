@@ -255,6 +255,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `help` - display information about built-in commands.
 - `time command [args...]` - run a command and print timing statistics.
 - `times` - print cumulative user/system CPU times.
+- `ulimit [-a|-f|-n [limit]]` - display or set resource limits.
 - `umask [mask]` - set or display the file creation mask.
 
 ## Redirection Examples

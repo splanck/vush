@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/times.h>
+#include <sys/resource.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -459,6 +460,7 @@ int builtin_help(char **args) {
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  test EXPR ([ EXPR ])  Evaluate a test expression\n");
+    printf("  ulimit [-a|-f|-n] [limit]  Display or set resource limits\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  exec CMD [ARGS]  Replace the shell with CMD\n");
     printf("  source FILE [ARGS...] (. FILE [ARGS...])\n");
@@ -722,6 +724,94 @@ int builtin_umask(char **args)
     }
 
     umask((mode_t)val);
+    return 1;
+}
+
+/* Display or set resource limits. Supports -f and -n with -a to show all */
+int builtin_ulimit(char **args)
+{
+    int resource = RLIMIT_FSIZE;
+    int show_all = 0;
+    int i = 1;
+    for (; args[i] && args[i][0] == '-'; i++) {
+        if (strcmp(args[i], "-f") == 0) {
+            resource = RLIMIT_FSIZE;
+        } else if (strcmp(args[i], "-n") == 0) {
+            resource = RLIMIT_NOFILE;
+        } else if (strcmp(args[i], "-a") == 0) {
+            show_all = 1;
+        } else {
+            fprintf(stderr, "usage: ulimit [-a|-f|-n] [limit]\n");
+            return 1;
+        }
+    }
+
+    if (show_all) {
+        if (args[i]) {
+            fprintf(stderr, "usage: ulimit [-a|-f|-n] [limit]\n");
+            return 1;
+        }
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_FSIZE, &rl) == 0) {
+            if (rl.rlim_cur == RLIM_INFINITY)
+                printf("-f unlimited\n");
+            else
+                printf("-f %llu\n",
+                       (unsigned long long)rl.rlim_cur);
+        }
+        if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+            if (rl.rlim_cur == RLIM_INFINITY)
+                printf("-n unlimited\n");
+            else
+                printf("-n %llu\n",
+                       (unsigned long long)rl.rlim_cur);
+        }
+        last_status = 0;
+        return 1;
+    }
+
+    if (!args[i]) {
+        struct rlimit rl;
+        if (getrlimit(resource, &rl) != 0) {
+            perror("ulimit");
+            last_status = 1;
+        } else {
+            if (rl.rlim_cur == RLIM_INFINITY)
+                printf("unlimited\n");
+            else
+                printf("%llu\n",
+                       (unsigned long long)rl.rlim_cur);
+            last_status = 0;
+        }
+        return 1;
+    }
+
+    if (args[i+1]) {
+        fprintf(stderr, "usage: ulimit [-a|-f|-n] [limit]\n");
+        return 1;
+    }
+
+    errno = 0;
+    char *end;
+    unsigned long long val = strtoull(args[i], &end, 10);
+    if (*end != '\0' || errno != 0) {
+        fprintf(stderr, "ulimit: invalid limit\n");
+        return 1;
+    }
+
+    struct rlimit rl;
+    if (getrlimit(resource, &rl) != 0) {
+        perror("ulimit");
+        last_status = 1;
+        return 1;
+    }
+    rl.rlim_cur = val;
+    if (setrlimit(resource, &rl) != 0) {
+        perror("ulimit");
+        last_status = 1;
+    } else {
+        last_status = 0;
+    }
     return 1;
 }
 
