@@ -462,6 +462,13 @@ $ printf "hello\n" | ./vush script.vsh
 You typed: hello
 ```
 
+When no variable name is given the input goes into `$REPLY`:
+
+```sh
+read
+echo "You typed: $REPLY"
+```
+
 ## Type Example
 
 ```

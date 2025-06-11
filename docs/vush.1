@@ -91,6 +91,13 @@ Stored functions.
 starts an interactive shell. To run a script file use
 .B "vush script.vsh".
 More examples can be found in docs/vushdoc.md.
+.PP
+Reading without naming a variable stores the line in \fBREPLY\fP:
+.PP
+.nf
+$ printf "foo\n" | vush -c 'read; echo $REPLY'
+foo
+.fi
 .SH SEE ALSO
 README.md \- overview and quick start, docs/vushdoc.md \- examples and
 detailed explanations, the POSIX Shell specification
