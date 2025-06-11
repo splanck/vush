@@ -72,8 +72,10 @@ The shell includes many built-ins. The brief summaries below show what each one
 does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 
 #### Job Control
-- `bg` &ndash; resume a stopped job in the background
-- `fg` &ndash; bring a background job to the foreground
+- `bg [ID]` &ndash; resume a stopped job in the background (uses the last
+  job when ID is omitted)
+- `fg [ID]` &ndash; bring a background job to the foreground (defaults to
+  the most recent job)
 - `jobs [-l|-p] [ID]` &ndash; list active jobs
 - `kill [-s SIG|-l] ID|PID` &ndash; send a signal
 - `wait [ID|PID]` &ndash; wait for a job or process to finish
