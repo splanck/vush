@@ -151,7 +151,11 @@ int builtin_cd(char **args) {
             strncpy(newpwd, dir, sizeof(newpwd));
             newpwd[PATH_MAX - 1] = '\0';
         } else {
-            snprintf(newpwd, sizeof(newpwd), "%s/%s", oldpwd, dir);
+            int n = snprintf(newpwd, sizeof(newpwd), "%s/%s", oldpwd, dir);
+            if (n < 0 || n >= (int)sizeof(newpwd)) {
+                fprintf(stderr, "cd: path too long\n");
+                return 1;
+            }
         }
         canonicalize_logical(newpwd, newpwd);
     }
