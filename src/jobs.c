@@ -15,6 +15,7 @@
 #define _GNU_SOURCE
 #include "jobs.h"
 #include "parser.h"  /* for MAX_LINE */
+#include "options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,9 +43,11 @@ pid_t last_bg_pid = 0;
  * Called by the executor whenever a command is launched with '&'.
  */
 void add_job(pid_t pid, const char *cmd) {
+    last_bg_pid = pid;
+    if (!opt_monitor)
+        return;
     Job *job = malloc(sizeof(Job));
     if (!job) return;
-    last_bg_pid = pid;
     job->id = next_job_id++;
     job->pid = pid;
     job->state = JOB_RUNNING;
@@ -79,13 +82,15 @@ void check_jobs(void) {
     int status;
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        Job *curr = jobs;
-        while (curr && curr->pid != pid)
-            curr = curr->next;
-        if (curr)
-            printf("[vush] job %d (%s) finished\n", curr->id, curr->cmd);
-        else
-            printf("[vush] job %d finished\n", pid);
+        if (opt_monitor) {
+            Job *curr = jobs;
+            while (curr && curr->pid != pid)
+                curr = curr->next;
+            if (curr)
+                printf("[vush] job %d (%s) finished\n", curr->id, curr->cmd);
+            else
+                printf("[vush] job %d finished\n", pid);
+        }
         remove_job(pid);
     }
 }
