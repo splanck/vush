@@ -22,7 +22,7 @@ Current version: 0.1.0
 - `export -p` lists all exported variables and `export -n NAME` removes the export
   attribute while leaving the variable defined.
 - `set` with no arguments prints all shell variables and functions.
-- `readonly -p` prints all read-only variables using `readonly NAME=value` format.
+- `readonly NAME[=VALUE]` marks a variable as read-only, creating it with an empty value when `VALUE` is omitted. `readonly -p` lists read-only variables using `readonly NAME=value` format.
 
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
@@ -145,6 +145,8 @@ cd -P /tmp/my_link
 # Mark a variable for export without changing its value
 MYVAR=example
 export MYVAR
+# Create an empty read-only variable
+readonly MYCONST
 ```
 
 ```sh

@@ -203,8 +203,9 @@ variables. Using \fB-n\fP \fIname\fP removes the export attribute from
 current value is exported and it is created with an empty value if undefined.
 .TP
 .B readonly [-p] NAME[=VALUE]...
-Mark each variable as read-only or list all read-only variables. When listing,
-the variables are printed as \fBreadonly NAME=value\fP.
+Mark each variable as read-only or list all read-only variables. If no
+\fIvalue\fP is given and the variable does not exist, it is created with an
+empty value. When listing, the variables are printed as \fBreadonly NAME=value\fP.
 .TP
 .B local \fIname\fP[=value] ...
 Mark each variable as local to the current function. Previous values are
