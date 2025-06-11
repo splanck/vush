@@ -1,6 +1,7 @@
 /*
  * Parsing of shell control clauses extracted from parser.c
  */
+#define _GNU_SOURCE
 #include "parser.h"
 #include "lexer.h"
 #include <stdlib.h>
