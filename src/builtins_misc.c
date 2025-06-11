@@ -14,6 +14,7 @@
 #include "parser.h"
 #include "execute.h"
 #include "util.h"
+#include "options.h"
 #include "scriptargs.h"
 #include "vars.h"
 #include "hash.h"
@@ -204,6 +205,8 @@ static void execute_source_file(FILE *input)
 {
     char line[MAX_LINE];
     while (read_logical_line(input, line, sizeof(line))) {
+        if (opt_verbose)
+            printf("%s\n", line);
         Command *cmds = parse_line(line);
         if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
             free_commands(cmds);

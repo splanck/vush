@@ -218,7 +218,7 @@ three
 ```
 ### Shell Options
 
-Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable) and `set -a` exports all assignments to the environment.
+Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable) and `set -a` exports all assignments to the environment.
 The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` prevents `>` from overwriting existing files. Use `set +o OPTION` to disable an option.
 
 
