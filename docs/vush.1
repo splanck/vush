@@ -13,7 +13,7 @@ environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
 wildcard matching for '*' and '?', brace expansion like \fB{foo,bar}\fP or \fB{1..3}\fP, input and output redirection with
-Wildcard expansion may be disabled with set -f.
+Wildcard expansion may be disabled with set -f and re-enabled with set +f.
 \'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", process substitution using \fB<(cmd)\fP and \fB>(cmd)\fP, and background jobs.  When a
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
@@ -247,7 +247,7 @@ Evaluate an arithmetic expression and return success if the result is non-zero.
 .TP
 \.B set [-e|-u|-x|-n|-f|-a|-o \fIoption\fP|+o \fIoption\fP] [-- \fIarg ...\fP]
 Toggle shell options. \-e exits on command failure, \-u errors on
-undefined variables, \-x prints each command before execution, -n parses commands without executing them, -f disables wildcard expansion, -a exports all assignments,
+undefined variables, \-x prints each command before execution, -n parses commands without executing them, -f disables wildcard expansion (use +f to re-enable), -a exports all assignments,
 \-o pipefail causes pipelines to return the status of the first failing
 command and \-o noclobber prevents `>` from overwriting existing files.
 Use \+o with the option name to disable it again.  If any arguments

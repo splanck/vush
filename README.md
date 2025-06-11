@@ -18,7 +18,8 @@ Current version: 0.1.0
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
   `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
-- Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`)
+ - Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`,
+   re-enable with `set +f`)
 - Brace expansion for patterns like `{foo,bar}` and `{1..3}`
 - Command substitution using backticks or `$(...)`
 - Arithmetic expansion using `$((...))` and a `let` builtin
@@ -44,7 +45,7 @@ Current version: 0.1.0
 - Startup commands read from `~/.vushrc` if the file exists
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
-- Shell options toggled with `set -e`, `set -u`, `set -x`, `set -n`, `set -f`, `set -a` and `set -o OPTION` such as `pipefail` or `noclobber`
+ - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -n`, `set -f`/`set +f`, `set -a` and `set -o OPTION` such as `pipefail` or `noclobber`
 - `set --` can replace positional parameters inside the running shell
 - Array assignments and `${name[index]}` access
 - Here-documents (`<<`) and here-strings (`<<<`)

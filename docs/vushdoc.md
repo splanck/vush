@@ -57,7 +57,7 @@ expanding variables. Use a backslash to escape the next character. A `#` that
 appears outside of quotes starts a comment and everything after it on the line
 is ignored.
 
-Unquoted words containing `*` or `?` are expanded to matching filenames (disable with `set -f`).  If no
+Unquoted words containing `*` or `?` are expanded to matching filenames (disable with `set -f`, re-enable with `set +f`).  If no
 files match, the pattern is left unchanged.
 
 Commands enclosed in backticks or `$(...)` are executed and their output
@@ -202,7 +202,7 @@ three
 ```
 ### Shell Options
 
-Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -n` parses commands without running them, `set -f` disables wildcard expansion and `set -a` exports all assignments to the environment.
+Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable) and `set -a` exports all assignments to the environment.
 The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` prevents `>` from overwriting existing files. Use `set +o OPTION` to disable an option.
 
 
