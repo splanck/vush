@@ -19,9 +19,11 @@ typedef struct PipelineSegment {
     char *out_file;
     int append;
     int dup_out;      /* > &N duplication */
+    int close_out;    /* >&- close descriptor */
     char *err_file;
     int err_append;
     int dup_err;      /* 2>&N duplication */
+    int close_err;    /* 2>&- close descriptor */
     char **assigns;   /* NAME=value pairs preceding the command */
     int assign_count;
     struct PipelineSegment *next;

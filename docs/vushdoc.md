@@ -300,6 +300,8 @@ vush> ls nonexistent &>both.txt
 vush> cat both.txt
 vush> echo dup >&dup.txt
 vush> ls nonexistent 2>&1 >>dup.txt
+vush> echo nothing >&-
+vush> ls nonexistent 2>&-
 ```
 
 Here-documents feed inline text to a command:

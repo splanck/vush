@@ -232,7 +232,10 @@ static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (**p == '&') {
         (*p)++;
         while (**p == ' ' || **p == '\t') (*p)++;
-        if (isdigit(**p)) {
+        if (**p == '-') {
+            seg->close_out = 1;
+            (*p)++;
+        } else if (isdigit(**p)) {
             seg->dup_out = strtol(*p, p, 10);
         } else if (**p) {
             int q = 0;
@@ -259,7 +262,10 @@ static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (**p == '&') {
         (*p)++;
         while (**p == ' ' || **p == '\t') (*p)++;
-        if (isdigit(**p)) {
+        if (**p == '-') {
+            seg->close_err = 1;
+            (*p)++;
+        } else if (isdigit(**p)) {
             seg->dup_err = strtol(*p, p, 10);
         } else if (**p) {
             int q = 0;

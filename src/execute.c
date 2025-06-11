@@ -255,9 +255,13 @@ void setup_redirections(PipelineSegment *seg) {
         }
     }
 
-    if (seg->dup_out != -1)
+    if (seg->close_out)
+        close(STDOUT_FILENO);
+    else if (seg->dup_out != -1)
         dup2(seg->dup_out, STDOUT_FILENO);
-    if (seg->dup_err != -1)
+    if (seg->close_err)
+        close(STDERR_FILENO);
+    else if (seg->dup_err != -1)
         dup2(seg->dup_err, STDERR_FILENO);
 }
 
