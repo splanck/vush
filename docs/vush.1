@@ -63,8 +63,12 @@ Several forms modify how variables are expanded:
 The form \fB${VAR/pat/repl}\fP replaces the first portion of \fB$VAR\fP
 matching \fIpat\fP with \fIrepl\fP.  Doubling the slash with
 \fB${VAR//pat/repl}\fP performs the substitution globally.
+The forms \fB${VAR?word}\fP and \fB${VAR:?word}\fP print \fIword\fP (or a
+default message) to the standard error and return failure when the variable is
+unset or empty.
 .EX
 unset TMP
+echo ${TMP:?missing}
 echo ${TMP:-default}
 echo ${TMP:=set}
 echo ${TMP:+alt}
