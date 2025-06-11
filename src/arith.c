@@ -17,7 +17,7 @@
  * set_shell_var().  eval_arith() simply calls parse_expr on the supplied
  * string and returns the resulting numeric value.
  */
-#include "builtins.h" // for set_shell_var and get_shell_var
+#include "vars.h" // for set_shell_var and get_shell_var
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>

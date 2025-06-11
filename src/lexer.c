@@ -6,6 +6,7 @@
 #include "lexer.h"
 #include "history.h"
 #include "builtins.h"
+#include "vars.h"
 #include "scriptargs.h"
 #include "options.h"
 #include "arith.h"

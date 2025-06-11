@@ -16,6 +16,7 @@
 #include "execute.h"
 #include "scriptargs.h"
 #include "builtins.h"
+#include "vars.h"
 
 extern int last_status;
 
