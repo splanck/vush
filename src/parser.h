@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #define MAX_TOKENS 64
 #define MAX_LINE 1024
@@ -25,6 +26,8 @@ typedef struct PipelineSegment {
     int err_append;
     int dup_err;      /* 2>&N duplication */
     int close_err;    /* 2>&- close descriptor */
+    int out_fd;       /* fd number for > redirections */
+    int in_fd;        /* fd number for < redirections */
     char **assigns;   /* NAME=value pairs preceding the command */
     int assign_count;
     struct PipelineSegment *next;

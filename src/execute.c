@@ -223,7 +223,7 @@ void setup_redirections(PipelineSegment *seg) {
         }
         if (seg->here_doc)
             unlink(seg->in_file);
-        redirect_fd(fd, STDIN_FILENO);
+        redirect_fd(fd, seg->in_fd);
     }
 
     if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
@@ -243,7 +243,7 @@ void setup_redirections(PipelineSegment *seg) {
                 perror(seg->out_file);
                 exit(1);
             }
-            redirect_fd(fd, STDOUT_FILENO);
+            redirect_fd(fd, seg->out_fd);
         }
         if (seg->err_file) {
             int fd = open_redirect(seg->err_file, seg->err_append, 0);
@@ -256,9 +256,9 @@ void setup_redirections(PipelineSegment *seg) {
     }
 
     if (seg->close_out)
-        close(STDOUT_FILENO);
+        close(seg->out_fd);
     else if (seg->dup_out != -1)
-        dup2(seg->dup_out, STDOUT_FILENO);
+        dup2(seg->dup_out, seg->out_fd);
     if (seg->close_err)
         close(STDERR_FILENO);
     else if (seg->dup_err != -1)

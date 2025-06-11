@@ -41,9 +41,9 @@ Current version: 0.1.0
   `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2`
 - `case` selection statements with optional fall-through using `;&`
 - `select` loops presenting a numbered menu of choices
-- Input and output redirection with `<`, `>`, `>|`, `>>`, `2>`, `2>>` and `&>`,
-  including descriptor duplication like `2>&1` or `>&file` and descriptor
-  closure using `>&-` or `2>&-`
+ - Input and output redirection with `<`, `>`, `>|`, `>>`, `2>`, `2>>` and `&>`,
+   including descriptor duplication like `2>&1` or `>&file`, descriptor
+   closure using `>&-` or `2>&-`, and numbered descriptors such as `3>` or `4<`
 - Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
 - Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
