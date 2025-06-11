@@ -218,11 +218,33 @@ int builtin_alias(char **args)
 /* builtin_unalias - remove each NAME argument from the alias list. */
 int builtin_unalias(char **args)
 {
-    if (!args[1]) {
-        fprintf(stderr, "usage: unalias name\n");
+    int all = 0;
+    int i = 1;
+    for (; args[i] && args[i][0] == '-'; i++) {
+        if (strcmp(args[i], "-a") == 0) {
+            all = 1;
+        } else {
+            fprintf(stderr, "usage: unalias [-a] name\n");
+            return 1;
+        }
+    }
+
+    if (all && args[i]) {
+        fprintf(stderr, "usage: unalias [-a] name\n");
         return 1;
     }
-    for (int i = 1; args[i]; i++)
+
+    if (all) {
+        free_aliases();
+        return 1;
+    }
+
+    if (!args[i]) {
+        fprintf(stderr, "usage: unalias [-a] name\n");
+        return 1;
+    }
+
+    for (; args[i]; i++)
         remove_alias(args[i]);
     save_aliases();
     return 1;

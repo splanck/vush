@@ -223,8 +223,8 @@ Manage or display the command hash table.
 .B alias [-p] [\fIname\fP[=\fIvalue\fP]]
 Set or display aliases. With no arguments all aliases are shown. A single name prints that alias. The \fB-p\fP option lists using "alias name='value'" format.
 .TP
-.B unalias \fIname\fP
-Remove an alias.
+.B unalias [-a] \fIname\fP
+Remove alias definitions. With \fB-a\fP all aliases are cleared.
 .TP
 .B read [-r] \fIvar\fP ...
 Read a line from standard input and assign the words to each \fIvar\fP in
