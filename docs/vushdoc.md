@@ -315,8 +315,8 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
 - `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.  Supports
   string comparisons, numeric operators and POSIX unary file tests such as
   `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`, `-O`,
-  `-G`, `-u`, `-g`, `-k`, `-S` and `-t`. Binary comparisons `file1 -nt file2`,
-  `file1 -ot file2` and `file1 -ef file2` are also available.
+  `-G`, `-u`, `-g`, `-k`, `-S` and `-t`. The unary `!` operator and binary
+  `-a`/`-o` apply with the usual precedence. Binary comparisons `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2` are also available.
 - `[[ EXPR ]]` - evaluate a conditional expression with pattern matching.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).

@@ -37,8 +37,7 @@ Current version: 0.1.0
 - Conditional expressions using `[[ ... ]]` with pattern matching
 - POSIX `test` builtin supporting string, numeric and file operators
   like `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`,
-  `-O`, `-G`, `-u`, `-g`, `-k`, `-S` and `-t`, as well as binary comparisons
-  `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2`
+  `-O`, `-G`, `-u`, `-g`, `-k`, `-S` and `-t`. The unary `!` operator and binary `-a`/`-o` are recognized with standard precedence. Binary comparisons `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2` are also available
 - `case` selection statements with optional fall-through using `;&`
 - `select` loops presenting a numbered menu of choices
  - Input and output redirection with `<`, `>`, `>|`, `>>`, `2>`, `2>>` and `&>`,
