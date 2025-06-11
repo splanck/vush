@@ -303,10 +303,16 @@ Display or set resource limits. With no option, print the current file
 size limit. The -a flag prints all supported limits. Providing a number
 sets the selected limit.
 .TP
-.B umask [mode]
-Print or set the file creation mask. Without an argument the current mask
-is printed in octal. When MODE is supplied it is interpreted as an octal
-number and becomes the new mask.
+.B umask [\-S] [mode]
+Print or set the file creation mask. Without an argument the current mask is
+printed in octal. The
+.B \-S
+option causes the mask to be displayed in symbolic form (e.g.,
+.B u=rwx,g=rx,o=rx
+). When MODE is supplied it is interpreted as an octal number and becomes
+the new mask. If MODE is given together with
+.B \-S,
+the mask is set and then printed symbolically.
 .TP
 .B source \fIfile [args...]\fP
 Read commands from \fIfile\fP using \fIargs\fP as positional parameters.
