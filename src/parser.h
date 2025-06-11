@@ -72,6 +72,7 @@ typedef struct Command {
     char *text;               /* function body as text */
     CaseItem *cases;          /* for case clause items */
     struct Command *group;    /* commands for subshell or group */
+    int negate;               /* invert status with leading ! */
     int background;
     CmdOp op; /* operator connecting to next command */
     struct Command *next;
