@@ -16,6 +16,8 @@ Current version: 0.1.0
  `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit`, `umask [-S] [mask]` (mask may be octal or symbolic like `u=rwx,g=rx,o=rx`), `unalias [-a]`, `unset`, `wait`, and `:`
 - The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
 - The `source` builtin searches `$PATH` when the filename has no `/`.
+- The `printf` builtin supports `%b` which interprets backslash escapes
+  in the argument before printing.
 
 - `export -p` lists all exported variables and `export -n NAME` removes the export
   attribute while leaving the variable defined.

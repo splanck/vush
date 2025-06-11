@@ -952,6 +952,40 @@ int builtin_printf(char **args)
             printf(spec, arg);
             if (args[ai]) ai++;
             break;
+        case 'b': {
+            size_t len = strlen(arg);
+            char *buf = malloc(len + 1);
+            if (!buf) {
+                perror("printf");
+                last_status = 1;
+                return 1;
+            }
+            char *bp = buf;
+            for (const char *p2 = arg; *p2; p2++) {
+                if (*p2 == '\\' && p2[1]) {
+                    p2++;
+                    switch (*p2) {
+                    case 'n': *bp++ = '\n'; break;
+                    case 't': *bp++ = '\t'; break;
+                    case 'r': *bp++ = '\r'; break;
+                    case 'b': *bp++ = '\b'; break;
+                    case 'a': *bp++ = '\a'; break;
+                    case 'f': *bp++ = '\f'; break;
+                    case 'v': *bp++ = '\v'; break;
+                    case '\\': *bp++ = '\\'; break;
+                    default: *bp++ = '\\'; *bp++ = *p2; break;
+                    }
+                } else {
+                    *bp++ = *p2;
+                }
+            }
+            *bp = '\0';
+            spec[strlen(spec) - 1] = 's';
+            printf(spec, buf);
+            free(buf);
+            if (args[ai]) ai++;
+            break;
+        }
         case 'p':
             printf(spec, (void *)(uintptr_t)strtoull(arg, NULL, 0));
             if (args[ai]) ai++;
