@@ -68,10 +68,27 @@ static const char *name_from_sig(int sig)
 }
 
 /* Assign commands to run when specified signals are received. */
+static void print_traps(void)
+{
+    if (exit_trap_cmd)
+        printf("trap '%s' EXIT\n", exit_trap_cmd);
+    for (int s = 1; s < NSIG; s++) {
+        if (trap_cmds[s]) {
+            const char *name = name_from_sig(s);
+            if (name)
+                printf("trap '%s' %s\n", trap_cmds[s], name);
+            else
+                printf("trap '%s' %d\n", trap_cmds[s], s);
+        }
+    }
+}
+
+/* Assign commands to run when specified signals are received. */
 int builtin_trap(char **args)
 {
     if (!args[1]) {
-        fprintf(stderr, "usage: trap [-p] [command] SIGNAL...\n");
+        print_traps();
+        last_status = 0;
         return 1;
     }
 
@@ -80,17 +97,7 @@ int builtin_trap(char **args)
             fprintf(stderr, "usage: trap -p\n");
             return 1;
         }
-        if (exit_trap_cmd)
-            printf("trap '%s' EXIT\n", exit_trap_cmd);
-        for (int s = 1; s < NSIG; s++) {
-            if (trap_cmds[s]) {
-                const char *name = name_from_sig(s);
-                if (name)
-                    printf("trap '%s' %s\n", trap_cmds[s], name);
-                else
-                    printf("trap '%s' %d\n", trap_cmds[s], s);
-            }
-        }
+        print_traps();
         last_status = 0;
         return 1;
     }
