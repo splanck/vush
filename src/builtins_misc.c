@@ -15,6 +15,7 @@
 #include "execute.h"
 #include "util.h"
 #include "scriptargs.h"
+#include "vars.h"
 #include "hash.h"
 #include <stdio.h>
 #include <stdlib.h>
