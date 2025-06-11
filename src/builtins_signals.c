@@ -12,6 +12,7 @@
 extern int last_status;
 extern void trap_handler(int);
 extern void run_exit_trap(void);
+void list_signals(void);
 
 /* Map signal names to numbers for trap builtin. */
 static const struct { const char *n; int v; } sig_map[] = {
@@ -98,6 +99,16 @@ int builtin_trap(char **args)
             return 1;
         }
         print_traps();
+        last_status = 0;
+        return 1;
+    }
+
+    if (strcmp(args[1], "-l") == 0) {
+        if (args[2]) {
+            fprintf(stderr, "usage: trap -l\n");
+            return 1;
+        }
+        list_signals();
         last_status = 0;
         return 1;
     }

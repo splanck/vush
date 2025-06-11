@@ -69,7 +69,7 @@ static const char *name_from_sig(int sig)
     return NULL;
 }
 
-static void list_signals(void)
+void list_signals(void)
 {
     int first = 1;
     for (int s = 1; s < NSIG; s++) {
