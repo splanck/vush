@@ -206,44 +206,77 @@ static void repl_loop(FILE *input)
             line = linebuf;
         }
 
-        char *expanded = expand_history(line);
-        if (!expanded) {
-            if (line != linebuf)
-                free(line);
-            continue;
-        }
-
-        parse_input = input;
-        Command *cmds = parse_line(expanded);
-        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
-            free_commands(cmds);
-            if (expanded != line)
-                free(expanded);
-            if (line != linebuf)
-                free(line);
-            continue;
-        }
-
-        add_history(line);
-
-        CmdOp prev = OP_SEMI;
-        for (Command *c = cmds; c; c = c->next) {
-            int run = 1;
-            if (c != cmds) {
-                if (prev == OP_AND)
-                    run = (last_status == 0);
-                else if (prev == OP_OR)
-                    run = (last_status != 0);
-            }
-            if (run)
-                run_pipeline(c, expanded);
-            prev = c->op;
-        }
-        free_commands(cmds);
-        if (expanded != line)
-            free(expanded);
+        char *cmdline = strdup(line);
         if (line != linebuf)
             free(line);
+
+        while (1) {
+            char *expanded = expand_history(cmdline);
+            if (!expanded) {
+                free(cmdline);
+                cmdline = NULL;
+                break;
+            }
+
+            parse_input = input;
+            Command *cmds = parse_line(expanded);
+            if (parse_need_more) {
+                free_commands(cmds);
+                free(expanded);
+                const char *ps2 = getenv("PS2");
+                char *more = NULL;
+                if (interactive) {
+                    char *p2 = expand_prompt(ps2 ? ps2 : "> ");
+                    more = line_edit(p2);
+                    free(p2);
+                    if (!more) { free(cmdline); cmdline = NULL; break; }
+                } else {
+                    if (!read_logical_line(input, linebuf, sizeof(linebuf))) {
+                        free(cmdline);
+                        cmdline = NULL;
+                        break;
+                    }
+                    more = strdup(linebuf);
+                }
+                size_t len1 = strlen(cmdline);
+                size_t len2 = strlen(more);
+                char *tmp = malloc(len1 + len2 + 2);
+                memcpy(tmp, cmdline, len1);
+                tmp[len1] = '\n';
+                memcpy(tmp + len1 + 1, more, len2 + 1);
+                free(cmdline);
+                free(more);
+                cmdline = tmp;
+                continue;
+            }
+
+            if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+                free_commands(cmds);
+                free(expanded);
+                break;
+            }
+
+            add_history(cmdline);
+
+            CmdOp prev = OP_SEMI;
+            for (Command *c = cmds; c; c = c->next) {
+                int run = 1;
+                if (c != cmds) {
+                    if (prev == OP_AND)
+                        run = (last_status == 0);
+                    else if (prev == OP_OR)
+                        run = (last_status != 0);
+                }
+                if (run)
+                    run_pipeline(c, expanded);
+                prev = c->op;
+            }
+            free_commands(cmds);
+            free(expanded);
+            break;
+        }
+
+        free(cmdline);
     }
 }
 

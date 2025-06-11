@@ -283,8 +283,11 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (!pipeline)
         return 0;
 
-    if (opt_xtrace && line)
-        fprintf(stderr, "+ %s\n", line);
+    if (opt_xtrace && line) {
+        const char *ps4 = getenv("PS4");
+        if (!ps4) ps4 = "+ ";
+        fprintf(stderr, "%s%s\n", ps4, line);
+    }
 
     if (apply_temp_assignments(pipeline)) {
         cleanup_proc_subs();
@@ -418,7 +421,8 @@ static int exec_select(Command *cmd, const char *line) {
     while (1) {
         for (int i = 0; i < cmd->word_count; i++)
             printf("%d) %s\n", i + 1, cmd->words[i]);
-        fputs("? ", stdout);
+        const char *ps3 = getenv("PS3");
+        fputs(ps3 ? ps3 : "? ", stdout);
         fflush(stdout);
         if (!fgets(input, sizeof(input), stdin))
             break;

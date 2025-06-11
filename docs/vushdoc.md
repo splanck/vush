@@ -409,6 +409,10 @@ Several environment variables and a startup file influence the shell:
 
 - `PS1` sets the interactive prompt and is expanded like normal text. The
   default is `vush> `.
+- `PS2` is displayed when additional input is required, for example after an
+  unclosed quote. The default is `> `.
+- `PS3` is shown by the `select` builtin when prompting for a choice.
+- `PS4` prefixes tracing output when `set -x` is enabled.
 - `VUSH_HISTFILE` names the history file while `VUSH_HISTSIZE` limits how many
   entries are retained. Defaults are `~/.vush_history` and `1000`.
 - `VUSH_ALIASFILE` and `VUSH_FUNCFILE` store persistent aliases and shell

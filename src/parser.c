@@ -33,6 +33,7 @@
 
 extern int last_status;
 FILE *parse_input = NULL;
+int parse_need_more = 0;
 
 struct temp_var { char *name; char *value; struct temp_var *next; };
 static struct temp_var *temp_vars = NULL;
@@ -1265,6 +1266,8 @@ Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;
 
+    parse_need_more = 0;
+
     clear_temp_vars();
 
     while (1) {
@@ -1282,7 +1285,8 @@ Command *parse_line(char *line) {
             cmd = parse_pipeline(&p, &op);
         if (!cmd) {
             free_commands(head);
-            last_status = 1;
+            if (!parse_need_more)
+                last_status = 1;
             return NULL;
         }
 
