@@ -254,7 +254,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `fc [-l] [-e editor] [first [last]]` - list or edit previous commands.
 - `hash [-r] [name...]` - manage cached command paths.
 - `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
-- `unalias NAME` - remove an alias.
+- `unalias [-a] NAME` - remove aliases. With `-a` all aliases are cleared.
 - `read [-r] VAR...` - read a line of input into variables.
 - `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).

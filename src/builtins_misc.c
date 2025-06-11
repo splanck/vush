@@ -431,7 +431,7 @@ int builtin_help(char **args) {
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  hash [-r] [name...]   Manage cached command paths\n");
     printf("  alias [-p] [NAME[=VALUE]]  Set or list aliases\n");
-    printf("  unalias NAME        Remove an alias\n");
+    printf("  unalias [-a] NAME   Remove alias(es)\n");
     printf("  read [-r] VAR...    Read a line into variables\n");
     printf("  return [status]     Return from a function\n");
     printf("  break      Exit the nearest loop\n");
