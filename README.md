@@ -43,7 +43,7 @@ Current version: 0.1.0
 - Command negation using `! command`
 - Subshells using `( ... )` to group commands
 - Brace groups using `{ ... ; }` executed in the current shell
-- Shell functions using `name() { ... }` syntax and a `return` builtin
+- Shell functions defined with `name() { ... }` or `function name { ... }` and a `return` builtin
 - Conditional expressions using `[[ ... ]]` with pattern matching
 - POSIX `test` builtin supporting string, numeric and file operators
   like `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`,
