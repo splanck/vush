@@ -190,6 +190,8 @@ void set_shell_var(const char *name, const char *value) {
             }
             free(v->value);
             v->value = strdup(value);
+            if (opt_allexport)
+                setenv(name, v->value ? v->value : "", 1);
             return;
         }
     }
@@ -201,6 +203,8 @@ void set_shell_var(const char *name, const char *value) {
     v->array_len = 0;
     v->next = shell_vars;
     shell_vars = v;
+    if (opt_allexport)
+        setenv(name, value ? value : "", 1);
 }
 
 /*
@@ -359,6 +363,8 @@ int builtin_set(char **args) {
             opt_noexec = 1;
         else if (strcmp(args[i], "-f") == 0)
             opt_noglob = 1;
+        else if (strcmp(args[i], "-a") == 0)
+            opt_allexport = 1;
         else if (strcmp(args[i], "-o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 1;
@@ -380,6 +386,8 @@ int builtin_set(char **args) {
             opt_noexec = 0;
         else if (strcmp(args[i], "+f") == 0)
             opt_noglob = 0;
+        else if (strcmp(args[i], "+a") == 0)
+            opt_allexport = 0;
         else if (strcmp(args[i], "+o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 0;

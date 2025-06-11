@@ -48,6 +48,7 @@ int opt_pipefail = 0;
 int opt_noclobber = 0;
 int opt_noexec = 0;
 int opt_noglob = 0;
+int opt_allexport = 0;
 
 static void process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);

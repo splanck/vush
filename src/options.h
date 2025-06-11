@@ -8,5 +8,6 @@ extern int opt_pipefail;
 extern int opt_noclobber;
 extern int opt_noexec;
 extern int opt_noglob;
+extern int opt_allexport;
 
 #endif /* OPTIONS_H */

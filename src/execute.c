@@ -92,11 +92,28 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
                     vals[count++] = strdup(start);
                 }
                 set_shell_array(name, vals, count);
+                if (opt_allexport) {
+                    size_t joinlen = 0;
+                    for (int j=0;j<count;j++)
+                        joinlen += strlen(vals[j]) + 1;
+                    char *joined = malloc(joinlen+1);
+                    if (joined) {
+                        joined[0] = '\0';
+                        for (int j=0;j<count;j++) {
+                            strcat(joined, vals[j]);
+                            if (j < count-1) strcat(joined, " ");
+                        }
+                        setenv(name, joined, 1);
+                        free(joined);
+                    }
+                }
                 for(int j=0;j<count;j++) free(vals[j]);
                 free(vals);
                 free(body);
             } else {
                 set_shell_var(name, val);
+                if (opt_allexport)
+                    setenv(name, val, 1);
             }
             free(name);
         }
