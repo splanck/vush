@@ -18,6 +18,7 @@
 #include "execute.h"
 #include "jobs.h"
 #include "builtins.h"
+#include "vars.h"
 #include "scriptargs.h"
 #include "options.h"
 #include "pipeline.h"

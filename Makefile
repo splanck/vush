@@ -5,6 +5,7 @@ MANPREFIX ?= $(PREFIX)/share/man
 
 SRCS := src/builtins.c src/builtins_fs.c src/builtins_jobs.c \
        src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
+       src/builtins_read.c src/builtins_getopts.c src/vars.c \
        src/builtins_misc.c src/builtins_history.c src/builtins_time.c \
        src/builtins_signals.c src/execute.c src/history.c \
        src/jobs.c src/lineedit.c src/history_search.c src/completion.c \
