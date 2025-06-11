@@ -617,6 +617,59 @@ static void print_symbolic_umask(mode_t mask)
     printf("%s\n", buf);
 }
 
+/* Parse a symbolic mode string like u=rwx,g=rx,o= and return the
+   corresponding mask. Returns 0 on success, -1 on error. */
+static int parse_symbolic_umask(const char *str, mode_t *out)
+{
+    char *copy = strdup(str);
+    if (!copy)
+        return -1;
+    mode_t perms = 0;
+    int fields = 0;
+    char *saveptr;
+    char *tok = strtok_r(copy, ",", &saveptr);
+    while (tok) {
+        if (tok[0] && tok[1] == '=') {
+            mode_t bits = 0;
+            for (char *p = tok + 2; *p; p++) {
+                if (*p == 'r')
+                    bits |= 4;
+                else if (*p == 'w')
+                    bits |= 2;
+                else if (*p == 'x')
+                    bits |= 1;
+                else {
+                    free(copy);
+                    return -1;
+                }
+            }
+            switch (tok[0]) {
+                case 'u':
+                    if (fields & 1) { free(copy); return -1; }
+                    perms |= bits << 6; fields |= 1; break;
+                case 'g':
+                    if (fields & 2) { free(copy); return -1; }
+                    perms |= bits << 3; fields |= 2; break;
+                case 'o':
+                    if (fields & 4) { free(copy); return -1; }
+                    perms |= bits; fields |= 4; break;
+                default:
+                    free(copy);
+                    return -1;
+            }
+        } else {
+            free(copy);
+            return -1;
+        }
+        tok = strtok_r(NULL, ",", &saveptr);
+    }
+    free(copy);
+    if (fields != 7)
+        return -1;
+    *out = (~perms) & 0777;
+    return 0;
+}
+
 int builtin_umask(char **args)
 {
     mode_t mask = umask(0);
@@ -645,14 +698,19 @@ int builtin_umask(char **args)
     errno = 0;
     char *end;
     long val = strtol(args[idx], &end, 8);
-    if (*end != '\0' || errno != 0 || val < 0 || val > 0777) {
+    mode_t newmask;
+    if (*end == '\0' && errno == 0 && val >= 0 && val <= 0777) {
+        newmask = (mode_t)val;
+    } else if (parse_symbolic_umask(args[idx], &newmask) == 0) {
+        /* parsed successfully */
+    } else {
         fprintf(stderr, "umask: invalid mode\n");
         return 1;
     }
 
-    umask((mode_t)val);
+    umask(newmask);
     if (symbolic)
-        print_symbolic_umask((mode_t)val);
+        print_symbolic_umask(newmask);
     return 1;
 }
 

@@ -13,7 +13,7 @@ Current version: 0.1.0
  `dirs`, `echo`, `eval`, `exec`, `exit`, `export [-p|-n NAME]`, `false`, `fc`, `fg`, `getopts`, `hash`,
   `help`, `history`, `jobs [-l|-p]`, `kill [-s SIG|-l]`, `let`, `local`, `popd`, `printf`, `pushd`,
  `pwd`, `read`, `readonly [-p]`, `return`, `set`, `shift`, `source` (or `.`), `test`,
- `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias [-a]`, `unset`, `wait`, and `:`
+ `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit`, `umask [-S] [mask]` (mask may be octal or symbolic like `u=rwx,g=rx,o=rx`), `unalias [-a]`, `unset`, `wait`, and `:`
 - The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
 
 - `export -p` lists all exported variables and `export -n NAME` removes the export
