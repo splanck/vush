@@ -64,6 +64,12 @@ Prompt used by the select builtin.
 .TP
 .B PS4
 Prefix for tracing output from set -x.
+.TP
+.B MAIL
+Mailbox file checked before each prompt. A notice is printed on update.
+.TP
+.B MAILPATH
+Colon separated list of additional mailbox files. Each prints "New mail in <file>" when modified.
 .SH FILES
 .TP
 .B ~/.vushrc

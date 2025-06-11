@@ -510,6 +510,10 @@ two
 - `PS2` appears when more input is needed such as after an unclosed quote (default `> `).
 - `PS3` is used by the `select` builtin when prompting for a choice.
 - `PS4` prefixes tracing output produced by `set -x`.
+- `MAIL` names a mailbox file checked before each prompt. A notice is printed
+  when the file's modification time increases.
+- `MAILPATH` is a `:` separated list of mailbox files also checked. Each path
+  prints `New mail in <file>` when updated.
 - `VUSH_HISTFILE` names the history file; `VUSH_HISTSIZE` limits retained entries (defaults `~/.vush_history` and `1000`).
 - `VUSH_ALIASFILE` and `VUSH_FUNCFILE` store persistent aliases and functions (defaults `~/.vush_aliases` and `~/.vush_funcs`).
 - `CDPATH` lists directories searched by `cd` for relative paths.
