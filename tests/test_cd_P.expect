@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+set timeout 5
+set dir [exec mktemp -d]
+file mkdir "$dir/real"
+file symlink "$dir/real" "$dir/link"
+spawn ../vush
+expect "vush> "
+send "cd -P $dir/link\r"
+expect "vush> "
+send "pwd\r"
+expect {
+    -re "[\r\n]+$dir/real[\r\n]+vush> " {}
+    timeout { send_user "cd -P failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $dir
