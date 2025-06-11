@@ -174,8 +174,8 @@ Return failure.
 Print the current working directory. \fB-P\fP displays the physical directory
 from \fBgetcwd(3)\fP while \fB-L\fP (the default) prints \fB$PWD\fP.
 .TP
-.B jobs
-List running background jobs.
+.B jobs [-l|-p] [ID...]
+List background jobs. The \fB-l\fP option prints the PID and status and \fB-p\fP prints only the PID. When one or more job IDs are given only those jobs are shown.
 .TP
 .B fg ID
 Wait for job ID in the foreground.

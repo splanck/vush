@@ -11,7 +11,7 @@ Current version: 0.1.0
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias`, `bg`, `break [N]`, `cd`, `command`, `continue [N]`,
  `dirs`, `echo`, `eval`, `exec`, `exit`, `export`, `false`, `fc`, `fg`, `getopts`, `hash`,
-  `help`, `history`, `jobs`, `kill`, `let`, `local`, `popd`, `printf`, `pushd`,
+  `help`, `history`, `jobs [-l|-p]`, `kill`, `let`, `local`, `popd`, `printf`, `pushd`,
   `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
   `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias`, `unset`, `wait`, and `:`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
