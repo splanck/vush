@@ -324,6 +324,17 @@ printed before each command and undergo normal variable and command
 substitution. The default prompt is \"vush> \" but users may set \fBPS1\fP to any
 string to include information such as the current directory.
 .TP
+.B PS2
+Displayed when the parser requires additional input, for example after an
+unclosed quote. The default value is \"\> \".
+.TP
+.B PS3
+Prompt string used by the \fBselect\fP builtin. Defaults to \"? \".
+.TP
+.B PS4
+Prefix printed before trace output when \fBset -x\fP is active. Defaults to
+\"+ \".
+.TP
 .B VUSH_HISTFILE
 Path to the file used for saving command history. The default is
 \fB~/.vush_history\fP.

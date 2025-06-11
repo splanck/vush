@@ -83,5 +83,6 @@ void free_pipeline(PipelineSegment *p);
 void free_commands(Command *c);
 void cleanup_proc_subs(void);
 extern FILE *parse_input;
+extern int parse_need_more;
 
 #endif /* PARSER_H */

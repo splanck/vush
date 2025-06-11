@@ -67,16 +67,20 @@ static char *parse_substitution(char **p) {
         cmd[clen++] = **p;
         (*p)++;
     }
+    if (!**p) {
+        parse_need_more = 1;
+        return NULL;
+    }
     if (is_dollar) {
         if (depth > 0) {
-            fprintf(stderr, "syntax error: unmatched ')'\n");
+            parse_need_more = 1;
             return NULL;
         }
     } else {
         if (**p == '`')
             (*p)++;
         else {
-            fprintf(stderr, "syntax error: unmatched '`'\n");
+            parse_need_more = 1;
             return NULL;
         }
     }
@@ -222,7 +226,10 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
                 (*p)++;
             }
-            if (**p == ')' && *(*p + 1) == ')' && depth == 0) {
+            if (!**p) {
+                parse_need_more = 1;
+                return -1;
+            } else if (**p == ')' && *(*p + 1) == ')' && depth == 0) {
                 if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
                 if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
             } else {
@@ -294,6 +301,9 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
             buf[len++] = *(*p)++;
         if (**p == quote) {
             (*p)++;
+        } else if (**p == '\0') {
+            parse_need_more = 1;
+            return NULL;
         } else {
             fprintf(stderr, "syntax error: unmatched '%c'\n", quote);
             return NULL;
@@ -304,6 +314,9 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
             return NULL;
         if (**p == quote) {
             (*p)++;
+        } else if (**p == '\0') {
+            parse_need_more = 1;
+            return NULL;
         } else {
             fprintf(stderr, "syntax error: unmatched '\"'\n");
             return NULL;
