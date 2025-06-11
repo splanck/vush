@@ -82,6 +82,59 @@ int builtin_false(char **args)
     return 1;
 }
 
+/* Print arguments separated by spaces. Supports -n to suppress the
+ * trailing newline and -e to interpret common backslash escapes. */
+int builtin_echo(char **args)
+{
+    int newline = 1;
+    int interpret = 0;
+    int i = 1;
+    for (; args[i] && args[i][0] == '-' && args[i][1]; i++) {
+        if (strcmp(args[i], "-n") == 0) {
+            newline = 0;
+            continue;
+        }
+        if (strcmp(args[i], "-e") == 0) {
+            interpret = 1;
+            continue;
+        }
+        break;
+    }
+
+    for (; args[i]; i++) {
+        if (i > 1 && args[i-1])
+            putchar(' ');
+        const char *s = args[i];
+        if (interpret) {
+            for (const char *p = s; *p; p++) {
+                if (*p == '\\' && p[1]) {
+                    p++;
+                    switch (*p) {
+                    case 'n': putchar('\n'); break;
+                    case 't': putchar('\t'); break;
+                    case 'r': putchar('\r'); break;
+                    case 'b': putchar('\b'); break;
+                    case 'a': putchar('\a'); break;
+                    case 'f': putchar('\f'); break;
+                    case 'v': putchar('\v'); break;
+                    case '\\': putchar('\\'); break;
+                    default: putchar('\\'); putchar(*p); break;
+                    }
+                } else {
+                    putchar(*p);
+                }
+            }
+        } else {
+            fputs(s, stdout);
+        }
+    }
+    if (newline)
+        putchar('\n');
+    fflush(stdout);
+    last_status = 0;
+    return 1;
+}
+
 /* Display the command history or modify it with -c to clear or -d N to
  * delete a specific entry. */
 int builtin_history(char **args) {
