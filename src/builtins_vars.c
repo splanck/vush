@@ -88,6 +88,8 @@ int builtin_set(char **args) {
             opt_noexec = 1;
         else if (strcmp(args[i], "-f") == 0)
             opt_noglob = 1;
+        else if (strcmp(args[i], "-C") == 0)
+            opt_noclobber = 1;
         else if (strcmp(args[i], "-a") == 0)
             opt_allexport = 1;
         else if (strcmp(args[i], "-o") == 0 && args[i+1]) {
@@ -113,6 +115,8 @@ int builtin_set(char **args) {
             opt_noexec = 0;
         else if (strcmp(args[i], "+f") == 0)
             opt_noglob = 0;
+        else if (strcmp(args[i], "+C") == 0)
+            opt_noclobber = 0;
         else if (strcmp(args[i], "+a") == 0)
             opt_allexport = 0;
         else if (strcmp(args[i], "+o") == 0 && args[i+1]) {
