@@ -41,7 +41,7 @@ Current version: 0.1.0
   `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2`
 - `case` selection statements with optional fall-through using `;&`
 - `select` loops presenting a numbered menu of choices
-- Input and output redirection with `<`, `>`, `>>`, `2>`, `2>>` and `&>`,
+- Input and output redirection with `<`, `>`, `>|`, `>>`, `2>`, `2>>` and `&>`,
   including descriptor duplication like `2>&1` or `>&file` and descriptor
   closure using `>&-` or `2>&-`
 - Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
@@ -60,6 +60,7 @@ Current version: 0.1.0
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
   `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m` and `set -o OPTION` such as
   `pipefail` or `noclobber`
+- Use `>| file` to force overwriting a file when `noclobber` is active
 - `set --` can replace positional parameters inside the running shell
 - Array assignments and `${name[index]}` access
 - Here-documents (`<<`) and here-strings (`<<<`)

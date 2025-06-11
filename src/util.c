@@ -45,9 +45,9 @@ char *read_logical_line(FILE *f, char *buf, size_t size) {
     return buf;
 }
 
-int open_redirect(const char *path, int append) {
+int open_redirect(const char *path, int append, int force) {
     int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
-    if (opt_noclobber && !append)
+    if (opt_noclobber && !append && !force)
         flags |= O_EXCL;
     return open(path, flags, 0644);
 }

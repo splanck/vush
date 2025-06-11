@@ -38,6 +38,14 @@ static char *parse_redirect_token(char **p) {
         buf[len] = '\0';
         return strdup(buf);
     }
+    if (**p == '>' && *(*p + 1) == '|') {
+        buf[len++] = '>';
+        (*p)++;
+        buf[len++] = '|';
+        (*p)++;
+        buf[len] = '\0';
+        return strdup(buf);
+    }
     if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
         buf[len++] = '&';
         (*p)++;

@@ -228,7 +228,7 @@ void setup_redirections(PipelineSegment *seg) {
 
     if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
         seg->append == seg->err_append) {
-        int fd = open_redirect(seg->out_file, seg->append);
+        int fd = open_redirect(seg->out_file, seg->append, seg->force);
         if (fd < 0) {
             perror(seg->out_file);
             exit(1);
@@ -238,7 +238,7 @@ void setup_redirections(PipelineSegment *seg) {
         close(fd);
     } else {
         if (seg->out_file) {
-            int fd = open_redirect(seg->out_file, seg->append);
+            int fd = open_redirect(seg->out_file, seg->append, seg->force);
             if (fd < 0) {
                 perror(seg->out_file);
                 exit(1);
@@ -246,7 +246,7 @@ void setup_redirections(PipelineSegment *seg) {
             redirect_fd(fd, STDOUT_FILENO);
         }
         if (seg->err_file) {
-            int fd = open_redirect(seg->err_file, seg->err_append);
+            int fd = open_redirect(seg->err_file, seg->err_append, 0);
             if (fd < 0) {
                 perror(seg->err_file);
                 exit(1);
