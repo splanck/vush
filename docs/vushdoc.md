@@ -252,6 +252,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   without removing it. Without `=VALUE` the variable's current value is
   exported and it is created with an empty value if undefined.
 - `readonly [-p] NAME[=VALUE]` - mark variables as read-only or list them.
+  Without `=VALUE` the variable is created with an empty value if undefined.
   With `-p` the variables are printed using `readonly NAME=value` format.
 - `local NAME[=VALUE]` - define a variable scoped to the current function.
 - `unset [-f] NAME` - remove an environment variable or function with `-f`.

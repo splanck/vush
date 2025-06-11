@@ -328,8 +328,9 @@ int builtin_readonly(char **args) {
             add_readonly(arg);
             *eq = '=';
         } else {
-            if (get_shell_var(arg) || get_shell_array(arg, NULL))
-                add_readonly(arg);
+            if (!get_shell_var(arg) && !get_shell_array(arg, NULL))
+                set_shell_var(arg, "");
+            add_readonly(arg);
         }
     }
     return 1;
