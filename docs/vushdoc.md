@@ -86,7 +86,8 @@ vush> echo $(echo hi)
 hi
 ```
 
-Additional parameter expansion forms:
+Additional parameter expansion forms (doubling `#` or `%` removes the
+longest matching prefix or suffix):
 
 ```
 vush> unset TEMP

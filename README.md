@@ -15,8 +15,8 @@ Current version: 0.1.0
   `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
   `time`, `trap`, `true`, `type`, `umask`, `unalias`, `unset`, `wait`, and `:`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
-  `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR%pat}` and
-  `${#VAR}`
+  `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
+  `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
 - Wildcard expansion for unquoted `*` and `?` patterns
 - Brace expansion for patterns like `{foo,bar}` and `{1..3}`

@@ -498,28 +498,61 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         return res ? res : strdup("");
     } else if (*p == '#' || *p == '%') {
         char op = *p;
+        int longest = 0;
+        if (p[1] == op) {
+            longest = 1;
+            p++;
+        }
         const char *pattern = p + 1;
         if (!val) val = "";
         size_t vlen = strlen(val);
         if (op == '#') {
-            for (size_t i = 0; i <= vlen; i++) {
-                char *pref = strndup(val, i);
-                if (!pref) break;
-                int m = fnmatch(pattern, pref, 0);
-                free(pref);
-                if (m == 0)
-                    return strdup(val + i);
+            if (!longest) {
+                for (size_t i = 0; i <= vlen; i++) {
+                    char *pref = strndup(val, i);
+                    if (!pref) break;
+                    int m = fnmatch(pattern, pref, 0);
+                    free(pref);
+                    if (m == 0)
+                        return strdup(val + i);
+                }
+            } else {
+                for (size_t i = vlen;; i--) {
+                    char *pref = strndup(val, i);
+                    if (!pref) break;
+                    int m = fnmatch(pattern, pref, 0);
+                    free(pref);
+                    if (m == 0)
+                        return strdup(val + i);
+                    if (i == 0)
+                        break;
+                }
             }
             return strdup(val);
         } else {
-            for (size_t i = 0; i <= vlen; i++) {
-                char *suf = strdup(val + vlen - i);
-                if (!suf) break;
-                int m = fnmatch(pattern, suf, 0);
-                free(suf);
-                if (m == 0) {
-                    char *res = strndup(val, vlen - i);
-                    return res ? res : strdup("");
+            if (!longest) {
+                for (size_t i = 0; i <= vlen; i++) {
+                    char *suf = strdup(val + vlen - i);
+                    if (!suf) break;
+                    int m = fnmatch(pattern, suf, 0);
+                    free(suf);
+                    if (m == 0) {
+                        char *res = strndup(val, vlen - i);
+                        return res ? res : strdup("");
+                    }
+                }
+            } else {
+                for (size_t i = vlen;; i--) {
+                    char *suf = strdup(val + vlen - i);
+                    if (!suf) break;
+                    int m = fnmatch(pattern, suf, 0);
+                    free(suf);
+                    if (m == 0) {
+                        char *res = strndup(val, vlen - i);
+                        return res ? res : strdup("");
+                    }
+                    if (i == 0)
+                        break;
                 }
             }
             return strdup(val);
