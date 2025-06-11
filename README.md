@@ -67,8 +67,8 @@ Current version: 0.1.0
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
-   `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -m`/`set +m` and `set -o OPTION` such as
-   `pipefail` or `noclobber`
+  `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m` and `set -o OPTION` such as
+  `pipefail` or `noclobber`
 - `set --` can replace positional parameters inside the running shell
 - Array assignments and `${name[index]}` access
 - Here-documents (`<<`) and here-strings (`<<<`)
