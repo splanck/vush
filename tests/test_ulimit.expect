@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "ulimit -a\r"
 expect {
-    -re "\r\n-f (?:unlimited|[0-9]+)\r?\n-n (?:unlimited|[0-9]+)\r?\nvush> " {}
+    -re "\r\n-c (?:unlimited|[0-9]+)\r?\n-d (?:unlimited|[0-9]+)\r?\n-f (?:unlimited|[0-9]+)\r?\n-n (?:unlimited|[0-9]+)\r?\n-s (?:unlimited|[0-9]+)\r?\n-t (?:unlimited|[0-9]+)\r?\n-v (?:unlimited|[0-9]+)\r?\nvush> " {}
     timeout { send_user "ulimit -a output mismatch\n"; exit 1 }
 }
 send "ulimit -f 1234\r"

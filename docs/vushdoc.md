@@ -292,7 +292,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `help` - display information about built-in commands.
 - `time command [args...]` - run a command and print timing statistics.
 - `times` - print cumulative user/system CPU times.
-- `ulimit [-a|-f|-n [limit]]` - display or set resource limits.
+- `ulimit [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` - display or set resource limits.
 - `umask [-S] [mask]` - set or display the file creation mask. `mask` may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With `-S`, the mask is shown in symbolic form.
 
 ## Redirection Examples
@@ -336,6 +336,18 @@ vush> # continue using the shell
 vush> pushd /tmp
 /path/to/dir
 vush> popd
+```
+
+## Ulimit Example
+
+```
+vush> ulimit -s
+8192
+vush> ulimit -s 1024
+vush> ulimit -a | head -n 3
+-c 0
+-d unlimited
+-f unlimited
 ```
 
 ## Conditionals and Loops
