@@ -185,7 +185,8 @@ Wait for the specified job IDs or process IDs. With no arguments wait
 for all running jobs.
 .TP
 .B trap 'cmd' SIGNAL
-Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear.
+Run \fIcmd\fP when \fISIGNAL\fP is received. Use "trap SIGNAL" to clear. Use
+"EXIT" or "0" to run \fIcmd\fP when the shell exits.
 .TP
 .B export NAME=value
 Set an environment variable for the shell.

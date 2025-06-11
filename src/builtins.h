@@ -53,6 +53,8 @@ int builtin_continue(char **args);
 int builtin_cond(char **args);
 
 extern char *trap_cmds[NSIG];
+extern char *exit_trap_cmd;
+void run_exit_trap(void);
 int builtin_trap(char **args);
 
 #endif /* BUILTINS_H */
