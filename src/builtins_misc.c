@@ -570,6 +570,25 @@ int builtin_test(char **args) {
             res = (atoi(av[0]) >= atoi(av[2])) ? 0 : 1;
         else if (strcmp(av[1], "-le") == 0)
             res = (atoi(av[0]) <= atoi(av[2])) ? 0 : 1;
+        else if (strcmp(av[1], "-nt") == 0) {
+            struct stat st1, st2;
+            if (stat(av[0], &st1) == 0 && stat(av[2], &st2) == 0)
+                res = (st1.st_mtime > st2.st_mtime) ? 0 : 1;
+            else
+                res = 1;
+        } else if (strcmp(av[1], "-ot") == 0) {
+            struct stat st1, st2;
+            if (stat(av[0], &st1) == 0 && stat(av[2], &st2) == 0)
+                res = (st1.st_mtime < st2.st_mtime) ? 0 : 1;
+            else
+                res = 1;
+        } else if (strcmp(av[1], "-ef") == 0) {
+            struct stat st1, st2;
+            if (stat(av[0], &st1) == 0 && stat(av[2], &st2) == 0)
+                res = (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino) ? 0 : 1;
+            else
+                res = 1;
+        }
     }
     last_status = res;
     return 1;

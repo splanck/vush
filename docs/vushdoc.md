@@ -298,7 +298,8 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.  Supports
   string comparisons, numeric operators and POSIX unary file tests such as
   `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`, `-O`,
-  `-G`, `-u`, `-g`, `-k`, `-S` and `-t`.
+  `-G`, `-u`, `-g`, `-k`, `-S` and `-t`. Binary comparisons `file1 -nt file2`,
+  `file1 -ot file2` and `file1 -ef file2` are also available.
 - `[[ EXPR ]]` - evaluate a conditional expression with pattern matching.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
@@ -396,6 +397,8 @@ vush> j=2; until test $j -eq 0; do echo $j; j=$(expr $j - 1); done
 1
 vush> if test -h /bin/sh; then echo link; fi
 link
+vush> test file1 -nt file2 && echo newer
+vush> test file1 -ef link && echo same
 vush> i=0; while true; do echo $i; break; done
 0
 vush> case 1 in 1) echo one ;& 2) echo two ;; esac
