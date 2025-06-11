@@ -1,3 +1,6 @@
+This guide complements the revamped [vush.1](vush.1) manual page with
+detailed explanations and examples.
+
 ## Synopsis
 
 `vush [scriptfile]`
