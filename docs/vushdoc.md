@@ -85,7 +85,15 @@ vush> echo $?
 0
 vush> echo $(echo hi)
 hi
+vush> echo $$
+12345
+vush> sleep 1 &
+vush> echo $!
+12346
 ```
+
+`$$` expands to the PID of the running shell while `$!` gives the PID of the
+most recent background job.
 
 Additional parameter expansion forms (doubling `#` or `%` removes the
 longest matching prefix or suffix):

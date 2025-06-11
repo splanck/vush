@@ -31,6 +31,8 @@ typedef struct Job {
 
 static Job *jobs = NULL;
 static int next_job_id = 1;
+/* PID of the most recently started background job */
+pid_t last_bg_pid = 0;
 
 /*
  * Record a child process that was started in the background.
@@ -39,6 +41,7 @@ static int next_job_id = 1;
 void add_job(pid_t pid, const char *cmd) {
     Job *job = malloc(sizeof(Job));
     if (!job) return;
+    last_bg_pid = pid;
     job->id = next_job_id++;
     job->pid = pid;
     strncpy(job->cmd, cmd, MAX_LINE - 1);

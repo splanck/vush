@@ -16,8 +16,9 @@ Current version: 0.1.0
   `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias`, `unset`, `wait`, and `:`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
-  `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
+- `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
+- `$$` expands to the PID of the running shell and `$!` to the last background job
  - Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`,
    re-enable with `set +f`)
 - Brace expansion for patterns like `{foo,bar}` and `{1..3}`

@@ -4,6 +4,7 @@
 #include "builtins.h"
 #include "scriptargs.h"
 #include "options.h"
+#include "jobs.h"
 #include "arith.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -361,6 +362,19 @@ static char *expand_braced(const char *inner) {
 
 /* Expand special parameters such as $?, $#, $@, $*, and positional arguments. */
 static char *expand_special(const char *token) {
+    if (strcmp(token, "$$") == 0) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%d", (int)getpid());
+        return strdup(buf);
+    }
+    if (strcmp(token, "$!") == 0) {
+        char buf[16];
+        if (last_bg_pid == 0)
+            buf[0] = '\0';
+        else
+            snprintf(buf, sizeof(buf), "%d", (int)last_bg_pid);
+        return strdup(buf);
+    }
     if (strcmp(token, "$?") == 0) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%d", last_status);
