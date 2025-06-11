@@ -296,16 +296,22 @@ int builtin_exec(char **args) {
 
 /* Execute a command ignoring any shell aliases or functions. */
 int builtin_command(char **args) {
+    static const char fallback[] = "/bin:/usr/bin";
     int i = 1;
-    int opt_v = 0, opt_V = 0;
+    int opt_v = 0, opt_V = 0, opt_p = 0;
 
-    if (args[i] && args[i][0] == '-' && !args[i][2]) {
-        if (args[i][1] == 'v') { opt_v = 1; i++; }
-        else if (args[i][1] == 'V') { opt_V = 1; i++; }
+    while (args[i] && args[i][0] == '-' && args[i][1]) {
+        for (int k = 1; args[i][k]; k++) {
+            if (args[i][k] == 'v') opt_v = 1;
+            else if (args[i][k] == 'V') opt_V = 1;
+            else if (args[i][k] == 'p') opt_p = 1;
+            else break;
+        }
+        i++;
     }
 
     if (!args[i]) {
-        fprintf(stderr, "usage: command [-v|-V] name [args...]\n");
+        fprintf(stderr, "usage: command [-p|-v|-V] name [args...]\n");
         return 1;
     }
 
@@ -341,9 +347,9 @@ int builtin_command(char **args) {
             }
             if (is_builtin)
                 continue;
-            const char *pathenv = getenv("PATH");
-            if (!pathenv)
-                pathenv = "/bin:/usr/bin";
+            const char *pathenv = opt_p ? fallback : getenv("PATH");
+            if (!pathenv || !*pathenv)
+                pathenv = fallback;
             char *paths = strdup(pathenv);
             if (!paths)
                 continue;
@@ -376,6 +382,8 @@ int builtin_command(char **args) {
 
     pid_t pid = fork();
     if (pid == 0) {
+        if (opt_p)
+            setenv("PATH", fallback, 1);
         execvp(args[i], &args[i]);
         perror(args[i]);
         _exit(127);
