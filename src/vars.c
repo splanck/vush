@@ -72,6 +72,25 @@ void print_readonly_vars(void)
     }
 }
 
+void print_shell_vars(void)
+{
+    for (struct var_entry *v = shell_vars; v; v = v->next) {
+        if (v->array) {
+            printf("%s=(", v->name);
+            for (int i = 0; i < v->array_len; i++) {
+                if (i)
+                    printf(" ");
+                printf("%s", v->array[i]);
+            }
+            printf(")\n");
+        } else if (v->value) {
+            printf("%s=%s\n", v->name, v->value);
+        } else {
+            printf("%s=\n", v->name);
+        }
+    }
+}
+
 struct local_var {
     char *name;
     char *value;

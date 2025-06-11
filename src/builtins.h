@@ -42,6 +42,7 @@ Command *get_function(const char *name);
 void remove_function(const char *name);
 void load_functions(void);
 void free_functions(void);
+void print_functions(void);
 int builtin_local(char **args);
 int builtin_break(char **args);
 int builtin_continue(char **args);

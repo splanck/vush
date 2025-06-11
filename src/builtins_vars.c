@@ -64,6 +64,12 @@ int builtin_shift(char **args) {
  * result in an error message.  The function always returns 1.
  */
 int builtin_set(char **args) {
+    if (!args[1]) {
+        print_shell_vars();
+        print_functions();
+        return 1;
+    }
+
     int i = 1;
     for (; args[i]; i++) {
         if (strcmp(args[i], "--") == 0) {

@@ -262,7 +262,8 @@ undefined variables, \-x prints each command before execution, -n parses command
 command and \-o noclobber prevents `>` from overwriting existing files.
 Use \+o with the option name to disable it again.  If any arguments
 remain after option processing, they replace the positional parameters
-`$1`, `$2`, ... and `$#`.
+`$1`, `$2`, ... and `$#`. When called with no operands, all shell
+variables and functions are printed in a reusable form.
 .TP
 Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
 .TP

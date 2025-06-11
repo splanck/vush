@@ -12,5 +12,6 @@ void pop_local_scope(void);
 void add_readonly(const char *name);
 void record_local_var(const char *name);
 void print_readonly_vars(void);
+void print_shell_vars(void);
 
 #endif /* VARS_H */
