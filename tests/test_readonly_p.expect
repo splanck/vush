@@ -6,7 +6,7 @@ send "readonly FOO=bar\r"
 expect "vush> "
 send "readonly -p\r"
 expect {
-    -re "readonly FOO=bar" {}
+    -re "readonly FOO=bar\r?\n" {}
     timeout { send_user "readonly -p output mismatch\n"; exit 1 }
 }
 send "exit\r"

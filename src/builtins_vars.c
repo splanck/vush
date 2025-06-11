@@ -275,17 +275,29 @@ int builtin_export(char **args) {
 }
 
 int builtin_readonly(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: readonly NAME[=VALUE]...\n");
-        return 1;
+    int pflag = 0;
+    int i = 1;
+
+    for (; args[i] && args[i][0] == '-'; i++) {
+        if (strcmp(args[i], "-p") == 0) {
+            pflag = 1;
+        } else {
+            fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n");
+            return 1;
+        }
     }
 
-    if (strcmp(args[1], "-p") == 0 && !args[2]) {
+    if (pflag && !args[i]) {
         print_readonly_vars();
         return 1;
     }
 
-    for (int i = 1; args[i]; i++) {
+    if (!args[i]) {
+        fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n");
+        return 1;
+    }
+
+    for (; args[i]; i++) {
         char *arg = args[i];
         char *eq = strchr(arg, '=');
         if (eq) {
