@@ -571,34 +571,39 @@ static int exec_group(Command *cmd, const char *line) {
 int run_pipeline(Command *cmd, const char *line) {
     if (!cmd)
         return 0;
-
+    int r = 0;
     switch (cmd->type) {
     case CMD_PIPELINE:
-        return exec_pipeline(cmd, line);
+        r = exec_pipeline(cmd, line); break;
     case CMD_FUNCDEF:
-        return exec_funcdef(cmd, line);
+        r = exec_funcdef(cmd, line); break;
     case CMD_IF:
-        return exec_if(cmd, line);
+        r = exec_if(cmd, line); break;
     case CMD_WHILE:
-        return exec_while(cmd, line);
+        r = exec_while(cmd, line); break;
     case CMD_UNTIL:
-        return exec_until(cmd, line);
+        r = exec_until(cmd, line); break;
     case CMD_FOR:
-        return exec_for(cmd, line);
+        r = exec_for(cmd, line); break;
     case CMD_SELECT:
-        return exec_select(cmd, line);
+        r = exec_select(cmd, line); break;
     case CMD_FOR_ARITH:
-        return exec_for_arith(cmd, line);
+        r = exec_for_arith(cmd, line); break;
     case CMD_CASE:
-        return exec_case(cmd, line);
+        r = exec_case(cmd, line); break;
     case CMD_SUBSHELL:
-        return exec_subshell(cmd, line);
+        r = exec_subshell(cmd, line); break;
     case CMD_COND:
-        return exec_cond(cmd, line);
+        r = exec_cond(cmd, line); break;
     case CMD_GROUP:
-        return exec_group(cmd, line);
+        r = exec_group(cmd, line); break;
     default:
-        return 0;
+        r = 0; break;
     }
+    if (cmd->negate) {
+        last_status = (r == 0 ? 1 : 0);
+        r = last_status;
+    }
+    return r;
 }
 

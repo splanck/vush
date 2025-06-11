@@ -90,6 +90,12 @@ vush> echo $$
 vush> sleep 1 &
 vush> echo $!
 12346
+vush> ! true
+vush> echo $?
+1
+vush> ! false
+vush> echo $?
+0
 ```
 
 `$$` expands to the PID of the running shell while `$!` gives the PID of the

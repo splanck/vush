@@ -460,10 +460,24 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
 
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
     while (**p == ' ' || **p == '\t') (*p)++;
+    int negate = 0;
+    if (**p == '!') {
+        negate = 1;
+        (*p)++;
+        while (**p == ' ' || **p == '\t') (*p)++;
+    }
     if (**p == '(')
-        return parse_subshell(p, op_out);
+    {
+        Command *cmd = parse_subshell(p, op_out);
+        if (cmd) cmd->negate = negate;
+        return cmd;
+    }
     if (**p == '{')
-        return parse_brace_group(p, op_out);
+    {
+        Command *cmd = parse_brace_group(p, op_out);
+        if (cmd) cmd->negate = negate;
+        return cmd;
+    }
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;
     seg_head->dup_err = -1;
@@ -481,6 +495,7 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     Command *cmd = calloc(1, sizeof(Command));
     cmd->pipeline = seg_head;
     cmd->background = background;
+    cmd->negate = negate;
     cmd->op = op;
     clear_temp_vars();
     if (op_out) *op_out = op;

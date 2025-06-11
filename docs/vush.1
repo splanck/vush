@@ -6,7 +6,7 @@ vush \- simple UNIX shell
 .RI [ scriptfile ]
 .SH DESCRIPTION
 vush is a lightweight UNIX shell supporting command execution,
-pipelines, brace groups using '{ ... ; }', subshells using '(...)', command chaining with ';', '&&' and '||',
+pipelines, brace groups using '{ ... ; }', subshells using '(...)', command chaining with ';', '&&' and '||', and negation with '! cmd',
 environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
 \fB${VAR:-word}\fP, \fB${VAR:=word}\fP, \fB${VAR:+word}\fP, \fB${VAR#pat}\fP,
 \fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status, "$$" the shell PID and "$!" the last background job),

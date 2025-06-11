@@ -28,6 +28,7 @@ Current version: 0.1.0
 - Simple pipelines using `|` to connect commands
 - Process substitution using `<(cmd)` and `>(cmd)`
 - Command chaining with `;`, `&&`, and `||`
+- Command negation using `! command`
 - Subshells using `( ... )` to group commands
 - Brace groups using `{ ... ; }` executed in the current shell
 - Shell functions using `name() { ... }` syntax and a `return` builtin
