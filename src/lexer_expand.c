@@ -406,6 +406,11 @@ static char *expand_special(const char *token) {
         flags[pos] = '\0';
         return strdup(flags);
     }
+    if (strcmp(token, "$LINENO") == 0 || strcmp(token, "${LINENO}") == 0) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%d", current_lineno);
+        return strdup(buf);
+    }
     if (strcmp(token, "$@") == 0) {
         if (!script_argv || script_argc == 0)
             return strdup("");
