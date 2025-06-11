@@ -151,6 +151,12 @@ static void list_aliases(void)
         printf("%s='%s'\n", a->name, a->value);
 }
 
+static void list_aliases_p(void)
+{
+    for (struct alias_entry *a = aliases; a; a = a->next)
+        printf("alias %s='%s'\n", a->name, a->value);
+}
+
 /* Save aliases and free all alias list entries. */
 void free_aliases(void)
 {
@@ -173,6 +179,24 @@ int builtin_alias(char **args)
         list_aliases();
         return 1;
     }
+
+    if (strcmp(args[1], "-p") == 0 && !args[2]) {
+        list_aliases_p();
+        return 1;
+    }
+
+    if (!args[2]) {
+        char *eq = strchr(args[1], '=');
+        if (!eq) {
+            const char *val = get_alias(args[1]);
+            if (val)
+                printf("%s='%s'\n", args[1], val);
+            else
+                fprintf(stderr, "alias: %s: not found\n", args[1]);
+            return 1;
+        }
+    }
+
     for (int i = 1; args[i]; i++) {
         char *eq = strchr(args[i], '=');
         if (!eq) {
