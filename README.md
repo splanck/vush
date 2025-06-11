@@ -165,6 +165,10 @@ environment variables:
 - `PS2` is shown when more input is needed, such as for unmatched quotes.
 - `PS3` is the prompt used by the `select` builtin.
 - `PS4` prefixes trace output produced by `set -x`.
+- `MAIL` names a mailbox file checked before each prompt. A notice is printed
+  when it is modified.
+- `MAILPATH` may list multiple mailbox files separated by `:`. Each triggers a
+  `New mail in <file>` message when updated.
 - `CDPATH` provides directories searched by `cd` for relative paths. `cd` also
   accepts `-L` (logical, default) and `-P` (physical) to control how paths are
   resolved. With `-L` `PWD` reflects the logical path while `-P` resolves the

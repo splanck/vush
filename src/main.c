@@ -21,6 +21,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <limits.h>
 #include "common.h"
 
 #include "parser.h"
@@ -59,6 +61,7 @@ int current_lineno = 0;
 static void process_rc_file(const char *path, FILE *input);
 static void process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
+static void check_mail(void);
 static void repl_loop(FILE *input);
 
 /*
@@ -227,6 +230,88 @@ static void run_command_string(const char *cmd)
 }
 
 /*
+ * Check mailbox files specified by $MAIL or $MAILPATH and print a
+ * notification when new mail arrives. The last modification time of each
+ * path is remembered so messages are only shown when the file is updated
+ * between prompts.
+ */
+typedef struct MailEntry {
+    char *path;
+    time_t mtime;
+    struct MailEntry *next;
+} MailEntry;
+
+static MailEntry *mail_list = NULL;
+
+static MailEntry *find_mail_entry(const char *path)
+{
+    for (MailEntry *e = mail_list; e; e = e->next)
+        if (strcmp(e->path, path) == 0)
+            return e;
+    return NULL;
+}
+
+static void remember_mail_time(const char *path, time_t mtime)
+{
+    MailEntry *e = find_mail_entry(path);
+    if (e) {
+        e->mtime = mtime;
+        return;
+    }
+    e = malloc(sizeof(*e));
+    if (!e)
+        return;
+    e->path = strdup(path);
+    if (!e->path) {
+        free(e);
+        return;
+    }
+    e->mtime = mtime;
+    e->next = mail_list;
+    mail_list = e;
+}
+
+static void check_mail(void)
+{
+    char *mpath = getenv("MAILPATH");
+    char *mail = getenv("MAIL");
+    char *list[64];
+    int count = 0;
+
+    if (mpath && *mpath) {
+        char *dup = strdup(mpath);
+        if (!dup)
+            return;
+        char *tok = strtok(dup, ":");
+        while (tok && count < 64) {
+            list[count++] = tok;
+            tok = strtok(NULL, ":");
+        }
+        for (int i = 0; i < count; i++) {
+            struct stat st;
+            if (stat(list[i], &st) == 0) {
+                MailEntry *e = find_mail_entry(list[i]);
+                if (e && st.st_mtime > e->mtime)
+                    printf("New mail in %s\n", list[i]);
+                remember_mail_time(list[i], st.st_mtime);
+            }
+        }
+        free(dup);
+        return;
+    }
+
+    if (mail && *mail) {
+        struct stat st;
+        if (stat(mail, &st) == 0) {
+            MailEntry *e = find_mail_entry(mail);
+            if (e && st.st_mtime > e->mtime)
+                printf("You have mail.\n");
+            remember_mail_time(mail, st.st_mtime);
+        }
+    }
+}
+
+/*
  * Primary read‑eval‑print loop. Reads a line from the given input (stdin
  * or a script), expands history, parses and executes it. In interactive
  * mode a prompt is displayed and background jobs are checked each
@@ -245,6 +330,7 @@ static void repl_loop(FILE *input)
             while (waitpid(-1, NULL, WNOHANG) > 0)
                 ;
         if (interactive) {
+            check_mail();
             const char *ps = getenv("PS1");
             char *prompt = expand_prompt(ps ? ps : "vush> ");
             history_reset_cursor();
