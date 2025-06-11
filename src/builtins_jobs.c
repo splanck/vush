@@ -174,6 +174,20 @@ int builtin_kill(char **args) {
         }
     }
 
+    if (list && args[idx] && !args[idx + 1]) {
+        int t = sig_from_name(args[idx]);
+        if (t <= 0 || t >= NSIG) {
+            fprintf(stderr, "kill: invalid signal %s\n", args[idx]);
+            return 1;
+        }
+        const char *name = name_from_sig(t);
+        if (name)
+            printf("%s\n", name);
+        else
+            printf("%d\n", t);
+        return 1;
+    }
+
     if (list && !args[idx]) {
         list_signals();
         return 1;
