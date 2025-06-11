@@ -22,9 +22,12 @@
 #include <signal.h>
 #include <unistd.h>
 
+typedef enum { JOB_RUNNING, JOB_STOPPED } JobState;
+
 typedef struct Job {
     int id;
     pid_t pid;
+    JobState state;
     char cmd[MAX_LINE];
     struct Job *next;
 } Job;
@@ -44,6 +47,7 @@ void add_job(pid_t pid, const char *cmd) {
     last_bg_pid = pid;
     job->id = next_job_id++;
     job->pid = pid;
+    job->state = JOB_RUNNING;
     strncpy(job->cmd, cmd, MAX_LINE - 1);
     job->cmd[MAX_LINE - 1] = '\0';
     job->next = jobs;
@@ -90,10 +94,44 @@ void check_jobs(void) {
  * Display the list of active background jobs.  Used by the `jobs`
  * builtin to show the user what is currently running.
  */
-void print_jobs(void) {
+static const char *job_state_str(JobState s) {
+    return s == JOB_STOPPED ? "Stopped" : "Running";
+}
+
+static Job *find_job(int id) {
+    Job *curr = jobs;
+    while (curr) {
+        if (curr->id == id)
+            return curr;
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+static void print_job(Job *j, int mode) {
+    if (mode == 2) {
+        printf("%d\n", j->pid);
+    } else if (mode == 1) {
+        printf("[%d] %d %s %s\n", j->id, j->pid, job_state_str(j->state), j->cmd);
+    } else {
+        printf("[%d] %d %s\n", j->id, j->pid, j->cmd);
+    }
+}
+
+void print_jobs(int mode, int count, int *ids) {
+    if (count > 0) {
+        for (int i = 0; i < count; i++) {
+            Job *j = find_job(ids[i]);
+            if (j)
+                print_job(j, mode);
+            else
+                fprintf(stderr, "jobs: %d: no such job\n", ids[i]);
+        }
+        return;
+    }
     Job *j = jobs;
     while (j) {
-        printf("[%d] %d %s\n", j->id, j->pid, j->cmd);
+        print_job(j, mode);
         j = j->next;
     }
 }
@@ -142,6 +180,10 @@ int kill_job(int id, int sig) {
                 perror("kill");
                 return -1;
             }
+            if (sig == SIGSTOP)
+                curr->state = JOB_STOPPED;
+            else if (sig == SIGCONT)
+                curr->state = JOB_RUNNING;
             return 0;
         }
         curr = curr->next;
@@ -162,6 +204,7 @@ int bg_job(int id) {
                 perror("bg");
                 return -1;
             }
+            curr->state = JOB_RUNNING;
             return 0;
         }
         curr = curr->next;

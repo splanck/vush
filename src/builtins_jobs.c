@@ -13,14 +13,32 @@
 #include "jobs.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <sys/wait.h>
 
-/* builtin_jobs - usage: jobs
- * Print the list of background jobs recorded by jobs.c and return 1. */
+/* builtin_jobs - usage: jobs [-l|-p] [ID...] */
 int builtin_jobs(char **args) {
-    (void)args;
-    print_jobs();
+    int mode = 0; /* 0=normal, 1=long, 2=pids */
+    int idx = 1;
+    for (; args[idx] && args[idx][0] == '-' && args[idx][1]; idx++) {
+        if (strcmp(args[idx], "-l") == 0) {
+            mode = 1;
+        } else if (strcmp(args[idx], "-p") == 0) {
+            mode = 2;
+        } else {
+            fprintf(stderr, "usage: jobs [-l|-p] [ID...]\n");
+            return 1;
+        }
+    }
+
+    int ids[64];
+    int count = 0;
+    for (; args[idx]; idx++) {
+        ids[count++] = atoi(args[idx]);
+    }
+
+    print_jobs(mode, count, ids);
     return 1;
 }
 
