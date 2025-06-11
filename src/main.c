@@ -53,6 +53,7 @@ int opt_noexec = 0;
 int opt_noglob = 0;
 int opt_allexport = 0;
 int opt_monitor = 1;
+int opt_notify = 1;
 int current_lineno = 0;
 
 static void process_rc_file(const char *path, FILE *input);

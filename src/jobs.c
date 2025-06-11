@@ -82,7 +82,7 @@ void check_jobs(void) {
     int status;
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        if (opt_monitor) {
+        if (opt_monitor && opt_notify) {
             Job *curr = jobs;
             while (curr && curr->pid != pid)
                 curr = curr->next;
