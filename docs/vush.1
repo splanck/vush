@@ -299,6 +299,14 @@ Alias for \fBsource\fP.
 .TP
 .B help
 Display information about built-in commands.
+.SH CONFIGURATION
+If \fB~/.vushrc\fP is present, it is read before the first prompt so startup
+behavior can be customized.  Command history is stored in the file named by
+\fBVUSH_HISTFILE\fP and limited by \fBVUSH_HISTSIZE\fP.  Persistent aliases and
+functions come from \fBVUSH_ALIASFILE\fP and \fBVUSH_FUNCFILE\fP respectively.
+Users may adjust \fBPS1\fP for the prompt and set \fBCDPATH\fP to search
+additional directories with \fBcd\fP.  See the ENVIRONMENT section for default
+paths and variable descriptions.
 .SH ENVIRONMENT
 .TP
 .B PS1
