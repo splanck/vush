@@ -197,8 +197,8 @@ Mark each variable as read-only and optionally assign VALUE.
 Mark each variable as local to the current function. Previous values are
 restored when the function returns.
 .TP
-.B unset \fIname\fP
-Remove an environment variable.
+.B unset [-f] \fIname\fP
+Remove an environment variable or, with \fB-f\fP, delete a function.
 .TP
 .B history [-c | -d \fInum\fP]
 Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB-d\fP.

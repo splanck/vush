@@ -229,7 +229,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `export NAME=value` - set an environment variable for the shell.
 - `readonly NAME[=VALUE]` - mark a variable as read-only.
 - `local NAME[=VALUE]` - define a variable scoped to the current function.
-- `unset NAME` - remove an environment variable.
+- `unset [-f] NAME` - remove an environment variable or function with `-f`.
 - `history [-c|-d NUMBER]` - show command history, clear it with `-c`, or delete a specific entry with `-d`.
   Entries are read from and written to the file specified by `VUSH_HISTFILE`
   (default `~/.vush_history`). History size is controlled by the
