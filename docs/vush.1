@@ -313,8 +313,10 @@ printed in octal. The
 .B \-S
 option causes the mask to be displayed in symbolic form (e.g.,
 .B u=rwx,g=rx,o=rx
-). When MODE is supplied it is interpreted as an octal number and becomes
-the new mask. If MODE is given together with
+). When MODE is supplied it may be an octal number or a symbolic string
+(like the output of
+.B \-S)
+and becomes the new mask. If MODE is given together with
 .B \-S,
 the mask is set and then printed symbolically.
 .TP

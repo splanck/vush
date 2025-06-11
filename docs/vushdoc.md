@@ -283,7 +283,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `time command [args...]` - run a command and print timing statistics.
 - `times` - print cumulative user/system CPU times.
 - `ulimit [-a|-f|-n [limit]]` - display or set resource limits.
-- `umask [-S] [mask]` - set or display the file creation mask. With `-S`, the mask is shown in symbolic form like `u=rwx,g=rx,o=rx`.
+- `umask [-S] [mask]` - set or display the file creation mask. `mask` may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With `-S`, the mask is shown in symbolic form.
 
 ## Redirection Examples
 
