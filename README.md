@@ -18,6 +18,7 @@ Current version: 0.1.0
 
 - `export -p` lists all exported variables and `export -n NAME` removes the export
   attribute while leaving the variable defined.
+- `readonly -p` prints all read-only variables using `readonly NAME=value` format.
 
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,

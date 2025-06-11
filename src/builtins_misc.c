@@ -426,7 +426,7 @@ int builtin_help(char **args) {
     printf("  bg ID      Continue job ID in background\n");
     printf("  kill [-s SIG|-SIGNAL] [-l] ID|PID  Send a signal or list signals\n");
     printf("  export [-p|-n NAME] NAME=value  Manage exported variables\n");
-    printf("  readonly NAME[=VALUE]  Mark variable as read-only\n");
+    printf("  readonly [-p] NAME[=VALUE]  Mark variable as read-only or list them\n");
     printf("  unset NAME          Remove an environment variable\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  hash [-r] [name...]   Manage cached command paths\n");

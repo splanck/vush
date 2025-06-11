@@ -200,7 +200,8 @@ lists all exported variables. Using \fB-n\fP \fIname\fP removes the export
 attribute from \fIname\fP without unsetting it.
 .TP
 .B readonly [-p] NAME[=VALUE]...
-Mark each variable as read-only or list all read-only variables.
+Mark each variable as read-only or list all read-only variables. When listing,
+the variables are printed as \fBreadonly NAME=value\fP.
 .TP
 .B local \fIname\fP[=value] ...
 Mark each variable as local to the current function. Previous values are
