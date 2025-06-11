@@ -36,21 +36,55 @@ int builtin_history(char **args)
 }
 
 /* Replay or edit commands from history. */
+static char *replace_first(const char *str, const char *old, const char *new)
+{
+    const char *p = strstr(str, old);
+    if (!p)
+        return strdup(str);
+    size_t pre = (size_t)(p - str);
+    size_t oldlen = strlen(old);
+    size_t newlen = strlen(new);
+    size_t len = pre + newlen + strlen(p + oldlen);
+    char *res = malloc(len + 1);
+    if (!res)
+        return NULL;
+    memcpy(res, str, pre);
+    memcpy(res + pre, new, newlen);
+    strcpy(res + pre + newlen, p + oldlen);
+    return res;
+}
+
 int builtin_fc(char **args)
 {
     int list = 0;
+    int nonum = 0;
+    int rev = 0;
+    int immediate = 0;
     const char *editor = NULL;
+    const char *subst = NULL;
     int i = 1;
     for (; args[i] && args[i][0] == '-'; i++) {
         if (strcmp(args[i], "-l") == 0) {
             list = 1;
+        } else if (strcmp(args[i], "-n") == 0) {
+            nonum = 1;
+        } else if (strcmp(args[i], "-r") == 0) {
+            rev = 1;
+        } else if (strcmp(args[i], "-s") == 0) {
+            immediate = 1;
         } else if (strcmp(args[i], "-e") == 0 && args[i+1]) {
             editor = args[i+1];
             i++;
         } else {
-            fprintf(stderr, "usage: fc [-l] [-e editor] [first [last]]\n");
+            fprintf(stderr,
+                    "usage: fc [-lnr] [-e editor] [first [last]] | fc -s [old=new] [command]\n");
             return 1;
         }
+    }
+
+    if (immediate && list) {
+        fprintf(stderr, "fc: -s cannot be used with -l\n");
+        return 1;
     }
 
     int max_id = 1;
@@ -59,6 +93,44 @@ int builtin_fc(char **args)
     max_id -= 1;
     if (max_id <= 0)
         return 1;
+
+    if (immediate) {
+        if (args[i] && strchr(args[i], '=')) {
+            subst = args[i];
+            i++;
+        }
+        int id = max_id;
+        if (args[i]) {
+            id = atoi(args[i]);
+            if (id < 0)
+                id = max_id + id + 1;
+        }
+        if (id <= 0 || id > max_id) {
+            fprintf(stderr, "fc: history range out of bounds\n");
+            return 1;
+        }
+
+        const char *cmd = history_get_by_id(id);
+        char *temp = NULL;
+        if (subst) {
+            char *eq = strchr(subst, '=');
+            if (!eq)
+                return 1;
+            char old[eq - subst + 1];
+            memcpy(old, subst, eq - subst);
+            old[eq - subst] = '\0';
+            const char *new = eq + 1;
+            temp = replace_first(cmd, old, new);
+            cmd = temp ? temp : cmd;
+        }
+        printf("%s\n", cmd);
+        Command *cmds = parse_line(cmd);
+        if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
+            run_command_list(cmds, cmd);
+        free_commands(cmds);
+        free(temp);
+        return 1;
+    }
 
     int first_id = max_id;
     int last_id = max_id;
@@ -78,17 +150,27 @@ int builtin_fc(char **args)
         fprintf(stderr, "fc: history range out of bounds\n");
         return 1;
     }
-    if (first_id > last_id) {
-        int tmp = first_id;
-        first_id = last_id;
-        last_id = tmp;
+
+    int start = first_id;
+    int end = last_id;
+    if (!rev && start > end) {
+        int tmp = start; start = end; end = tmp;
+    } else if (rev && start < end) {
+        int tmp = start; start = end; end = tmp;
     }
+    int step = (start <= end) ? 1 : -1;
 
     if (list) {
-        for (int id = first_id; id <= last_id; id++) {
+        for (int id = start;; id += step) {
             const char *cmd = history_get_by_id(id);
-            if (cmd)
-                printf("%d %s\n", id, cmd);
+            if (cmd) {
+                if (nonum)
+                    printf("%s\n", cmd);
+                else
+                    printf("%d %s\n", id, cmd);
+            }
+            if (id == end)
+                break;
         }
         return 1;
     }
@@ -106,10 +188,12 @@ int builtin_fc(char **args)
         unlink(tmpname);
         return 1;
     }
-    for (int id = first_id; id <= last_id; id++) {
+    for (int id = start;; id += step) {
         const char *cmd = history_get_by_id(id);
         if (cmd)
             fprintf(f, "%s\n", cmd);
+        if (id == end)
+            break;
     }
     fflush(f);
 

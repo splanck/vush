@@ -200,8 +200,20 @@ echo /tmp
 ```
 
 The `fc` builtin can replay or edit previous commands. `fc -l` prints the
-specified range while `fc -e editor` opens the commands in `editor` and then
-executes them.
+specified range and with `-n` the command numbers are omitted. `-r` reverses the
+order of the range. Without `-l` the commands are edited using `-e editor`
+(defaulting to `$FCEDIT` or `ed`). The `-s` option immediately re-executes the
+selected command, optionally replacing the first occurrence of `old` with
+`new`.
+
+```sh
+vush> fc -l -2
+1 echo hi
+2 ls
+vush> fc -s hi=hello 1
+echo hello
+hello
+```
 
 ## Assignments
 
@@ -280,7 +292,9 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   Entries are read from and written to the file specified by `VUSH_HISTFILE`
   (default `~/.vush_history`). History size is controlled by the
   `VUSH_HISTSIZE` environment variable (default 1000).
-- `fc [-l] [-e editor] [first [last]]` - list or edit previous commands.
+- `fc [-lnr] [-e editor] [first [last]]` - list or edit previous commands.
+  Use `-s [old=new] [command]` to immediately run a command with optional
+  text replacement.
 - `hash [-r] [name...]` - manage cached command paths.
 - `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
 - `unalias [-a] NAME` - remove aliases. With `-a` all aliases are cleared.
