@@ -330,7 +330,7 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
 - `help` - display information about built-in commands.
 - `time command [args...]` - run a command and print timing statistics.
 - `times` - print cumulative user/system CPU times.
-- `ulimit [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` - display or set resource limits.
+- `ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` - display or set resource limits.
 - `umask [-S] [mask]` - set or display the file creation mask. `mask` may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With `-S`, the mask is shown in symbolic form.
 
 ## Redirection Examples
@@ -382,9 +382,10 @@ vush> popd
 ## Ulimit Example
 
 ```
-vush> ulimit -s
+vush> ulimit -S -s
 8192
-vush> ulimit -s 1024
+vush> ulimit -S -s 1024
+vush> ulimit -H -n 4096
 vush> ulimit -a | head -n 3
 -c 0
 -d unlimited

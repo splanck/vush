@@ -468,7 +468,7 @@ int builtin_help(char **args) {
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  test EXPR ([ EXPR ])  Evaluate a test expression\n");
-    printf("  ulimit [-a|-f|-n] [limit]  Display or set resource limits\n");
+    printf("  ulimit [-HS] [-a|-f|-n] [limit]  Display or set resource limits\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  exec CMD [ARGS]  Replace the shell with CMD\n");
     printf("  source FILE [ARGS...] (. FILE [ARGS...])\n");
@@ -815,10 +815,15 @@ int builtin_ulimit(char **args)
 
     int resource = RLIMIT_FSIZE;
     int show_all = 0;
+    int hard = 0; /* default to soft limit */
     int i = 1;
     for (; args[i] && args[i][0] == '-'; i++) {
         if (strcmp(args[i], "-a") == 0) {
             show_all = 1;
+        } else if (strcmp(args[i], "-H") == 0) {
+            hard = 1;
+        } else if (strcmp(args[i], "-S") == 0) {
+            hard = 0;
         } else if (args[i][1] && !args[i][2]) {
             int found = 0;
             for (int m = 0; map[m].opt; m++) {
@@ -829,28 +834,29 @@ int builtin_ulimit(char **args)
                 }
             }
             if (!found) {
-                fprintf(stderr, "usage: ulimit [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+                fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
                 return 1;
             }
         } else {
-            fprintf(stderr, "usage: ulimit [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
             return 1;
         }
     }
 
     if (show_all) {
         if (args[i]) {
-            fprintf(stderr, "usage: ulimit [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
             return 1;
         }
         struct rlimit rl;
         for (int m = 0; map[m].opt; m++) {
             if (getrlimit(map[m].r, &rl) == 0) {
-                if (rl.rlim_cur == RLIM_INFINITY)
+                rlim_t val = hard ? rl.rlim_max : rl.rlim_cur;
+                if (val == RLIM_INFINITY)
                     printf("-%c unlimited\n", map[m].opt);
                 else
                     printf("-%c %llu\n", map[m].opt,
-                           (unsigned long long)rl.rlim_cur);
+                           (unsigned long long)val);
             }
         }
         last_status = 0;
@@ -863,18 +869,19 @@ int builtin_ulimit(char **args)
             perror("ulimit");
             last_status = 1;
         } else {
-            if (rl.rlim_cur == RLIM_INFINITY)
+            rlim_t val = hard ? rl.rlim_max : rl.rlim_cur;
+            if (val == RLIM_INFINITY)
                 printf("unlimited\n");
             else
                 printf("%llu\n",
-                       (unsigned long long)rl.rlim_cur);
+                       (unsigned long long)val);
             last_status = 0;
         }
         return 1;
     }
 
     if (args[i+1]) {
-        fprintf(stderr, "usage: ulimit [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+        fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
         return 1;
     }
 
@@ -892,7 +899,10 @@ int builtin_ulimit(char **args)
         last_status = 1;
         return 1;
     }
-    rl.rlim_cur = val;
+    if (hard)
+        rl.rlim_max = val;
+    else
+        rl.rlim_cur = val;
     if (setrlimit(resource, &rl) != 0) {
         perror("ulimit");
         last_status = 1;
