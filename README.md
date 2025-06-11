@@ -13,7 +13,7 @@ Current version: 0.1.0
  `dirs`, `echo`, `eval`, `exec`, `exit`, `export`, `false`, `fc`, `fg`, `getopts`, `hash`,
   `help`, `history`, `jobs`, `kill`, `let`, `local`, `popd`, `printf`, `pushd`,
   `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
-  `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask`, `unalias`, `unset`, `wait`, and `:`
+  `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias`, `unset`, `wait`, and `:`
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
   `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`

@@ -931,30 +931,66 @@ int builtin_continue(char **args)
 }
 
 /* Display or modify the file creation mask. */
+/* Helper to print a mask in symbolic form like u=rwx,g=rx,o=rx. */
+static void print_symbolic_umask(mode_t mask)
+{
+    mode_t perms = (~mask) & 0777;
+    char buf[32];
+    char *p = buf;
+    *p++ = 'u'; *p++ = '=';
+    if (perms & 0400) *p++ = 'r';
+    if (perms & 0200) *p++ = 'w';
+    if (perms & 0100) *p++ = 'x';
+    *p++ = ',';
+    *p++ = 'g'; *p++ = '=';
+    if (perms & 0040) *p++ = 'r';
+    if (perms & 0020) *p++ = 'w';
+    if (perms & 0010) *p++ = 'x';
+    *p++ = ',';
+    *p++ = 'o'; *p++ = '=';
+    if (perms & 0004) *p++ = 'r';
+    if (perms & 0002) *p++ = 'w';
+    if (perms & 0001) *p++ = 'x';
+    *p = '\0';
+    printf("%s\n", buf);
+}
+
 int builtin_umask(char **args)
 {
     mode_t mask = umask(0);
     umask(mask);
 
-    if (!args[1]) {
-        printf("%04o\n", mask);
+    int symbolic = 0;
+    int idx = 1;
+    if (args[idx] && strcmp(args[idx], "-S") == 0) {
+        symbolic = 1;
+        idx++;
+    }
+
+    if (!args[idx]) {
+        if (symbolic)
+            print_symbolic_umask(mask);
+        else
+            printf("%04o\n", mask);
         return 1;
     }
 
-    if (args[2]) {
-        fprintf(stderr, "usage: umask [mode]\n");
+    if (args[idx+1]) {
+        fprintf(stderr, "usage: umask [-S] [mode]\n");
         return 1;
     }
 
     errno = 0;
     char *end;
-    long val = strtol(args[1], &end, 8);
+    long val = strtol(args[idx], &end, 8);
     if (*end != '\0' || errno != 0 || val < 0 || val > 0777) {
         fprintf(stderr, "umask: invalid mode\n");
         return 1;
     }
 
     umask((mode_t)val);
+    if (symbolic)
+        print_symbolic_umask((mode_t)val);
     return 1;
 }
 
