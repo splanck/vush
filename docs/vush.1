@@ -183,8 +183,8 @@ Wait for job ID in the foreground.
 .B bg ID
 Continue job ID in the background.
 .TP
-.B kill [-SIGNAL] ID
-Send a signal to job ID.
+.B kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...
+Send a signal to the given job or PID or list signals with -l.
 .TP
 .B wait [ID|PID...]
 Wait for the specified job IDs or process IDs. With no arguments wait

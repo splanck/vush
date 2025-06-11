@@ -14,8 +14,75 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <signal.h>
 #include <sys/wait.h>
+
+/* Map signal names to numbers for kill builtin */
+static const struct { const char *n; int v; } sig_map[] = {
+    {"INT", SIGINT}, {"TERM", SIGTERM}, {"HUP", SIGHUP},
+#ifdef SIGQUIT
+    {"QUIT", SIGQUIT},
+#endif
+#ifdef SIGUSR1
+    {"USR1", SIGUSR1},
+#endif
+#ifdef SIGUSR2
+    {"USR2", SIGUSR2},
+#endif
+#ifdef SIGCHLD
+    {"CHLD", SIGCHLD},
+#endif
+#ifdef SIGCONT
+    {"CONT", SIGCONT},
+#endif
+#ifdef SIGSTOP
+    {"STOP", SIGSTOP},
+#endif
+#ifdef SIGALRM
+    {"ALRM", SIGALRM},
+#endif
+    {NULL, 0}
+};
+
+static int sig_from_name(const char *name)
+{
+    if (!name || !*name)
+        return -1;
+    if (isdigit((unsigned char)name[0]))
+        return atoi(name);
+    if (strncasecmp(name, "SIG", 3) == 0)
+        name += 3;
+    for (int i = 0; sig_map[i].n; i++) {
+        if (strcasecmp(name, sig_map[i].n) == 0)
+            return sig_map[i].v;
+    }
+    return -1;
+}
+
+static const char *name_from_sig(int sig)
+{
+    for (int i = 0; sig_map[i].n; i++) {
+        if (sig_map[i].v == sig)
+            return sig_map[i].n;
+    }
+    return NULL;
+}
+
+static void list_signals(void)
+{
+    int first = 1;
+    for (int s = 1; s < NSIG; s++) {
+        const char *n = name_from_sig(s);
+        if (n) {
+            if (!first)
+                printf(" ");
+            printf("%s", n);
+            first = 0;
+        }
+    }
+    printf("\n");
+}
 
 /* builtin_jobs - usage: jobs [-l|-p] [ID...] */
 int builtin_jobs(char **args) {
@@ -66,25 +133,61 @@ int builtin_bg(char **args) {
     return 1;
 }
 
-/* builtin_kill - usage: kill [-SIGNAL] ID
- * Send a signal (default SIGTERM) to a job using kill_job and return 1. */
+/* builtin_kill - usage: kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...
+ * Send a signal (default SIGTERM) to jobs or processes. */
 int builtin_kill(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: kill [-SIGNAL] ID\n");
-        return 1;
-    }
     int sig = SIGTERM;
     int idx = 1;
-    if (args[1][0] == '-') {
-        sig = atoi(args[1] + 1);
-        idx++;
+    int list = 0;
+
+    for (; args[idx] && args[idx][0] == '-' && args[idx][1]; idx++) {
+        if (strcmp(args[idx], "-l") == 0) {
+            list = 1;
+        } else if (strcmp(args[idx], "-s") == 0) {
+            idx++;
+            if (!args[idx]) {
+                fprintf(stderr, "usage: kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...\n");
+                return 1;
+            }
+            sig = sig_from_name(args[idx]);
+            if (sig <= 0 || sig >= NSIG) {
+                fprintf(stderr, "kill: invalid signal %s\n", args[idx]);
+                return 1;
+            }
+        } else {
+            int t = sig_from_name(args[idx] + 1);
+            if (t <= 0 || t >= NSIG) {
+                fprintf(stderr, "kill: invalid signal %s\n", args[idx] + 1);
+                return 1;
+            }
+            sig = t;
+        }
     }
-    if (!args[idx]) {
-        fprintf(stderr, "usage: kill [-SIGNAL] ID\n");
+
+    if (list && !args[idx]) {
+        list_signals();
         return 1;
     }
-    int id = atoi(args[idx]);
-    kill_job(id, sig);
+
+    if (!args[idx]) {
+        fprintf(stderr, "usage: kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...\n");
+        return 1;
+    }
+
+    for (; args[idx]; idx++) {
+        char *end;
+        long val = strtol(args[idx], &end, 10);
+        if (*end != '\0') {
+            fprintf(stderr, "kill: invalid id %s\n", args[idx]);
+            continue;
+        }
+        pid_t pid = get_job_pid((int)val);
+        if (pid > 0) {
+            kill_job((int)val, sig);
+        } else if (kill((pid_t)val, sig) == -1) {
+            perror("kill");
+        }
+    }
     return 1;
 }
 

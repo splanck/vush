@@ -416,7 +416,7 @@ int builtin_help(char **args) {
     printf("  jobs       List running background jobs\n");
     printf("  fg ID      Wait for job ID in foreground\n");
     printf("  bg ID      Continue job ID in background\n");
-    printf("  kill [-SIGNAL] ID   Send a signal to job ID\n");
+    printf("  kill [-s SIG|-SIGNAL] [-l] ID|PID  Send a signal or list signals\n");
     printf("  export NAME=value   Set an environment variable\n");
     printf("  readonly NAME[=VALUE]  Mark variable as read-only\n");
     printf("  unset NAME          Remove an environment variable\n");
