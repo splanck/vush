@@ -79,6 +79,18 @@ typedef struct Command {
 
 Command *parse_line(char *line);
 char *read_continuation_lines(FILE *f, char *buf, size_t size);
+char *gather_until(char **p, const char **stops, int nstops, int *idx);
+char *gather_braced(char **p);
+char *gather_parens(char **p);
+char *gather_dbl_parens(char **p);
+char *trim_ws(const char *s);
+char *process_substitution(char **p, int read_from);
+Command *parse_function_def(char **p, CmdOp *op_out);
+Command *parse_subshell(char **p, CmdOp *op_out);
+Command *parse_brace_group(char **p, CmdOp *op_out);
+Command *parse_conditional(char **p, CmdOp *op_out);
+Command *parse_control_clause(char **p, CmdOp *op_out);
+void free_case_items(CaseItem *ci);
 void free_pipeline(PipelineSegment *p);
 void free_commands(Command *c);
 void cleanup_proc_subs(void);
