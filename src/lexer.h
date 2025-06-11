@@ -28,4 +28,8 @@ char *expand_prompt(const char *prompt);
  * the caller must free. */
 char **expand_braces(const char *word, int *count_out);
 
+/* Parse a command substitution expression starting at *p. Used internally by
+ * the token reader but exposed for cross-module use. */
+char *parse_substitution(char **p);
+
 #endif /* LEXER_H */
