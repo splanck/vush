@@ -16,6 +16,9 @@ Current version: 0.1.0
  `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias [-a]`, `unset`, `wait`, and `:`
 - The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
 
+- `export -p` lists all exported variables and `export -n NAME` removes the export
+  attribute while leaving the variable defined.
+
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
 - `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`

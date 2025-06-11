@@ -244,7 +244,7 @@ static void list_exports(void)
  */
 int builtin_export(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: export NAME=value\n");
+        fprintf(stderr, "usage: export [-p|-n NAME] NAME=value\n");
         return 1;
     }
 
@@ -259,7 +259,7 @@ int builtin_export(char **args) {
     }
 
     if (!strchr(args[1], '=')) {
-        fprintf(stderr, "usage: export NAME=value\n");
+        fprintf(stderr, "usage: export [-p|-n NAME] NAME=value\n");
         return 1;
     }
 
