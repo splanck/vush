@@ -254,6 +254,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
 - `help` - display information about built-in commands.
 - `time command [args...]` - run a command and print timing statistics.
+- `times` - print cumulative user/system CPU times.
 - `umask [mask]` - set or display the file creation mask.
 
 ## Redirection Examples
