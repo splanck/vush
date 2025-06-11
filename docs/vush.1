@@ -220,8 +220,8 @@ Otherwise the commands are written to a temporary file, edited with
 .B hash [name...]
 Manage or display the command hash table.
 .TP
-.B alias \fIname\fP=\fIvalue\fP
-Set an alias or list aliases when used without arguments.
+.B alias [-p] [\fIname\fP[=\fIvalue\fP]]
+Set or display aliases. With no arguments all aliases are shown. A single name prints that alias. The \fB-p\fP option lists using "alias name='value'" format.
 .TP
 .B unalias \fIname\fP
 Remove an alias.

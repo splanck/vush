@@ -430,7 +430,7 @@ int builtin_help(char **args) {
     printf("  unset NAME          Remove an environment variable\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  hash [-r] [name...]   Manage cached command paths\n");
-    printf("  alias NAME=VALUE    Set an alias\n");
+    printf("  alias [-p] [NAME[=VALUE]]  Set or list aliases\n");
     printf("  unalias NAME        Remove an alias\n");
     printf("  read [-r] VAR...    Read a line into variables\n");
     printf("  return [status]     Return from a function\n");

@@ -253,7 +253,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   `VUSH_HISTSIZE` environment variable (default 1000).
 - `fc [-l] [-e editor] [first [last]]` - list or edit previous commands.
 - `hash [-r] [name...]` - manage cached command paths.
-- `alias NAME=value` - define an alias or list all aliases when used without arguments.
+- `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
 - `unalias NAME` - remove an alias.
 - `read [-r] VAR...` - read a line of input into variables.
 - `return [status]` - return from a shell function with an optional status.
