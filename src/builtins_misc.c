@@ -454,7 +454,7 @@ int builtin_help(char **args) {
     printf("  kill [-s SIG|-SIGNAL] [-l] ID|PID  Send a signal or list signals\n");
     printf("  export [-p|-n NAME] NAME[=VALUE]  Manage exported variables\n");
     printf("  readonly [-p] NAME[=VALUE]  Mark variable as read-only or list them\n");
-    printf("  unset NAME          Remove an environment variable\n");
+    printf("  unset [-f|-v] NAME  Remove functions with -f or variables with -v\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
     printf("  hash [-r] [name...]   Manage cached command paths\n");
     printf("  alias [-p] [NAME[=VALUE]]  Set or list aliases\n");

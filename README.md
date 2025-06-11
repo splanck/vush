@@ -48,7 +48,7 @@ Current version: 0.1.0
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
 - Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
 - Function definitions persisted in `~/.vush_funcs` (overridable with `VUSH_FUNCFILE`)
-- Functions can be removed with `unset -f`
+- Variables can be removed with `unset -v` and functions with `unset -f`
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
@@ -88,7 +88,7 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `export [-p|-n NAME] NAME[=VALUE]` &ndash; set or display exported variables
 - `readonly [-p] NAME[=VALUE]` &ndash; mark variables read-only
 - `local NAME[=VALUE]` &ndash; define a local variable in a function
-- `unset [-f] NAME` &ndash; remove variables or functions
+- `unset [-f|-v] NAME` &ndash; remove functions with `-f`, variables with `-v`, or both
 - `set [options] [-- args...]` &ndash; change shell options or parameters
 - `shift [N]` &ndash; rotate positional parameters
 - `alias [-p] [NAME[=VALUE]]` &ndash; define command aliases
