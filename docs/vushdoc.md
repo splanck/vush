@@ -281,7 +281,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   With `-v` or `-V` display how the name would be resolved. The `-p` option searches or executes using `/bin:/usr/bin` instead of the current `$PATH`.
 
 - `eval WORDS...` - concatenate arguments and execute the result.
-- `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
+- `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters. If `file` contains no `/`, each directory in `$PATH` is searched.
 - `help` - display information about built-in commands.
 - `time command [args...]` - run a command and print timing statistics.
 - `times` - print cumulative user/system CPU times.

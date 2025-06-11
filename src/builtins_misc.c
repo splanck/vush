@@ -239,7 +239,29 @@ int builtin_source(char **args) {
     }
 
     FILE *prev_input = parse_input;
-    FILE *input = fopen(args[1], "r");
+    FILE *input = NULL;
+
+    if (strchr(args[1], '/')) {
+        input = fopen(args[1], "r");
+    } else {
+        const char *pathenv = getenv("PATH");
+        if (pathenv && *pathenv) {
+            char *paths = strdup(pathenv);
+            if (paths) {
+                char *save = NULL;
+                for (char *p = strtok_r(paths, ":", &save); p; p = strtok_r(NULL, ":", &save)) {
+                    const char *base = *p ? p : ".";
+                    char full[PATH_MAX];
+                    snprintf(full, sizeof(full), "%s/%s", base, args[1]);
+                    input = fopen(full, "r");
+                    if (input)
+                        break;
+                }
+                free(paths);
+            }
+        }
+    }
+
     if (!input) {
         perror(args[1]);
         return 1;
