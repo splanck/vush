@@ -27,6 +27,7 @@
 #include <fnmatch.h>
 #include <stdint.h>
 #include <time.h>
+#include <sys/times.h>
 
 extern int last_status;
 extern FILE *parse_input;
@@ -396,6 +397,32 @@ int builtin_time(char **args) {
         last_status = 1;
         return 1;
     }
+}
+
+/* Print user/system CPU times for the shell and its children. */
+int builtin_times(char **args) {
+    if (args[1]) {
+        fprintf(stderr, "usage: times\n");
+        last_status = 1;
+        return 1;
+    }
+
+    struct tms t;
+    if (times(&t) == (clock_t)-1) {
+        perror("times");
+        last_status = 1;
+        return 1;
+    }
+    long hz = sysconf(_SC_CLK_TCK);
+    if (hz <= 0)
+        hz = 100;
+    printf("%.2f %.2f\n%.2f %.2f\n",
+           (double)t.tms_utime / hz,
+           (double)t.tms_stime / hz,
+           (double)t.tms_cutime / hz,
+           (double)t.tms_cstime / hz);
+    last_status = 0;
+    return 1;
 }
 
 /* Print a usage summary of the available builtin commands. */
