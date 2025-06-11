@@ -271,7 +271,10 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `let EXPR` - evaluate an arithmetic expression.
 - `set [options] [-- args...]` - set shell options or replace positional parameters.
 - `set` with no operands lists all shell variables and functions.
-- `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.
+- `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.  Supports
+  string comparisons, numeric operators and POSIX unary file tests such as
+  `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`, `-O`,
+  `-G`, `-u`, `-g`, `-k`, `-S` and `-t`.
 - `[[ EXPR ]]` - evaluate a conditional expression with pattern matching.
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
@@ -355,6 +358,8 @@ vush> for ((i=0; i<3; i++)); do echo $i; done
 vush> j=2; until test $j -eq 0; do echo $j; j=$(expr $j - 1); done
 2
 1
+vush> if test -h /bin/sh; then echo link; fi
+link
 vush> i=0; while true; do echo $i; break; done
 0
 vush> case 1 in 1) echo one ;& 2) echo two ;; esac

@@ -273,7 +273,8 @@ Functions are saved to the file specified by \fBVUSH_FUNCFILE\fP (default \fB~/.
 .B test expression
 Evaluate EXPRESSION and return success if it is true.  Supports string
 comparisons with '=' and '!=', the -n and -z checks, numeric operators
--eq, -ne, -gt, -lt, -ge and -le, and file tests -e, -f, -d, -r, -w and -x.
+-eq, -ne, -gt, -lt, -ge and -le, and POSIX file tests including -e, -f, -d,
+-r, -w, -x, -b, -c, -p, -h, -L, -s, -O, -G, -u, -g, -k, -S and -t.
 The \fB[\fP builtin is a synonym that requires a closing '\]'.
 .TP
 .B [[ expression ]]
