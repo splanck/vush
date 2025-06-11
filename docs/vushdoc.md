@@ -270,7 +270,9 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
 - `type NAME...` - display how each NAME would be interpreted.
-- `command NAME [args...]` - execute a command without shell function lookup.
+- `command [-p] [-v|-V] NAME [args...]` - run `NAME` ignoring shell functions.
+  With `-v` or `-V` display how the name would be resolved and `-p` searches
+  using the default path `/bin:/usr/bin`.
 - `eval WORDS...` - concatenate arguments and execute the result.
 - `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
 - `help` - display information about built-in commands.

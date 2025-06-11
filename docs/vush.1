@@ -279,8 +279,9 @@ strings and allow wildcards like '*' and '?'.
 For each argument, print whether it is an alias, builtin or the full path of an
 executable found in \fB$PATH\fP.
 .TP
-.B command [\-v|\-V] \fIname [args...]\fP
+.B command [\-p|\-v|\-V] \fIname [args...]\fP
 Without options, execute NAME directly, bypassing aliases and functions.
+The \fB-p\fP option searches using the default path \fB/bin:/usr/bin\fP.
 With \fB-v\fP or \fB-V\fP, display how NAME would be resolved.\
 \fB-v\fP prints only the resulting path or name while \fB-V\fP
 provides a verbose description similar to \fBtype\fP.
