@@ -204,6 +204,11 @@ Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB
 History is saved to the file specified by \fBVUSH_HISTFILE\fP (default \fB~/.vush_history\fP).
 The number of entries kept is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
 .TP
+.B fc [\-l] [\-e \fIeditor\fP] [first [last]]
+List or edit commands from history. With \fB-l\fP the range is printed.
+Otherwise the commands are written to a temporary file, edited with
+\fIeditor\fP (default $FCEDIT or "ed") and executed.
+.TP
 .B hash [name...]
 Manage or display the command hash table.
 .TP

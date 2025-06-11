@@ -31,6 +31,7 @@ extern int builtin_readonly(char **);
 extern int builtin_local(char **);
 extern int builtin_unset(char **);
 extern int builtin_history(char **);
+extern int builtin_fc(char **);
 extern int builtin_hash(char **);
 extern int builtin_alias(char **);
 extern int builtin_unalias(char **);
@@ -79,6 +80,7 @@ const struct builtin builtin_table[] = {
     {"local", builtin_local},
     {"unset", builtin_unset},
     {"history", builtin_history},
+    {"fc", builtin_fc},
     {"hash", builtin_hash},
     {"alias", builtin_alias},
     {"unalias", builtin_unalias},

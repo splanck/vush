@@ -161,6 +161,10 @@ echo /tmp
 /tmp
 ```
 
+The `fc` builtin can replay or edit previous commands. `fc -l` prints the
+specified range while `fc -e editor` opens the commands in `editor` and then
+executes them.
+
 ## Assignments
 
 Words of the form `NAME=value` placed at the beginning of a command only affect
@@ -231,6 +235,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   Entries are read from and written to the file specified by `VUSH_HISTFILE`
   (default `~/.vush_history`). History size is controlled by the
   `VUSH_HISTSIZE` environment variable (default 1000).
+- `fc [-l] [-e editor] [first [last]]` - list or edit previous commands.
 - `hash [-r] [name...]` - manage cached command paths.
 - `alias NAME=value` - define an alias or list all aliases when used without arguments.
 - `unalias NAME` - remove an alias.
