@@ -42,6 +42,7 @@ extern int builtin_command(char **);
 extern int builtin_time(char **);
 extern int builtin_times(char **);
 extern int builtin_umask(char **);
+extern int builtin_ulimit(char **);
 extern int builtin_return(char **);
 extern int builtin_break(char **);
 extern int builtin_continue(char **);
@@ -98,6 +99,7 @@ const struct builtin builtin_table[] = {
     {"time", builtin_time},
     {"times", builtin_times},
     {"umask", builtin_umask},
+    {"ulimit", builtin_ulimit},
     {"source", builtin_source},
     {".", builtin_source},
     {"help", builtin_help},

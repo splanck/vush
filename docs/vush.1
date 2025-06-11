@@ -281,6 +281,11 @@ Run the command and print the elapsed real time in seconds.
 .B times
 Display user and system CPU times for the shell and its children.
 .TP
+.B ulimit \fI[-a|-f|-n] [limit]\fP
+Display or set resource limits. With no option, print the current file
+size limit. The -a flag prints all supported limits. Providing a number
+sets the selected limit.
+.TP
 .B umask [mode]
 Print or set the file creation mask. Without an argument the current mask
 is printed in octal. When MODE is supplied it is interpreted as an octal
