@@ -225,7 +225,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `bg ID` - resume a stopped background job `ID`.
 - `kill [-SIGNAL] ID` - send a signal to the background job `ID`.
 - `wait [ID|PID]` - wait for the given job or process to finish.
-- `trap 'cmd' SIGNAL` - execute `cmd` when `SIGNAL` is received. Use `trap SIGNAL` to clear.
+- `trap 'cmd' SIGNAL` - execute `cmd` when `SIGNAL` is received. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
 - `export NAME=value` - set an environment variable for the shell.
 - `readonly NAME[=VALUE]` - mark a variable as read-only.
 - `local NAME[=VALUE]` - define a variable scoped to the current function.
@@ -385,6 +385,9 @@ unknown not found
 vush> trap 'echo INT received' INT
 vush> # press Ctrl-C to test
 INT received
+vush> trap 'echo exiting' EXIT
+vush> exit
+exiting
 ```
 
 ## Eval Example

@@ -37,7 +37,9 @@
 
 extern FILE *parse_input;
 extern char *trap_cmds[NSIG];
+extern char *exit_trap_cmd;
 void trap_handler(int sig);
+void run_exit_trap(void);
 int last_status = 0;
 int script_argc = 0;
 char **script_argv = NULL;
@@ -81,6 +83,33 @@ void trap_handler(int sig)
             }
             if (run)
                 run_pipeline(c, cmd);
+            prevop = c->op;
+        }
+    }
+    free_commands(cmds);
+    parse_input = prev;
+}
+
+/* Execute the command registered for EXIT, if any. */
+void run_exit_trap(void)
+{
+    if (!exit_trap_cmd)
+        return;
+    FILE *prev = parse_input;
+    parse_input = stdin;
+    Command *cmds = parse_line(exit_trap_cmd);
+    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+        CmdOp prevop = OP_SEMI;
+        for (Command *c = cmds; c; c = c->next) {
+            int run = 1;
+            if (c != cmds) {
+                if (prevop == OP_AND)
+                    run = (last_status == 0);
+                else if (prevop == OP_OR)
+                    run = (last_status != 0);
+            }
+            if (run)
+                run_pipeline(c, exit_trap_cmd);
             prevop = c->op;
         }
     }
@@ -333,6 +362,7 @@ int main(int argc, char **argv) {
         repl_loop(input);
     if (input != stdin)
         fclose(input);
+    run_exit_trap();
     free(script_argv);
     free_aliases();
     free_functions();

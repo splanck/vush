@@ -36,7 +36,9 @@ extern FILE *parse_input;
 #include <signal.h>
 
 char *trap_cmds[NSIG];
+char *exit_trap_cmd;
 extern void trap_handler(int);
+extern void run_exit_trap(void);
 
 /* Exit the shell, freeing resources and using the provided status
  * or the status of the last command when none is given. */
@@ -52,6 +54,7 @@ int builtin_exit(char **args) {
         }
         status = (int)val;
     }
+    run_exit_trap();
     free_aliases();
     free_functions();
     free_shell_vars();
@@ -834,6 +837,11 @@ int builtin_trap(char **args)
     }
 
     for (int i = idx; args[i]; i++) {
+        if (strcasecmp(args[i], "EXIT") == 0 || strcmp(args[i], "0") == 0) {
+            free(exit_trap_cmd);
+            exit_trap_cmd = cmd ? strdup(cmd) : NULL;
+            continue;
+        }
         int sig = sig_from_name(args[i]);
         if (sig <= 0 || sig >= NSIG) {
             fprintf(stderr, "trap: invalid signal %s\n", args[i]);
@@ -847,7 +855,7 @@ int builtin_trap(char **args)
         sa.sa_flags = 0;
         sa.sa_handler = cmd ? trap_handler : SIG_DFL;
         sigaction(sig, &sa, NULL);
-    } 
+    }
     return 1;
 }
 
