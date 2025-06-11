@@ -63,6 +63,9 @@ Several forms modify how variables are expanded:
 The form \fB${VAR/pat/repl}\fP replaces the first portion of \fB$VAR\fP
 matching \fIpat\fP with \fIrepl\fP.  Doubling the slash with
 \fB${VAR//pat/repl}\fP performs the substitution globally.
+Using \fB${VAR#pat}\fP and \fB${VAR%pat}\fP removes the shortest matching
+prefix or suffix. Doubling the operator with \fB${VAR##pat}\fP or
+\fB${VAR%%pat}\fP removes the longest match instead.
 The forms \fB${VAR?word}\fP and \fB${VAR:?word}\fP print \fIword\fP (or a
 default message) to the standard error and return failure when the variable is
 unset or empty.
@@ -75,6 +78,8 @@ echo ${TMP:+alt}
 TMP=endings
 echo ${TMP#end}
 echo ${TMP%ings}
+echo ${TMP##e*}
+echo ${TMP%%e*}
 echo ${#TMP}
 TMP=hello
 echo ${TMP/l/1}
