@@ -9,7 +9,7 @@ vush is a lightweight UNIX shell supporting command execution,
 pipelines, brace groups using '{ ... ; }', subshells using '(...)', command chaining with ';', '&&' and '||', and negation with '! cmd',
 environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
 \fB${VAR:-word}\fP, \fB${VAR:=word}\fP, \fB${VAR:+word}\fP, \fB${VAR#pat}\fP,
-\fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status, "$$" the shell PID and "$!" the last background job),
+\fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status, "$$" the shell PID, "$!" the last background job and "$-" the current option letters),
 command substitution using backticks or \fB$(\fPcmd\fB)\fP,
 arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
 wildcard matching for '*' and '?', brace expansion like \fB{foo,bar}\fP or \fB{1..3}\fP, input and output redirection with
