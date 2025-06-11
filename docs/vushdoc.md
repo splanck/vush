@@ -209,6 +209,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
 - `printf FORMAT [args...]` - print formatted text.
+- `echo [-n] [-e] [args...]` - print arguments separated by spaces. With `-n` no newline is added and `-e` enables backslash escapes.
 - `dirs` - display the directory stack.
 - `exit [status]` - terminate the shell with an optional status code.
 - `:` - do nothing and return success.

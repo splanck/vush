@@ -145,6 +145,10 @@ printed after the switch.
 Print formatted text according to the format string using standard
 printf(3) conversions. The exit status is 0 on success.
 .TP
+.B echo [\fB-n\fP] [\fB-e\fP] \fIargs...\fP
+Print each ARG separated by spaces. With \fB-n\fP the trailing newline is
+omitted. \fB-e\fP enables interpretation of backslash escapes like \n and \t.
+.TP
 .B dirs
 Display the directory stack.
 .TP

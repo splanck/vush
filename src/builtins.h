@@ -26,6 +26,7 @@ int builtin_read(char **args);
 int builtin_getopts(char **args);
 int builtin_eval(char **args);
 int builtin_printf(char **args);
+int builtin_echo(char **args);
 int builtin_exec(char **args);
 int builtin_command(char **args);
 const char **get_builtin_names(void);

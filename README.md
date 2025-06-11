@@ -10,7 +10,7 @@ Current version: 0.1.0
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias`, `bg`, `break`, `cd`, `command`, `continue`,
-  `dirs`, `eval`, `exec`, `exit`, `export`, `false`, `fg`, `getopts`, `hash`,
+ `dirs`, `echo`, `eval`, `exec`, `exit`, `export`, `false`, `fg`, `getopts`, `hash`,
   `help`, `history`, `jobs`, `kill`, `let`, `local`, `popd`, `printf`, `pushd`,
   `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
   `time`, `times`, `trap`, `true`, `type`, `ulimit`, `umask`, `unalias`, `unset`, `wait`, and `:`

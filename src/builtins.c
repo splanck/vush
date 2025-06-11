@@ -19,6 +19,7 @@ extern int builtin_exit(char **);
 extern int builtin_colon(char **);
 extern int builtin_true(char **);
 extern int builtin_false(char **);
+extern int builtin_echo(char **);
 extern int builtin_pwd(char **);
 extern int builtin_jobs(char **);
 extern int builtin_fg(char **);
@@ -66,6 +67,7 @@ const struct builtin builtin_table[] = {
     {":", builtin_colon},
     {"true", builtin_true},
     {"false", builtin_false},
+    {"echo", builtin_echo},
     {"pwd", builtin_pwd},
     {"jobs", builtin_jobs},
     {"fg", builtin_fg},
