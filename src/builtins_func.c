@@ -136,6 +136,12 @@ Command *get_function(const char *name)
     return NULL;
 }
 
+void print_functions(void)
+{
+    for (struct func_entry *fn = functions; fn; fn = fn->next)
+        printf("%s() { %s }\n", fn->name, fn->text);
+}
+
 /* Remove NAME from the function list if present. */
 void remove_function(const char *name)
 {
