@@ -194,11 +194,11 @@ for all running jobs.
 Print currently set traps with \fB-p\fP or run \fIcmd\fP when \fISIGNAL\fP is received.
 Use "trap SIGNAL" to clear. Use "EXIT" or "0" to run \fIcmd\fP when the shell exits.
 .TP
-.B export NAME=value
-Set an environment variable for the shell.
+.B export [-p|-n \fIname\fP] \fIname\fP=value
+Set an environment variable or manage exported names.
 .TP
-.B readonly NAME[=VALUE]...
-Mark each variable as read-only and optionally assign VALUE.
+.B readonly [-p] NAME[=VALUE]...
+Mark each variable as read-only or list all read-only variables.
 .TP
 .B local \fIname\fP[=value] ...
 Mark each variable as local to the current function. Previous values are

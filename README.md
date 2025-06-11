@@ -10,9 +10,9 @@ Current version: 0.1.0
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias [-p]`, `bg`, `break [N]`, `cd`, `command [-p|-v|-V]`, `continue [N]`,
- `dirs`, `echo`, `eval`, `exec`, `exit`, `export`, `false`, `fc`, `fg`, `getopts`, `hash`,
+ `dirs`, `echo`, `eval`, `exec`, `exit`, `export [-p|-n NAME]`, `false`, `fc`, `fg`, `getopts`, `hash`,
   `help`, `history`, `jobs [-l|-p]`, `kill [-s SIG|-l]`, `let`, `local`, `popd`, `printf`, `pushd`,
-  `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
+ `pwd`, `read`, `readonly [-p]`, `return`, `set`, `shift`, `source` (or `.`), `test`,
  `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias [-a]`, `unset`, `wait`, and `:`
 - The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
 

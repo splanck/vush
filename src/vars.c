@@ -48,6 +48,30 @@ void add_readonly(const char *name)
     readonly_vars = r;
 }
 
+void print_readonly_vars(void)
+{
+    for (struct readonly_entry *r = readonly_vars; r; r = r->next) {
+        const char *val = get_shell_var(r->name);
+        if (val)
+            printf("readonly %s=%s\n", r->name, val);
+        else {
+            int len = 0;
+            char **arr = get_shell_array(r->name, &len);
+            if (arr) {
+                printf("readonly %s=(", r->name);
+                for (int i = 0; i < len; i++) {
+                    if (i)
+                        printf(" ");
+                    printf("%s", arr[i]);
+                }
+                printf(")\n");
+            } else {
+                printf("readonly %s\n", r->name);
+            }
+        }
+    }
+}
+
 struct local_var {
     char *name;
     char *value;

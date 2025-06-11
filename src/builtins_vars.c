@@ -226,12 +226,39 @@ int builtin_unset(char **args) {
     return 1;
 }
 
+static void list_exports(void)
+{
+    extern char **environ;
+    for (char **e = environ; *e; e++) {
+        char *eq = strchr(*e, '=');
+        if (eq)
+            printf("export %.*s='%s'\n", (int)(eq - *e), eq + 1);
+        else
+            printf("export %s\n", *e);
+    }
+}
+
 /*
  * Export a shell variable to the environment.  Expects NAME=value syntax and
  * prints a usage message on error.  Always returns 1.
  */
 int builtin_export(char **args) {
-    if (!args[1] || !strchr(args[1], '=')) {
+    if (!args[1]) {
+        fprintf(stderr, "usage: export NAME=value\n");
+        return 1;
+    }
+
+    if (strcmp(args[1], "-p") == 0 && !args[2]) {
+        list_exports();
+        return 1;
+    }
+
+    if (strcmp(args[1], "-n") == 0 && args[2] && !args[3]) {
+        unsetenv(args[2]);
+        return 1;
+    }
+
+    if (!strchr(args[1], '=')) {
         fprintf(stderr, "usage: export NAME=value\n");
         return 1;
     }
@@ -252,6 +279,12 @@ int builtin_readonly(char **args) {
         fprintf(stderr, "usage: readonly NAME[=VALUE]...\n");
         return 1;
     }
+
+    if (strcmp(args[1], "-p") == 0 && !args[2]) {
+        print_readonly_vars();
+        return 1;
+    }
+
     for (int i = 1; args[i]; i++) {
         char *arg = args[i];
         char *eq = strchr(arg, '=');
