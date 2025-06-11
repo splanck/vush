@@ -266,7 +266,7 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `bg ID` - resume a stopped background job `ID`.
 - `kill [-s SIGNAL|-SIGNAL] [-l] ID|PID` - send a signal to the given job or process. Use `-l` to list signals.
 - `wait [ID|PID]` - wait for the given job or process to finish.
- - `trap [-p | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received or list traps with `-p` or with no arguments. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
+- `trap [-p|-l | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received, list traps with `-p` or with no arguments, or show available signals with `-l`. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
 - `export [-p|-n NAME] NAME[=VALUE]` - manage exported variables or set one.
   Use `-p` to list all exported variables. `-n NAME` stops exporting `NAME`
   without removing it. Without `=VALUE` the variable's current value is

@@ -47,6 +47,7 @@ int builtin_local(char **args);
 int builtin_break(char **args);
 int builtin_continue(char **args);
 int builtin_cond(char **args);
+void list_signals(void);
 
 extern char *trap_cmds[NSIG];
 extern char *exit_trap_cmd;

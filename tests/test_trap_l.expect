@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "trap -l\r"
+expect {
+    -re "TERM" {}
+    timeout { send_user "trap -l output mismatch\n"; exit 1 }
+}
+expect "vush> "
+send "exit\r"
+expect eof
