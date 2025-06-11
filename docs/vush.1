@@ -323,7 +323,8 @@ and becomes the new mask. If MODE is given together with
 the mask is set and then printed symbolically.
 .TP
 .B source \fIfile [args...]\fP
-Read commands from \fIfile\fP using \fIargs\fP as positional parameters.
+Read commands from \fIfile\fP using \fIargs\fP as positional parameters. If
+\fIfile\fP contains no \fB/\fP, each directory in \fB$PATH\fP is searched.
 .TP
 .B . \fIfile [args...]\fP
 Alias for \fBsource\fP.
