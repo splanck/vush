@@ -249,12 +249,14 @@ static void list_exports(void)
 }
 
 /*
- * Export a shell variable to the environment.  Expects NAME=value syntax and
- * prints a usage message on error.  Always returns 1.
+ * Export shell variables to the environment.  Arguments may be NAME=value
+ * pairs or just variable names.  When only a name is given the variable is
+ * marked for export.  If it does not exist it will be created with an empty
+ * value.  A usage message is printed on error and the function always returns 1.
  */
 int builtin_export(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: export [-p|-n NAME] NAME=value\n");
+        fprintf(stderr, "usage: export [-p|-n NAME] NAME[=VALUE]...\n");
         return 1;
     }
 
@@ -268,19 +270,25 @@ int builtin_export(char **args) {
         return 1;
     }
 
-    if (!strchr(args[1], '=')) {
-        fprintf(stderr, "usage: export [-p|-n NAME] NAME=value\n");
-        return 1;
+    for (int i = 1; args[i]; i++) {
+        char *arg = args[i];
+        char *eq = strchr(arg, '=');
+        if (eq) {
+            *eq = '\0';
+            if (setenv(arg, eq + 1, 1) != 0)
+                perror("export");
+            set_shell_var(arg, eq + 1);
+            *eq = '=';
+        } else {
+            const char *val = get_shell_var(arg);
+            if (!val) {
+                val = "";
+                set_shell_var(arg, val);
+            }
+            if (setenv(arg, val, 1) != 0)
+                perror("export");
+        }
     }
-
-    char *pair = args[1];
-    char *eq = strchr(pair, '=');
-    *eq = '\0';
-    if (setenv(pair, eq + 1, 1) != 0) {
-        perror("export");
-    }
-    set_shell_var(pair, eq + 1);
-    *eq = '=';
     return 1;
 }
 
