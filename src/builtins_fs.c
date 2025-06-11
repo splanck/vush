@@ -11,11 +11,48 @@
 #include "builtins.h"
 #include "dirstack.h"
 #include "util.h"
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+
+/* Remove '.' and '..' path segments without resolving symlinks. */
+static void canonicalize_logical(const char *path, char *out)
+{
+    char tmp[PATH_MAX];
+    strncpy(tmp, path, sizeof(tmp));
+    tmp[PATH_MAX - 1] = '\0';
+    char *parts[PATH_MAX / 2];
+    int sp = 0;
+    char *save;
+    for (char *t = strtok_r(tmp, "/", &save); t; t = strtok_r(NULL, "/", &save)) {
+        if (strcmp(t, ".") == 0) {
+            continue;
+        } else if (strcmp(t, "..") == 0) {
+            if (sp > 0)
+                sp--;
+        } else {
+            parts[sp++] = t;
+        }
+    }
+    char *p = out;
+    if (path[0] == '/')
+        *p++ = '/';
+    for (int i = 0; i < sp; i++) {
+        size_t len = strlen(parts[i]);
+        if (p - out + len + 1 >= PATH_MAX)
+            break;
+        memcpy(p, parts[i], len);
+        p += len;
+        if (i < sp - 1)
+            *p++ = '/';
+    }
+    if (p == out)
+        *p++ = '/';
+    *p = '\0';
+}
 
 /*
  * builtin_cd - implement the cd command.  Changes the current directory and
@@ -98,15 +135,27 @@ int builtin_cd(char **args) {
             dir = used;
     }
 
-    char newcwd[PATH_MAX];
-    if (getcwd(newcwd, sizeof(newcwd))) {
-        const char *pwd = getenv("PWD");
-        if (!pwd) pwd = prev;
-        setenv("OLDPWD", pwd, 1);
-        setenv("PWD", newcwd, 1);
+    const char *oldpwd = getenv("PWD");
+    if (!oldpwd)
+        oldpwd = prev;
+    setenv("OLDPWD", oldpwd, 1);
+
+    char newpwd[PATH_MAX];
+    if (physical) {
+        if (!realpath(".", newpwd)) {
+            if (!getcwd(newpwd, sizeof(newpwd)))
+                strcpy(newpwd, dir);
+        }
     } else {
-        perror("getcwd");
+        if (dir[0] == '/') {
+            strncpy(newpwd, dir, sizeof(newpwd));
+            newpwd[PATH_MAX - 1] = '\0';
+        } else {
+            snprintf(newpwd, sizeof(newpwd), "%s/%s", oldpwd, dir);
+        }
+        canonicalize_logical(newpwd, newpwd);
     }
+    setenv("PWD", newpwd, 1);
 
     if (searched) {
         printf("%s\n", dir);

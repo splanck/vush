@@ -99,7 +99,8 @@ environment variables:
 - `PS4` prefixes trace output produced by `set -x`.
 - `CDPATH` provides directories searched by `cd` for relative paths. `cd` also
   accepts `-L` (logical, default) and `-P` (physical) to control how paths are
-  resolved.
+  resolved. With `-L` `PWD` reflects the logical path while `-P` resolves the
+  target with `realpath()` and sets `PWD` to the physical location.
 
 Examples:
 

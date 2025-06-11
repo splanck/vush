@@ -130,8 +130,9 @@ Change the current directory. Without an argument it switches to \fB$HOME\fP.
 Both \fB~\fP and \fB~user\fP expand to home directories using the password
 database. After a successful change \fB$PWD\fP and \fB$OLDPWD\fP are updated.
 Using \fBcd -\fP prints and switches to \fB$OLDPWD\fP. The \fB-L\fP option is
-the default logical behavior while \fB-P\fP resolves the path using
-\fBrealpath(3)\fP before switching. When the directory does not begin with
+the default logical behavior and keeps \fB$PWD\fP as the logical path.\
+ \fB-P\fP resolves the target with \fBrealpath(3)\fP and sets \fB$PWD\fP to
+the physical location. When the directory does not begin with
 \fB/\fP or \fB.\fP, each entry in the \fBCDPATH\fP environment variable is
 searched. If a path from \fBCDPATH\fP is used the resolved directory is printed
 on success. Example: \fBcd ~otheruser\fP
