@@ -30,6 +30,7 @@ extern int last_status;
 
 int loop_break = 0;
 int loop_continue = 0;
+int loop_depth = 0;
 
 int run_command_list(Command *cmds, const char *line);
 static int apply_temp_assignments(PipelineSegment *pipeline);
@@ -346,6 +347,10 @@ int run_command_list(Command *cmds, const char *line) {
         if (func_return || loop_break || loop_continue)
             break;
     }
+    if (loop_depth == 0) {
+        loop_break = 0;
+        loop_continue = 0;
+    }
     return last_status;
 }
 
@@ -388,16 +393,18 @@ static int exec_if(Command *cmd, const char *line) {
  * loop_break and loop_continue are honored.  Returns last_status.
  */
 static int exec_while(Command *cmd, const char *line) {
+    loop_depth++;
     while (1) {
         run_command_list(cmd->cond, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
         if (last_status != 0)
             break;
         run_command_list(cmd->body, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
     }
+    loop_depth--;
     return last_status;
 }
 
@@ -407,16 +414,18 @@ static int exec_while(Command *cmd, const char *line) {
  * control flags are processed and the final last_status is returned.
  */
 static int exec_until(Command *cmd, const char *line) {
+    loop_depth++;
     while (1) {
         run_command_list(cmd->cond, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
         if (last_status == 0)
             break;
         run_command_list(cmd->body, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
     }
+    loop_depth--;
     return last_status;
 }
 
@@ -426,13 +435,15 @@ static int exec_until(Command *cmd, const char *line) {
  * Returns last_status from the final iteration.
  */
 static int exec_for(Command *cmd, const char *line) {
+    loop_depth++;
     for (int i = 0; i < cmd->word_count; i++) {
         if (cmd->var)
             setenv(cmd->var, cmd->words[i], 1);
         run_command_list(cmd->body, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
     }
+    loop_depth--;
     return last_status;
 }
 
@@ -442,6 +453,7 @@ static int exec_for(Command *cmd, const char *line) {
  * iteration variable.  The function returns the status of the body.
  */
 static int exec_select(Command *cmd, const char *line) {
+    loop_depth++;
     char input[MAX_LINE];
     while (1) {
         for (int i = 0; i < cmd->word_count; i++)
@@ -458,9 +470,10 @@ static int exec_select(Command *cmd, const char *line) {
         if (cmd->var)
             setenv(cmd->var, cmd->words[choice - 1], 1);
         run_command_list(cmd->body, line);
-        if (loop_break) { loop_break = 0; break; }
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_break) { loop_break--; break; }
+        if (loop_continue) { loop_continue--; continue; }
     }
+    loop_depth--;
     return last_status;
 }
 
@@ -471,16 +484,18 @@ static int exec_select(Command *cmd, const char *line) {
  */
 static int exec_for_arith(Command *cmd, const char *line) {
     (void)line;
+    loop_depth++;
     eval_arith(cmd->arith_init ? cmd->arith_init : "0");
     while (1) {
         long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1");
         if (cond == 0)
             break;
         run_command_list(cmd->body, line);
-        if (loop_break) { loop_break = 0; break; }
+        if (loop_break) { loop_break--; break; }
         eval_arith(cmd->arith_update ? cmd->arith_update : "0");
-        if (loop_continue) { loop_continue = 0; continue; }
+        if (loop_continue) { loop_continue--; continue; }
     }
+    loop_depth--;
     return last_status;
 }
 

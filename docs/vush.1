@@ -237,11 +237,11 @@ Return from a shell function with the given status (default 0).
 .B shift [n]
 Shift positional parameters down by \fIn\fP (default 1).
 .TP
-.B break
-Exit the innermost loop.
+.B break [n]
+Exit \fIn\fP levels of enclosing loops (default 1).
 .TP
-.B continue
-Skip to the next iteration of the innermost loop.
+.B continue [n]
+Skip to the next iteration of the \fIn\fPth enclosing loop (default 1).
 .TP
 .B getopts optstring var
 Parse positional parameters according to \fIoptstring\fP. The next option
