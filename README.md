@@ -114,7 +114,8 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `fc` and `history` &ndash; edit or list command history
 - `echo [-n] [-e] [args...]` &ndash; print text
 - `printf FORMAT [args...]` &ndash; formatted output
-- `read [-r] VAR...` &ndash; read a line of input
+- `read [-r] [-a NAME] [VAR...]` &ndash; read a line of input, storing it in
+  `$REPLY` when no variables are listed
 - `test EXPR` and `[[ EXPR ]]` &ndash; evaluate conditions
 - `:`/`true`/`false` &ndash; return fixed status codes
 - `return [status]` &ndash; exit from a function
@@ -207,6 +208,12 @@ test -d /tmp && echo "tmp exists"
 test -h /bin/sh && echo "linked shell"
 test file1 -nt file2 && echo "file1 newer"
 test file1 -ef link && echo "same file"
+```
+
+```sh
+# Read with no variable names stores the line in $REPLY
+read
+echo "You typed $REPLY"
 ```
 
 ```sh

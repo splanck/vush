@@ -24,9 +24,7 @@ static int parse_read_options(char **args, int *raw, const char **array_name,
         i += 2;
     }
 
-    if (!args[i])
-        return -1;
-
+    /* Do not error when no variable names remain */
     *idx = i;
     return 0;
 }
@@ -79,7 +77,7 @@ int builtin_read(char **args) {
     const char *array_name = NULL;
     int idx;
     if (parse_read_options(args, &raw, &array_name, &idx) != 0) {
-        fprintf(stderr, "usage: read [-r] [-a NAME] NAME...\n");
+        fprintf(stderr, "usage: read [-r] [-a NAME] [NAME...]\n");
         last_status = 1;
         return 1;
     }
@@ -119,7 +117,14 @@ int builtin_read(char **args) {
             free(vals[i]);
         free(vals);
     } else {
-        assign_read_vars(args, idx, line);
+        int var_count = 0;
+        for (int i = idx; args[i]; i++)
+            var_count++;
+        if (var_count == 0) {
+            set_shell_var("REPLY", line);
+        } else {
+            assign_read_vars(args, idx, line);
+        }
     }
     last_status = 0;
     return 1;
