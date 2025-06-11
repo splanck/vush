@@ -22,5 +22,12 @@ expect {
     -re "\[1\] $bg sleep 1 &[\r\n]+vush> " {}
     timeout { send_user "jobs pid mismatch\n"; exit 1 }
 }
+send "set -e -u\r"
+expect "vush> "
+send "echo $-\r"
+expect {
+    -re "[\r\n]+eu[\r\n]+vush> " {}
+    timeout { send_user "\$- expansion failed\n"; exit 1 }
+}
 send "exit\r"
 expect eof

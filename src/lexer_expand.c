@@ -385,6 +385,24 @@ static char *expand_special(const char *token) {
         snprintf(buf, sizeof(buf), "%d", script_argc);
         return strdup(buf);
     }
+    if (strcmp(token, "$-") == 0) {
+        char flags[16];
+        int pos = 0;
+        if (opt_allexport)
+            flags[pos++] = 'a';
+        if (opt_errexit)
+            flags[pos++] = 'e';
+        if (opt_noglob)
+            flags[pos++] = 'f';
+        if (opt_noexec)
+            flags[pos++] = 'n';
+        if (opt_nounset)
+            flags[pos++] = 'u';
+        if (opt_xtrace)
+            flags[pos++] = 'x';
+        flags[pos] = '\0';
+        return strdup(flags);
+    }
     if (strcmp(token, "$@") == 0) {
         if (!script_argv || script_argc == 0)
             return strdup("");

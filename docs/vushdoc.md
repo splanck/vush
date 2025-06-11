@@ -99,7 +99,8 @@ vush> echo $?
 ```
 
 `$$` expands to the PID of the running shell while `$!` gives the PID of the
-most recent background job.
+most recent background job. `$-` expands to a string of the current option
+letters such as `eu` when `set -e` and `set -u` are enabled.
 
 Additional parameter expansion forms (doubling `#` or `%` removes the
 longest matching prefix or suffix):
