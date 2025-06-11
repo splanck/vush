@@ -862,16 +862,40 @@ int builtin_trap(char **args)
 /* Signal a loop to terminate after the current iteration. */
 int builtin_break(char **args)
 {
-    (void)args;
-    loop_break = 1;
+    int n = 1;
+    if (args[1]) {
+        char *end;
+        errno = 0;
+        long val = strtol(args[1], &end, 10);
+        if (*end != '\0' || errno != 0 || val <= 0) {
+            fprintf(stderr, "usage: break [N]\n");
+            return 1;
+        }
+        n = (int)val;
+    }
+    if (n > loop_depth)
+        n = loop_depth;
+    loop_break = n;
     return 1;
 }
 
 /* Skip directly to the next iteration of the innermost loop. */
 int builtin_continue(char **args)
 {
-    (void)args;
-    loop_continue = 1;
+    int n = 1;
+    if (args[1]) {
+        char *end;
+        errno = 0;
+        long val = strtol(args[1], &end, 10);
+        if (*end != '\0' || errno != 0 || val <= 0) {
+            fprintf(stderr, "usage: continue [N]\n");
+            return 1;
+        }
+        n = (int)val;
+    }
+    if (n > loop_depth)
+        n = loop_depth;
+    loop_continue = n;
     return 1;
 }
 

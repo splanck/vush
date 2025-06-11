@@ -243,8 +243,8 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `read [-r] VAR...` - read a line of input into variables.
 - `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).
-- `break` - exit the nearest loop.
-- `continue` - start the next iteration of the nearest loop.
+- `break [N]` - exit `N` levels of loops (default 1).
+- `continue [N]` - start the next iteration of the `N`th enclosing loop (default 1).
 - `getopts OPTSTRING VAR` - parse positional parameters, storing the
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
   `OPTIND`.
