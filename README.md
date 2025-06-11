@@ -101,6 +101,7 @@ environment variables:
   accepts `-L` (logical, default) and `-P` (physical) to control how paths are
   resolved. With `-L` `PWD` reflects the logical path while `-P` resolves the
   target with `realpath()` and sets `PWD` to the physical location.
+- `pwd` prints the current directory. Use `-P` to display the physical directory from `getcwd()` while `-L` (the default) uses the value of `$PWD`.
 
 Examples:
 
