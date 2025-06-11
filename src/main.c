@@ -46,6 +46,7 @@ char **script_argv = NULL;
 int opt_errexit = 0;
 int opt_nounset = 0;
 int opt_xtrace = 0;
+int opt_verbose = 0;
 int opt_pipefail = 0;
 int opt_noclobber = 0;
 int opt_noexec = 0;
@@ -135,6 +136,8 @@ static void process_startup_file(FILE *input)
 
     char rcline[MAX_LINE];
     while (read_logical_line(rc, rcline, sizeof(rcline))) {
+        if (opt_verbose)
+            printf("%s\n", rcline);
         char *exp = expand_history(rcline);
         if (!exp)
             continue;
@@ -181,6 +184,9 @@ static void run_command_string(const char *cmd)
     strncpy(linebuf, cmd, sizeof(linebuf) - 1);
     linebuf[sizeof(linebuf) - 1] = '\0';
     char *line = linebuf;
+
+    if (opt_verbose)
+        printf("%s\n", line);
 
     char *expanded = expand_history(line);
     if (!expanded)
@@ -238,6 +244,9 @@ static void repl_loop(FILE *input)
             line = linebuf;
         }
 
+        if (opt_verbose)
+            printf("%s\n", line);
+
         char *cmdline = strdup(line);
         if (line != linebuf)
             free(line);
@@ -270,6 +279,8 @@ static void repl_loop(FILE *input)
                     }
                     more = strdup(linebuf);
                 }
+                if (opt_verbose)
+                    printf("%s\n", more);
                 size_t len1 = strlen(cmdline);
                 size_t len2 = strlen(more);
                 char *tmp = malloc(len1 + len2 + 2);

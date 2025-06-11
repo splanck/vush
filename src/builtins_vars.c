@@ -82,6 +82,8 @@ int builtin_set(char **args) {
             opt_nounset = 1;
         else if (strcmp(args[i], "-x") == 0)
             opt_xtrace = 1;
+        else if (strcmp(args[i], "-v") == 0)
+            opt_verbose = 1;
         else if (strcmp(args[i], "-n") == 0)
             opt_noexec = 1;
         else if (strcmp(args[i], "-f") == 0)
@@ -105,6 +107,8 @@ int builtin_set(char **args) {
             opt_nounset = 0;
         else if (strcmp(args[i], "+x") == 0)
             opt_xtrace = 0;
+        else if (strcmp(args[i], "+v") == 0)
+            opt_verbose = 0;
         else if (strcmp(args[i], "+n") == 0)
             opt_noexec = 0;
         else if (strcmp(args[i], "+f") == 0)

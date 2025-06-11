@@ -399,6 +399,8 @@ static char *expand_special(const char *token) {
             flags[pos++] = 'n';
         if (opt_nounset)
             flags[pos++] = 'u';
+        if (opt_verbose)
+            flags[pos++] = 'v';
         if (opt_xtrace)
             flags[pos++] = 'x';
         flags[pos] = '\0';
