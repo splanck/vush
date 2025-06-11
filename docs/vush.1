@@ -1,404 +1,67 @@
 .TH VUSH 1 "" "vush 0.1.0"
 .SH NAME
-vush \- simple UNIX shell
+vush \- simple POSIX-style shell
 .SH SYNOPSIS
 .B vush
 .RI [ scriptfile ]
 .SH DESCRIPTION
-vush is a lightweight UNIX shell supporting command execution,
-pipelines, brace groups using '{ ... ; }', subshells using '(...)', command chaining with ';', '&&' and '||', and negation with '! cmd',
-environment variable expansion using \fB$VAR\fP, \fB${VAR}\fP and forms like
-\fB${VAR:-word}\fP, \fB${VAR:=word}\fP, \fB${VAR:+word}\fP, \fB${VAR#pat}\fP,
-\fB${VAR%pat}\fP and \fB${#VAR}\fP (with "$?" storing the last exit status, "$$" the shell PID, "$!" the last background job, "$-" the current option letters and "$LINENO" the current line number),
-command substitution using backticks or \fB$(\fPcmd\fB)\fP,
-arithmetic expansion using \fB$((\fPexpr\fB))\fP and a \fBlet\fP builtin,
-wildcard matching for '*' and '?', brace expansion like \fB{foo,bar}\fP or \fB{1..3}\fP, input and output redirection with
-Wildcard expansion may be disabled with set -f and re-enabled with set +f.
-\'<\', \'\>', \'>>\', \"2>\", \"2>>\" and \"&>\", process substitution using \fB<(cmd)\fP and \fB>(cmd)\fP, and background jobs.  When a
-\fIscriptfile\fP is supplied, commands are read from that file
-instead of standard input.  A `#` outside of quotes begins a comment
-and causes the rest of the line to be ignored.
-A function may be defined using \fIname\fP() {\fIcommands\fP} or with the \fBfunction\fP keyword and invoked like a command.
-A trailing backslash joins the next line before parsing.
-When run interactively, arrow keys allow editing the current line and
-recalling previous commands from history.  `Ctrl-A` or the Home key moves
-the cursor to the start of the line, `Ctrl-E` or End moves to the end and
-`Ctrl-U` clears from the cursor back to the beginning.  `Ctrl-W` deletes
-the word before the cursor, `Ctrl-K` deletes from the cursor to the end
-of the line and `Ctrl-L` clears the screen and redraws the current line.
-Typing `!!` repeats the previous command. `!n` recalls command number `n` and
-`!-n` goes back `n` commands. `!$` expands to the last word of the previous
-command and `!*` expands to all of its arguments. `!prefix` recalls the most
-recent command beginning with `prefix`.
-If \fB~/.vushrc\fP exists, commands from this file are executed before
-the first prompt is shown.  If the \fBENV\fP variable is set, the named
-file is processed afterwards.
+vush is a lightweight POSIX-style shell focused on providing the
+essentials for interactive and scripted use. It supports job control,
+pipelines, redirection and standard shell expansions. See README.md or
+docs/vushdoc.md for a full feature overview.
 .SH OPTIONS
 .TP
-.BI -c " command"
-Execute the provided command string non-interactively and exit with its
-status.
+.B -c command
+Execute the provided command string and exit.
 .TP
 .BR -V , --version
-Print the version and exit.
-.SH POSITIONAL PARAMETERS
-When executing a script file, the remaining command line words become
-positional parameters.  \$0 expands to the script path and \$1, \$2 and
-so on expand to subsequent parameters. Indexes beyond nine may be
-referenced using the full number such as \$10 or \$11.  \$@ expands to
-all parameters separated by spaces while \$* joins them using the first
-character of \fBIFS\fP (space by default).  \$# expands to the number of
-parameters.  The \fBshift\fP builtin discards the first \fIn\fP parameters
-(one if omitted) and moves the rest down.
-
-.SH ASSIGNMENTS
-.PP
-Words of the form \fBNAME=value\fP appearing before a command are added to that
-command's environment only.  Using the same syntax without a command creates a
-shell variable that persists but is not exported.
-.PP
-Arrays are created with \fBNAME=(word ...)\fP. Elements are referenced with
-\fB${NAME[index]}\fP and all elements with \fB${NAME[@]}\fP.
-.SH PARAMETER EXPANSION
-Several forms modify how variables are expanded:
-.PP
-The form \fB${VAR/pat/repl}\fP replaces the first portion of \fB$VAR\fP
-matching \fIpat\fP with \fIrepl\fP.  Doubling the slash with
-\fB${VAR//pat/repl}\fP performs the substitution globally.
-Using \fB${VAR#pat}\fP and \fB${VAR%pat}\fP removes the shortest matching
-prefix or suffix. Doubling the operator with \fB${VAR##pat}\fP or
-\fB${VAR%%pat}\fP removes the longest match instead.
-The forms \fB${VAR?word}\fP and \fB${VAR:?word}\fP print \fIword\fP (or a
-default message) to the standard error and return failure when the variable is
-unset or empty.
-.EX
-unset TMP
-echo ${TMP:?missing}
-echo ${TMP:-default}
-echo ${TMP:=set}
-echo ${TMP:+alt}
-TMP=endings
-echo ${TMP#end}
-echo ${TMP%ings}
-echo ${TMP##e*}
-echo ${TMP%%e*}
-echo ${#TMP}
-TMP=hello
-echo ${TMP/l/1}
-echo ${TMP//l/1}
-TMP=abcdef
-echo ${TMP:3}
-echo ${TMP:3:2}
-.EE
-.SH CONTROL STRUCTURES
-The keywords \fBif\fP, \fBthen\fP, \fBelse\fP, \fBelif\fP and \fBfi\fP provide
-conditional execution. Commands following \fBthen\fP run when the test before
-it exits with status 0. An optional \fBelif\fP or \fBelse\fP section executes
-when previous tests fail.
-.PP
-Loops are created with \fBwhile\fP/\fBdo\fP/\fBdone\fP,
-\fBuntil\fP/\fBdo\fP/\fBdone\fP, \fBfor\fP/\fBin\fP/\fBdo\fP/\fBdone\fP or
-\fBselect\fP/\fBin\fP/\fBdo\fP/\fBdone\fP.
-The \fBwhile\fP and \fBuntil\fP conditions are evaluated before each iteration.
-\fBwhile\fP continues while the test succeeds whereas \fBuntil\fP repeats until
-the test succeeds. \fBfor\fP assigns each word to a variable in turn.  \fBselect\fP
-prints a numbered menu and assigns the chosen word to a variable.
-.PP
-The \fBcase\fP word is matched against pattern lists terminated with \fB;;\fP or
-\fB;&\fP to fall through to the next pattern. Wildcards \fB*\fP and \fB?\fP are
-supported. The list ends with \fBesac\fP.
-.PP
-Example:
-.EX
-if test "$USER" = root; then echo admin; else echo user; fi
-for x in a b c; do echo $x; done
-export i=0; while test $i -lt 2; do echo $i; export i=$(expr $i + 1); done
-for x in a b c; do if test $x = b; then continue; fi; echo $x; done
-for ((i=0; i<3; i++)); do echo $i; done
-while true; do echo done; break; done
-export j=2; until test $j -eq 0; do echo $j; export j=$(expr $j - 1); done
-case 1 in 1) echo one ;& 2) echo two ;; esac
-select x in foo bar; do echo $x; break; done
-1) foo
-2) bar
-? 2
-bar
-.EE
+Print version information and exit.
 .SH BUILTINS
-.TP
-.B cd [-L|-P] [dir]
-Change the current directory. Without an argument it switches to \fB$HOME\fP.
-Both \fB~\fP and \fB~user\fP expand to home directories using the password
-database. After a successful change \fB$PWD\fP and \fB$OLDPWD\fP are updated.
-Using \fBcd -\fP prints and switches to \fB$OLDPWD\fP. The \fB-L\fP option is
-the default logical behavior and keeps \fB$PWD\fP as the logical path.\
- \fB-P\fP resolves the target with \fBrealpath(3)\fP and sets \fB$PWD\fP to
-the physical location. When the directory does not begin with
-\fB/\fP or \fB.\fP, each entry in the \fBCDPATH\fP environment variable is
-searched. If a path from \fBCDPATH\fP is used the resolved directory is printed
-on success. Example: \fBcd ~otheruser\fP
-.br
-Example: \fBcd -P /tmp/my_link\fP
-.TP
-.B pushd dir
-Push the current directory onto a stack and switch to \fIdir\fP. The stack is
-printed after the change.
-.TP
-.B popd
-Switch to the directory most recently pushed with \fBpushd\fP. The stack is
-printed after the switch.
-.TP
-.B printf \fIformat\fP [\fIargs...\fP]
-Print formatted text according to the format string using standard
-printf(3) conversions. The exit status is 0 on success. The \fB%b\fP
-conversion interprets backslash escapes in the argument before printing.
-.TP
-.B echo [\fB-n\fP] [\fB-e\fP] \fIargs...\fP
-Print each ARG separated by spaces. With \fB-n\fP the trailing newline is
-omitted. \fB-e\fP enables interpretation of backslash escapes like \n and \t.
-.TP
-.B dirs
-Display the directory stack.
-.TP
-.B exit [STATUS]
-Exit the shell with the given status (default 0).
-.TP
-.B :
-Do nothing and return success.
-.TP
-.B true
-Return success.
-.TP
-.B false
-Return failure.
-.TP
-.B pwd [-L|-P]
-Print the current working directory. \fB-P\fP displays the physical directory
-from \fBgetcwd(3)\fP while \fB-L\fP (the default) prints \fB$PWD\fP.
-.TP
-.B jobs [-l|-p] [ID...]
-List background jobs. The \fB-l\fP option prints the PID and status and \fB-p\fP prints only the PID. When one or more job IDs are given only those jobs are shown.
-.TP
-.B fg ID
-Wait for job ID in the foreground.
-.TP
-.B bg ID
-Continue job ID in the background.
-.TP
-.B kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...
-Send a signal to the given job or PID or list signals with -l.
-.TP
-.B wait [ID|PID...]
-Wait for the specified job IDs or process IDs. With no arguments wait
-for all running jobs.
-.TP
-.B trap [-p | 'cmd' SIGNAL]
-Print currently set traps with \fB-p\fP or no arguments, or run \fIcmd\fP when \fISIGNAL\fP is received.
-Use "trap SIGNAL" to clear. Use "EXIT" or "0" to run \fIcmd\fP when the shell exits.
-.TP
-.B export [-p|-n \fIname\fP] \fIname\fP[=\fIvalue\fP]
-Set or mark shell variables for export. The \fB-p\fP option lists all exported
-variables. Using \fB-n\fP \fIname\fP removes the export attribute from
-\fIname\fP without unsetting it. When no \fIvalue\fP is given the variable's
-current value is exported and it is created with an empty value if undefined.
-.TP
-.B readonly [-p] NAME[=VALUE]...
-Mark each variable as read-only or list all read-only variables. If no
-\fIvalue\fP is given and the variable does not exist, it is created with an
-empty value. When listing, the variables are printed as \fBreadonly NAME=value\fP.
-.TP
-.B local \fIname\fP[=value] ...
-Mark each variable as local to the current function. Previous values are
-restored when the function returns.
-.TP
-.B unset [-f] \fIname\fP
-Remove an environment variable or, with \fB-f\fP, delete a function.
-.TP
-.B history [-c | -d \fInum\fP]
-Show command history, clear it with \fB-c\fP, or delete entry \fInum\fP with \fB-d\fP.
-History is saved to the file specified by \fBVUSH_HISTFILE\fP (default \fB~/.vush_history\fP).
-The number of entries kept is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
-.TP
-.B fc [\-l] [\-e \fIeditor\fP] [first [last]]
-List or edit commands from history. With \fB-l\fP the range is printed.
-Otherwise the commands are written to a temporary file, edited with
-\fIeditor\fP (default $FCEDIT or "ed") and executed.
-.TP
-.B hash [name...]
-Manage or display the command hash table.
-.TP
-.B alias [-p] [\fIname\fP[=\fIvalue\fP]]
-Set or display aliases. With no arguments all aliases are shown. A single name prints that alias. The \fB-p\fP option lists using "alias name='value'" format.
-.TP
-.B unalias [-a] \fIname\fP
-Remove alias definitions. With \fB-a\fP all aliases are cleared.
-.TP
-.B read [-r] \fIvar\fP ...
-Read a line from standard input and assign the words to each \fIvar\fP in
-order. The last variable receives the remainder of the line. With \fB-r\fP
-backslashes are not treated specially.
-.TP
-.B return [status]
-Return from a shell function with the given status (default 0).
-.TP
-.B shift [n]
-Shift positional parameters down by \fIn\fP (default 1).
-.TP
-.B break [n]
-Exit \fIn\fP levels of enclosing loops (default 1).
-.TP
-.B continue [n]
-Skip to the next iteration of the \fIn\fPth enclosing loop (default 1).
-.TP
-.B getopts optstring var
-Parse positional parameters according to \fIoptstring\fP. The next option
-character is stored in \fIvar\fP and \fBOPTARG\fP is set when an argument is
-present. \fBOPTIND\fP is updated to the index of the next parameter. The
-status is 0 while options are found and 1 when parsing ends.
-.TP
-.B let expr
-Evaluate an arithmetic expression and return success if the result is non-zero.
-.TP
-\.B set [-e|-u|-x|-n|-f|-C|-a|-o \fIoption\fP|+o \fIoption\fP] [-- \fIarg ...\fP]
-Toggle shell options. \-e exits on command failure, \-u errors on
-undefined variables, \-x prints each command before execution, -v echoes input lines as they are read, -n parses commands without executing them, -f disables wildcard expansion (use +f to re-enable), -C prevents `>` from overwriting existing files (use +C to allow it again), -a exports all assignments, -b prints a message when background jobs finish (use +b to disable), -m enables background job tracking (use +m to disable),
-\-o pipefail causes pipelines to return the status of the first failing
-command and \-o noclobber has the same effect as -C.
-Use \+o with the option name or +C to disable it again.  If any arguments
-remain after option processing, they replace the positional parameters
-`$1`, `$2`, ... and `$#`. When called with no operands, all shell
-variables and functions are printed in a reusable form.
-.TP
-Aliases are saved to the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP), one \fIname\fP=\fIvalue\fP per line.
-.TP
-Functions are saved to the file specified by \fBVUSH_FUNCFILE\fP (default \fB~/.vush_funcs\fP).
-.TP
-.B test expression
-Evaluate EXPRESSION and return success if it is true.  Supports string
-comparisons with '=' and '!=', the -n and -z checks, numeric operators
--eq, -ne, -gt, -lt, -ge and -le, and POSIX file tests including -e, -f, -d,
--r, -w, -x, -b, -c, -p, -h, -L, -s, -O, -G, -u, -g, -k, -S and -t.
-The \fB[\fP builtin is a synonym that requires a closing '\]'.
-.TP
-.B [[ expression ]]
-Evaluate EXPRESSION using shell pattern matching. "==" and "!=" compare
-strings and allow wildcards like '*' and '?'.
-.TP
-.B type \fIname\fP...
-For each argument, print whether it is an alias, builtin or the full path of an
-executable found in \fB$PATH\fP.
-.TP
-.B command [\-p|\-v|\-V] \fIname [args...]\fP
-Without options, execute NAME directly, bypassing aliases and functions.
-The \fB-p\fP option searches or executes using the fallback path \fB/bin:/usr/bin\fP instead of the current \fB$PATH\fP.
-With \fB-v\fP or \fB-V\fP, display how NAME would be resolved.\
-\fB-v\fP prints only the resulting path or name while \fB-V\fP
-provides a verbose description similar to \fBtype\fP.
-.TP
-.B eval \fIargs...\fP
-Concatenate the arguments into a single command line and execute it in the
-current shell.
-.TP
-.B exec \fIcommand [args...]\fP
-Replace the shell with the specified command.
-.TP
-.B time \fIcommand [args...]\fP
-Run the command and print the elapsed real time in seconds.
-.TP
-.B times
-Display user and system CPU times for the shell and its children.
-.TP
-.B ulimit \fI[-a|-c|-d|-f|-n|-s|-t|-v] [limit]\fP
-Display or set resource limits. With no option, print the current file
-size limit. The -a flag prints all supported limits. Providing a number
-sets the selected limit.
-.TP
-.B umask [\-S] [mode]
-Print or set the file creation mask. Without an argument the current mask is
-printed in octal. The
-.B \-S
-option causes the mask to be displayed in symbolic form (e.g.,
-.B u=rwx,g=rx,o=rx
-). When MODE is supplied it may be an octal number or a symbolic string
-(like the output of
-.B \-S)
-and becomes the new mask. If MODE is given together with
-.B \-S,
-the mask is set and then printed symbolically.
-.TP
-.B source \fIfile [args...]\fP
-Read commands from \fIfile\fP using \fIargs\fP as positional parameters. If
-\fIfile\fP contains no \fB/\fP, each directory in \fB$PATH\fP is searched.
-.TP
-.B . \fIfile [args...]\fP
-Alias for \fBsource\fP.
-.TP
-.B help
-Display information about built-in commands.
-.SH CONFIGURATION
-If \fB~/.vushrc\fP is present, it is read before the first prompt so startup
-behavior can be customized.  If \fBENV\fP is set, the file it names is read
-afterwards.  Command history is stored in the file named by
-\fBVUSH_HISTFILE\fP and limited by \fBVUSH_HISTSIZE\fP.  Persistent aliases and
-functions come from \fBVUSH_ALIASFILE\fP and \fBVUSH_FUNCFILE\fP respectively.
-Users may adjust \fBPS1\fP for the prompt and set \fBCDPATH\fP to search
-additional directories with \fBcd\fP.  See the ENVIRONMENT section for default
-paths and variable descriptions.
+Built-in commands cover common shell tasks such as variable
+management, flow control and job handling. Refer to README.md for the
+complete list.
+.SH SHELL FEATURES
+Parameter, command and arithmetic expansion, wildcard matching,
+functions, history and background jobs are available. Expanded
+examples reside in docs/vushdoc.md.
 .SH ENVIRONMENT
 .TP
-.B PS1
-Controls the interactive shell prompt. The contents of this variable are
-printed before each command and undergo normal variable and command
-substitution. The default prompt is \"vush> \" but users may set \fBPS1\fP to any
-string to include information such as the current directory.
-.TP
-.B PS2
-Displayed when the parser requires additional input, for example after an
-unclosed quote. The default value is \"\> \".
-.TP
-.B PS3
-Prompt string used by the \fBselect\fP builtin. Defaults to \"? \".
-.TP
-.B PS4
-Prefix printed before trace output when \fBset -x\fP is active. Defaults to
-\"+ \".
-.TP
 .B VUSH_HISTFILE
-Path to the file used for saving command history. The default is
-\fB~/.vush_history\fP.
+Location of the history file.
 .TP
 .B VUSH_HISTSIZE
-Maximum number of commands retained in \fBVUSH_HISTFILE\fP. The default
-is 1000.
+Maximum number of history entries.
 .TP
 .B VUSH_ALIASFILE
-File that stores persistent alias definitions. Defaults to
-\fB~/.vush_aliases\fP.
+File used to store persistent aliases.
 .TP
 .B VUSH_FUNCFILE
-File that stores persistent function definitions. Defaults to
-\fB~/.vush_funcs\fP.
-.TP
-.B CDPATH
-Colon-separated list of directories searched by \fBcd\fP when given a
-relative path. Unset by default.
+File used to store persistent functions.
 .TP
 .B ENV
-Path of a file sourced after \fB~/.vushrc\fP if set.
-.SH REDIRECTION
-Standard input can be redirected with '<'.  Standard output may be
-redirected with '>' or '>>' to append.  Likewise, file descriptor 2
-(standard error) can be redirected using '2>' or '2>>'.
-Both descriptors may be sent to the same file with '&>' or '>&file'.
-File descriptors can also be duplicated, e.g. '2>&1' or '>&2'.
-Use '>&-' or '2>&-' to close the descriptor instead of redirecting it.
-Here-documents can be created with '<<WORD'. Lines are read until a
-line containing only WORD is found and the intervening text becomes the
-command's standard input.  A single word may be used directly as input
-with the '<<<WORD' syntax which writes WORD to a temporary file and uses
-it as standard input.
+Extra startup file executed after \fB~/.vushrc\fP when set.
+.TP
+.B PS1
+Primary command prompt string.
+.SH FILES
+.TP
+.B ~/.vushrc
+Commands executed before the first prompt if present.
+.TP
+.B ~/.vush_history
+Persistent command history.
+.TP
+.B ~/.vush_aliases
+Stored aliases.
+.TP
+.B ~/.vush_funcs
+Stored functions.
+.SH EXAMPLES
+.B vush
+starts an interactive shell. To run a script file use
+.B "vush script.vsh".
+More examples can be found in docs/vushdoc.md.
 .SH SEE ALSO
-README.md
-.SH TESTING
-Run "make test" in the source tree to execute the automated Expect scripts.
-They exercise the interactive line editor and built-in commands.
+README.md, docs/vushdoc.md, sh(1)
+.SH AUTHOR
+The vush developers.
