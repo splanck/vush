@@ -272,8 +272,8 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
   The file contains one `name=value` pair per line without quotes.
 - `type NAME...` - display how each NAME would be interpreted.
 - `command [-p] [-v|-V] NAME [args...]` - run `NAME` ignoring shell functions.
-  With `-v` or `-V` display how the name would be resolved and `-p` searches
-  using the default path `/bin:/usr/bin`.
+  With `-v` or `-V` display how the name would be resolved. The `-p` option searches or executes using `/bin:/usr/bin` instead of the current `$PATH`.
+
 - `eval WORDS...` - concatenate arguments and execute the result.
 - `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters.
 - `help` - display information about built-in commands.

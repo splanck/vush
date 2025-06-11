@@ -296,7 +296,7 @@ int builtin_exec(char **args) {
 
 /* Execute a command ignoring any shell aliases or functions. */
 int builtin_command(char **args) {
-    static const char fallback[] = "/bin:/usr/bin";
+    const char fallback[] = "/bin:/usr/bin";
     int i = 1;
     int opt_v = 0, opt_V = 0, opt_p = 0;
 

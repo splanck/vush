@@ -281,7 +281,7 @@ executable found in \fB$PATH\fP.
 .TP
 .B command [\-p|\-v|\-V] \fIname [args...]\fP
 Without options, execute NAME directly, bypassing aliases and functions.
-The \fB-p\fP option searches using the default path \fB/bin:/usr/bin\fP.
+The \fB-p\fP option searches or executes using the fallback path \fB/bin:/usr/bin\fP instead of the current \fB$PATH\fP.
 With \fB-v\fP or \fB-V\fP, display how NAME would be resolved.\
 \fB-v\fP prints only the resulting path or name while \fB-V\fP
 provides a verbose description similar to \fBtype\fP.

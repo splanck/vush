@@ -14,6 +14,8 @@ Current version: 0.1.0
   `help`, `history`, `jobs [-l|-p]`, `kill [-s SIG|-l]`, `let`, `local`, `popd`, `printf`, `pushd`,
   `pwd`, `read`, `readonly`, `return`, `set`, `shift`, `source` (or `.`), `test`,
  `time`, `times`, `trap [-p]`, `true`, `type`, `ulimit`, `umask [-S] [mask]`, `unalias [-a]`, `unset`, `wait`, and `:`
+- The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
+
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
 - `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
