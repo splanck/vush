@@ -60,6 +60,8 @@ Current version: 0.1.0
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
   and `Ctrl-U` clears back to the start
 - Startup commands read from `~/.vushrc` if the file exists
+- Additional startup commands read from the file named by the `ENV`
+  environment variable if set
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`, `set -f`/`set +f`, `set -a` and `set -o OPTION` such as `pipefail` or `noclobber`
@@ -104,6 +106,7 @@ Startup behavior and saved state can be customized with a few files and
 environment variables:
 
 - `~/.vushrc` runs before the first prompt if present.
+- `ENV` can specify an additional startup file executed after `~/.vushrc`.
 - `VUSH_HISTFILE` controls where history is saved (default `~/.vush_history`).
 - `VUSH_HISTSIZE` limits how many entries are kept in the history file
   (default 1000).

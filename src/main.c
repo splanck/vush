@@ -54,6 +54,7 @@ int opt_noglob = 0;
 int opt_allexport = 0;
 int current_lineno = 0;
 
+static void process_rc_file(const char *path, FILE *input);
 static void process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
 static void repl_loop(FILE *input);
@@ -124,14 +125,9 @@ void run_exit_trap(void)
  * parsed and executed before starting the main loop. The commands are
  * added to history and `parse_input` is temporarily set to the rc file.
  */
-static void process_startup_file(FILE *input)
+static void process_rc_file(const char *path, FILE *input)
 {
-    const char *home = getenv("HOME");
-    if (!home)
-        return;
-    char rcpath[PATH_MAX];
-    snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
-    FILE *rc = fopen(rcpath, "r");
+    FILE *rc = fopen(path, "r");
     if (!rc)
         return;
 
@@ -173,6 +169,16 @@ static void process_startup_file(FILE *input)
     }
     fclose(rc);
     parse_input = input;
+}
+
+static void process_startup_file(FILE *input)
+{
+    const char *home = getenv("HOME");
+    if (!home)
+        return;
+    char rcpath[PATH_MAX];
+    snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
+    process_rc_file(rcpath, input);
 }
 
 /*
@@ -372,6 +378,10 @@ int main(int argc, char **argv) {
     load_functions();
 
     process_startup_file(input);
+
+    const char *envfile = getenv("ENV");
+    if (envfile && *envfile)
+        process_rc_file(envfile, input);
 
     if (dash_c)
         run_command_string(dash_c);

@@ -31,7 +31,8 @@ Typing `!!` repeats the previous command. `!n` recalls command number `n` and
 command and `!*` expands to all of its arguments. `!prefix` recalls the most
 recent command beginning with `prefix`.
 If \fB~/.vushrc\fP exists, commands from this file are executed before
-the first prompt is shown.
+the first prompt is shown.  If the \fBENV\fP variable is set, the named
+file is processed afterwards.
 .SH OPTIONS
 .TP
 .BI -c " command"
@@ -334,7 +335,8 @@ Alias for \fBsource\fP.
 Display information about built-in commands.
 .SH CONFIGURATION
 If \fB~/.vushrc\fP is present, it is read before the first prompt so startup
-behavior can be customized.  Command history is stored in the file named by
+behavior can be customized.  If \fBENV\fP is set, the file it names is read
+afterwards.  Command history is stored in the file named by
 \fBVUSH_HISTFILE\fP and limited by \fBVUSH_HISTSIZE\fP.  Persistent aliases and
 functions come from \fBVUSH_ALIASFILE\fP and \fBVUSH_FUNCFILE\fP respectively.
 Users may adjust \fBPS1\fP for the prompt and set \fBCDPATH\fP to search
@@ -378,6 +380,9 @@ File that stores persistent function definitions. Defaults to
 .B CDPATH
 Colon-separated list of directories searched by \fBcd\fP when given a
 relative path. Unset by default.
+.TP
+.B ENV
+Path of a file sourced after \fB~/.vushrc\fP if set.
 .SH REDIRECTION
 Standard input can be redirected with '<'.  Standard output may be
 redirected with '>' or '>>' to append.  Likewise, file descriptor 2
