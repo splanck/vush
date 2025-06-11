@@ -6,5 +6,7 @@ extern int opt_nounset;
 extern int opt_xtrace;
 extern int opt_pipefail;
 extern int opt_noclobber;
+extern int opt_noexec;
+extern int opt_noglob;
 
 #endif /* OPTIONS_H */

@@ -1191,7 +1191,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
 
         for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
             char *bt = btoks[bi];
-            if (!quoted && (strchr(bt, '*') || strchr(bt, '?'))) {
+            if (!quoted && !opt_noglob && (strchr(bt, '*') || strchr(bt, '?'))) {
                 glob_t g;
                 int r = glob(bt, 0, NULL, &g);
                 if (r == 0 && g.gl_pathc > 0) {

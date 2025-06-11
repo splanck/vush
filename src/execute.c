@@ -315,8 +315,16 @@ int run_command_list(Command *cmds, const char *line) {
             else if (prev == OP_OR)
                 run = (last_status != 0);
         }
-        if (run)
-            run_pipeline(c, line);
+        if (run) {
+            if (opt_noexec) {
+                if (c->type == CMD_PIPELINE && c->pipeline &&
+                    c->pipeline->argv[0] &&
+                    strcmp(c->pipeline->argv[0], "set") == 0)
+                    run_pipeline(c, line);
+            } else {
+                run_pipeline(c, line);
+            }
+        }
         prev = c->op;
         if (func_return || loop_break || loop_continue)
             break;
