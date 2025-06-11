@@ -290,7 +290,7 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
   Without `=VALUE` the variable is created with an empty value if undefined.
   With `-p` the variables are printed using `readonly NAME=value` format.
 - `local NAME[=VALUE]` - define a variable scoped to the current function.
-- `unset [-f] NAME` - remove an environment variable or function with `-f`.
+- `unset [-f|-v] NAME` - remove functions with `-f`, variables with `-v`, or both.
 - `history [-c|-d NUMBER]` - show command history, clear it with `-c`, or delete a specific entry with `-d`.
   Entries are read from and written to the file specified by `VUSH_HISTFILE`
   (default `~/.vush_history`). History size is controlled by the

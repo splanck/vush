@@ -206,21 +206,33 @@ int builtin_let(char **args) {
  */
 int builtin_unset(char **args) {
     int remove_func = 0;
+    int remove_vars = 0;
     int i = 1;
-    if (args[i] && strcmp(args[i], "-f") == 0) {
-        remove_func = 1;
+    while (args[i] && args[i][0] == '-') {
+        if (strcmp(args[i], "-f") == 0)
+            remove_func = 1;
+        else if (strcmp(args[i], "-v") == 0)
+            remove_vars = 1;
+        else
+            break;
         i++;
     }
+    if (!remove_func && !remove_vars) {
+        remove_func = remove_vars = 1;
+    }
     if (!args[i]) {
-        fprintf(stderr, "usage: unset [-f] NAME...\n");
+        fprintf(stderr, "usage: unset [-f|-v] NAME...\n");
         return 1;
     }
     for (; args[i]; i++) {
         char *name = args[i];
         if (remove_func) {
             remove_function(name);
-            continue;
+            if (!remove_vars)
+                continue;
         }
+        if (!remove_vars)
+            continue;
         char *lb = strchr(name, '[');
         if (lb && name[strlen(name)-1] == ']') {
             char *endptr;
