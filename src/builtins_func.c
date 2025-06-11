@@ -136,6 +136,25 @@ Command *get_function(const char *name)
     return NULL;
 }
 
+/* Remove NAME from the function list if present. */
+void remove_function(const char *name)
+{
+    struct func_entry *prev = NULL;
+    for (struct func_entry *f = functions; f; prev = f, f = f->next) {
+        if (strcmp(f->name, name) == 0) {
+            if (prev)
+                prev->next = f->next;
+            else
+                functions = f->next;
+            free(f->name);
+            free(f->text);
+            free_commands(f->body);
+            free(f);
+            return;
+        }
+    }
+}
+
 /* Free all function entries without saving them. */
 static void free_function_entries(void)
 {

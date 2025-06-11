@@ -35,6 +35,7 @@ void load_aliases(void);
 void free_aliases(void);
 void define_function(const char *name, Command *body, const char *text);
 Command *get_function(const char *name);
+void remove_function(const char *name);
 void load_functions(void);
 void free_functions(void);
 const char *get_shell_var(const char *name);

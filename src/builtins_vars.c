@@ -604,12 +604,22 @@ int builtin_let(char **args) {
  * errors when the usage is incorrect.
  */
 int builtin_unset(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: unset NAME...\n");
+    int remove_func = 0;
+    int i = 1;
+    if (args[i] && strcmp(args[i], "-f") == 0) {
+        remove_func = 1;
+        i++;
+    }
+    if (!args[i]) {
+        fprintf(stderr, "usage: unset [-f] NAME...\n");
         return 1;
     }
-    for (int i = 1; args[i]; i++) {
+    for (; args[i]; i++) {
         char *name = args[i];
+        if (remove_func) {
+            remove_function(name);
+            continue;
+        }
         char *lb = strchr(name, '[');
         if (lb && name[strlen(name)-1] == ']') {
             char *endptr;
