@@ -251,31 +251,56 @@ static Command *parse_case_clause(char **p) {
 Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
     int qfunc = 0;
-    char *fname = read_token(p, &qfunc);
-    if (fname && !qfunc && **p == '(' && *(*p + 1) == ')') {
-        *p += 2;
+    char *tok = read_token(p, &qfunc);
+    if (!tok)
+        return NULL;
+
+    int using_kw = 0;
+    if (!qfunc && strcmp(tok, "function") == 0 && (**p == ' ' || **p == '\t')) {
+        using_kw = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '{') {
-            char *bodytxt = gather_braced(p);
-            if (!bodytxt) { free(fname); return NULL; }
-            Command *body_cmd = parse_line(bodytxt);
-            Command *cmd = calloc(1, sizeof(Command));
-            cmd->type = CMD_FUNCDEF;
-            cmd->var = fname;
-            cmd->text = bodytxt;
-            cmd->body = body_cmd;
-            while (**p == ' ' || **p == '\t') (*p)++;
-            CmdOp op = OP_NONE;
-            if (**p == ';') { op = OP_SEMI; (*p)++; }
-            else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
-            else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
-            cmd->op = op;
-            if (op_out) *op_out = op;
-            return cmd;
-        }
+        free(tok);
+        tok = read_token(p, &qfunc);
+        if (!tok || qfunc) { goto fail; }
     }
+
+    char *fname = tok;
+    if (!qfunc) {
+        size_t len = strlen(fname);
+        if (len > 2 && fname[len-2] == '(' && fname[len-1] == ')') {
+            fname[len-2] = '\0';
+        } else if (**p == '(' && *(*p + 1) == ')') {
+            *p += 2;
+        } else if (!using_kw) {
+            goto fail;
+        }
+    } else {
+        goto fail;
+    }
+
+    while (**p == ' ' || **p == '\t') (*p)++;
+    if (**p == '{') {
+        char *bodytxt = gather_braced(p);
+        if (!bodytxt) goto fail;
+        Command *body_cmd = parse_line(bodytxt);
+        Command *cmd = calloc(1, sizeof(Command));
+        cmd->type = CMD_FUNCDEF;
+        cmd->var = fname;
+        cmd->text = bodytxt;
+        cmd->body = body_cmd;
+        while (**p == ' ' || **p == '\t') (*p)++;
+        CmdOp op = OP_NONE;
+        if (**p == ';') { op = OP_SEMI; (*p)++; }
+        else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
+        else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
+        cmd->op = op;
+        if (op_out) *op_out = op;
+        return cmd;
+    }
+
+fail:
     *p = savep;
-    if (fname) free(fname);
+    free(tok);
     return NULL;
 }
 

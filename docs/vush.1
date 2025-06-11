@@ -18,7 +18,7 @@ Wildcard expansion may be disabled with set -f and re-enabled with set +f.
 \fIscriptfile\fP is supplied, commands are read from that file
 instead of standard input.  A `#` outside of quotes begins a comment
 and causes the rest of the line to be ignored.
-A function may be defined using \fIname\fP() {\fIcommands\fP} and invoked like a command.
+A function may be defined using \fIname\fP() {\fIcommands\fP} or with the \fBfunction\fP keyword and invoked like a command.
 A trailing backslash joins the next line before parsing.
 When run interactively, arrow keys allow editing the current line and
 recalling previous commands from history.  `Ctrl-A` or the Home key moves

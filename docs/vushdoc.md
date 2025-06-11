@@ -382,6 +382,9 @@ bar
 vush> greet() { echo Hello $1; }
 vush> greet world
 Hello world
+vush> function bye { echo Bye $1; }
+vush> bye folks
+Bye folks
 vush> greet foo; echo $?
 Hello foo
 0
