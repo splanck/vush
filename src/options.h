@@ -10,5 +10,6 @@ extern int opt_noclobber;
 extern int opt_noexec;
 extern int opt_noglob;
 extern int opt_allexport;
+extern int current_lineno;
 
 #endif /* OPTIONS_H */

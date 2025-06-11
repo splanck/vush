@@ -205,6 +205,7 @@ static void execute_source_file(FILE *input)
 {
     char line[MAX_LINE];
     while (read_logical_line(input, line, sizeof(line))) {
+        current_lineno++;
         if (opt_verbose)
             printf("%s\n", line);
         Command *cmds = parse_line(line);

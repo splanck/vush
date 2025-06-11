@@ -28,6 +28,7 @@ Current version: 0.1.0
 - `$?` expands to the exit status of the last foreground command
 - `$$` expands to the PID of the running shell and `$!` to the last background job
 - `$-` expands to the currently enabled option letters
+- `$LINENO` expands to the current input line number
  - Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`,
    re-enable with `set +f`)
 - Brace expansion for patterns like `{foo,bar}` and `{1..3}`

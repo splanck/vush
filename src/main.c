@@ -52,6 +52,7 @@ int opt_noclobber = 0;
 int opt_noexec = 0;
 int opt_noglob = 0;
 int opt_allexport = 0;
+int current_lineno = 0;
 
 static void process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
@@ -136,6 +137,7 @@ static void process_startup_file(FILE *input)
 
     char rcline[MAX_LINE];
     while (read_logical_line(rc, rcline, sizeof(rcline))) {
+        current_lineno++;
         if (opt_verbose)
             printf("%s\n", rcline);
         char *exp = expand_history(rcline);
@@ -238,9 +240,11 @@ static void repl_loop(FILE *input)
             free(prompt);
             if (!line)
                 break;
+            current_lineno++;
         } else {
             if (!read_logical_line(input, linebuf, sizeof(linebuf)))
                 break;
+            current_lineno++;
             line = linebuf;
         }
 
@@ -271,12 +275,14 @@ static void repl_loop(FILE *input)
                     more = line_edit(p2);
                     free(p2);
                     if (!more) { free(cmdline); cmdline = NULL; break; }
+                    current_lineno++;
                 } else {
                     if (!read_logical_line(input, linebuf, sizeof(linebuf))) {
                         free(cmdline);
                         cmdline = NULL;
                         break;
                     }
+                    current_lineno++;
                     more = strdup(linebuf);
                 }
                 if (opt_verbose)
