@@ -246,12 +246,34 @@ int builtin_dirs(char **args) {
  * queries getcwd and writes the result to stdout; it has no side effects.
  */
 int builtin_pwd(char **args) {
-    (void)args;
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd))) {
-        printf("%s\n", cwd);
+    int physical = 0; /* -P option */
+    int idx = 1;
+    if (args[idx] && args[idx][0] == '-' && args[idx][1] && !args[idx][2]) {
+        if (args[idx][1] == 'P') {
+            physical = 1;
+            idx++;
+        } else if (args[idx][1] == 'L') {
+            idx++;
+        } else {
+            fprintf(stderr, "usage: pwd [-L|-P]\n");
+            return 1;
+        }
+    }
+
+    if (args[idx]) {
+        fprintf(stderr, "usage: pwd [-L|-P]\n");
+        return 1;
+    }
+
+    if (physical || !getenv("PWD")) {
+        char cwd[PATH_MAX];
+        if (getcwd(cwd, sizeof(cwd))) {
+            printf("%s\n", cwd);
+        } else {
+            perror("pwd");
+        }
     } else {
-        perror("pwd");
+        printf("%s\n", getenv("PWD"));
     }
     return 1;
 }

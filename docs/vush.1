@@ -170,8 +170,9 @@ Return success.
 .B false
 Return failure.
 .TP
-.B pwd
-Print the current working directory.
+.B pwd [-L|-P]
+Print the current working directory. \fB-P\fP displays the physical directory
+from \fBgetcwd(3)\fP while \fB-L\fP (the default) prints \fB$PWD\fP.
 .TP
 .B jobs
 List running background jobs.

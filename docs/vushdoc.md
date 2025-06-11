@@ -220,7 +220,8 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `true` - return a successful status.
 - `false` - return a failure status.
 - `exec command [args...]` - replace the shell with `command`.
-- `pwd` - print the current working directory.
+- `pwd [-L|-P]` - print the current working directory. `-P` displays the
+  physical directory from `getcwd()` while `-L` (the default) prints `$PWD`.
 - `jobs` - list background jobs started with `&`.
 - `fg ID` - wait for background job `ID`.
 - `bg ID` - resume a stopped background job `ID`.
