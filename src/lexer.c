@@ -456,6 +456,22 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             val = "";
         }
         return strdup(val);
+    } else if ((*p == ':' && p[1] == '?') || *p == '?') {
+        const char *word = (*p == ':') ? p + 2 : p + 1;
+        char *wexp = strdup(word && *word ? word : "");
+        if (!wexp) wexp = strdup("");
+        int err = (!val || val[0] == '\0');
+        if (err) {
+            if (*wexp)
+                fprintf(stderr, "%s: %s\n", name, wexp);
+            else
+                fprintf(stderr, "%s: parameter null or not set\n", name);
+            last_status = 1;
+            free(wexp);
+            return strdup("");
+        }
+        free(wexp);
+        return strdup(val ? val : "");
     } else if (*p == ':' && isdigit((unsigned char)p[1])) {
         if (!val) {
             if (opt_nounset) {

@@ -105,6 +105,16 @@ vush> echo ${#TEMP}
 7
 ```
 
+Using `?` reports an error when a variable is unset or empty:
+
+```
+vush> unset ERR
+vush> echo ${ERR:?missing value}
+ERR: missing value
+vush> echo $?
+1
+```
+
 If the closing quote or `)` for command substitution is missing, `vush` prints
 `syntax error: unmatched '<char>'` to stderr, sets `$?` to `1` and ignores the
 line.

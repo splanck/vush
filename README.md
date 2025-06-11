@@ -49,7 +49,7 @@ Current version: 0.1.0
 - Array assignments and `${name[index]}` access
 - Here-documents (`<<`) and here-strings (`<<<`)
 - History expansion with `!!`, `!n`, `!prefix`, `!$`, `!*`
-- Extended parameter expansion for pattern replacement `${var/pat/repl}` and substrings `${var:off[:len]}`
+- Extended parameter expansion for pattern replacement `${var/pat/repl}`, substrings `${var:off[:len]}` and error checking `${var?word}`
 
 ## Building
 
