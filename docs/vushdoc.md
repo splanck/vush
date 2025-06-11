@@ -397,16 +397,41 @@ vush> printf "%s %04d %x\n" foo 5 255
 foo 0005 ff
 ```
 
-## Environment Variables
+## Configuration
 
-The shell responds to several variables that customize its behavior:
+Several environment variables and a startup file influence the shell:
 
-- `PS1` controls the interactive prompt and is expanded like normal text.
-- `VUSH_HISTFILE` specifies where command history is saved while
-  `VUSH_HISTSIZE` limits how many entries are kept.
-- `VUSH_ALIASFILE` and `VUSH_FUNCFILE` hold persistent aliases and functions.
-- `CDPATH` provides a colon-separated list of directories searched by `cd`
-  when a relative path is used.
+- `PS1` sets the interactive prompt and is expanded like normal text. The
+  default is `vush> `.
+- `VUSH_HISTFILE` names the history file while `VUSH_HISTSIZE` limits how many
+  entries are retained. Defaults are `~/.vush_history` and `1000`.
+- `VUSH_ALIASFILE` and `VUSH_FUNCFILE` store persistent aliases and shell
+  functions. They default to `~/.vush_aliases` and `~/.vush_funcs`.
+- `CDPATH` provides a colon-separated list of directories searched by `cd` for
+  relative paths.
+- `~/.vushrc` is executed before the first prompt if it exists.
 
+Example configuration:
+
+```sh
+# Use a custom alias file
+export VUSH_ALIASFILE=~/.config/vush/aliases
+
+# Include the working directory in the prompt
+export PS1='\w> '
+
+# Search these directories when changing directories
+export CDPATH=~/projects:/tmp
+cd repo    # jumps to ~/projects/repo if it exists
+
+# Keep only 200 history entries
+export VUSH_HISTSIZE=200
+
+# Store functions in another location
+export VUSH_FUNCFILE=~/.config/vush/functions
+```
+
+By default history is saved to `~/.vush_history`, aliases to `~/.vush_aliases`,
+functions to `~/.vush_funcs`, and startup commands are read from `~/.vushrc`.
 See the manual page for more detail.
 
