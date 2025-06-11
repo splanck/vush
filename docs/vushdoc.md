@@ -345,6 +345,9 @@ vush> echo dup >&dup.txt
 vush> ls nonexistent 2>&1 >>dup.txt
 vush> echo nothing >&-
 vush> ls nonexistent 2>&-
+vush> echo fd example 3>fd3.txt >&3
+vush> cat fd3.txt
+fd example
 ```
 
 Here-documents feed inline text to a command:

@@ -35,6 +35,7 @@ Parameter, command and arithmetic expansion, wildcard matching,
 functions, history and background jobs are available. Expanded
 examples reside in docs/vushdoc.md.
 The redirection operator \fB>|\fP forces truncation even when the \fBnoclobber\fP option is set.
+File descriptor numbers may prefix \fB<\fP or \fB>\fP to select an alternate descriptor, e.g. \fB3>file\fP.
 .SH ENVIRONMENT
 .TP
 .B VUSH_HISTFILE

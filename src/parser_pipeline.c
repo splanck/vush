@@ -212,8 +212,14 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
 }
 
 static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
-    if (strcmp(tok, "<") != 0)
+    char *t = tok;
+    int fd = STDIN_FILENO;
+    if (isdigit((unsigned char)*t)) {
+        fd = strtol(t, &t, 10);
+    }
+    if (strcmp(t, "<") != 0)
         return 0;
+    seg->in_fd = fd;
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p) {
         int q = 0;
@@ -225,10 +231,18 @@ static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
 }
 
 static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
-    if (!(strcmp(tok, ">") == 0 || strcmp(tok, ">>") == 0 || strcmp(tok, ">|") == 0))
+    char *t = tok;
+    int fd = STDOUT_FILENO;
+    if (isdigit((unsigned char)*t)) {
+        fd = strtol(t, &t, 10);
+        if (fd == 2 && (strcmp(t, ">") == 0 || strcmp(t, ">>") == 0))
+            return 0; /* let parse_error_redirect handle */
+    }
+    if (!(strcmp(t, ">") == 0 || strcmp(t, ">>") == 0 || strcmp(t, ">|") == 0))
         return 0;
-    seg->append = (tok[1] == '>');
-    seg->force = (strcmp(tok, ">|") == 0);
+    seg->out_fd = fd;
+    seg->append = (t[1] == '>');
+    seg->force = (strcmp(t, ">|") == 0);
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p == '&') {
         (*p)++;
@@ -374,6 +388,8 @@ static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
     next->dup_out = -1;
     next->dup_err = -1;
+    next->out_fd = STDOUT_FILENO;
+    next->in_fd = STDIN_FILENO;
     next->assigns = NULL;
     next->assign_count = 0;
     seg->next = next;
@@ -428,6 +444,23 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         }
         int quoted = 0;
         char *tok = read_token(p, &quoted);
+        if (!quoted) {
+            const char *s = tok;
+            int all_digits = (*s != '\0');
+            for (; *s && all_digits; s++)
+                if (!isdigit((unsigned char)*s))
+                    all_digits = 0;
+            if (all_digits && (**p == '>' || **p == '<')) {
+                int q2 = 0;
+                char *op = read_token(p, &q2);
+                if (!op) { free(tok); return -1; }
+                char *nt;
+                asprintf(&nt, "%s%s", tok, op);
+                free(op);
+                free(tok);
+                tok = nt;
+            }
+        }
         if (getenv("VUSH_DEBUG"))
             fprintf(stderr, "parse_pipeline token: '%s'\n", tok ? tok : "(null)");
         if (!tok) return -1;
@@ -488,6 +521,8 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;
     seg_head->dup_err = -1;
+    seg_head->out_fd = STDOUT_FILENO;
+    seg_head->in_fd = STDIN_FILENO;
     seg_head->assigns = NULL;
     seg_head->assign_count = 0;
     PipelineSegment *seg = seg_head;
