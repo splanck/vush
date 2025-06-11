@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "kill -l 1\r"
+expect {
+    -re "HUP" {}
+    timeout { send_user "kill -l NUM output mismatch\n"; exit 1 }
+}
+expect "vush> "
+send "exit\r"
+expect eof

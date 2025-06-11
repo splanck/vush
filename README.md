@@ -77,7 +77,8 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `fg [ID]` &ndash; bring a background job to the foreground (defaults to
   the most recent job)
 - `jobs [-l|-p] [ID]` &ndash; list active jobs
-- `kill [-s SIG|-l] ID|PID` &ndash; send a signal
+- `kill [-s SIG|-l] ID|PID` &ndash; send a signal. `kill -l NUM` prints the
+  signal name for `NUM`.
 - `wait [ID|PID]` &ndash; wait for a job or process to finish
 - `trap [-p|-l|'cmd' SIGNAL]` &ndash; run a command when a signal is received
 - `set -b` &ndash; notify when background jobs complete
