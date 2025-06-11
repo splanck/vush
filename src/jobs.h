@@ -16,6 +16,7 @@ pid_t get_job_pid(int id);
 int wait_job(int id);
 int kill_job(int id, int sig);
 int bg_job(int id);
+int get_last_job_id(void);
 
 /* PID of the most recently started background job */
 extern pid_t last_bg_pid;

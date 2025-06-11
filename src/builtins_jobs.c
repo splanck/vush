@@ -112,11 +112,16 @@ int builtin_jobs(char **args) {
 /* builtin_fg - usage: fg ID
  * Bring the specified job to the foreground using wait_job and return 1. */
 int builtin_fg(char **args) {
+    int id;
     if (!args[1]) {
-        fprintf(stderr, "usage: fg ID\n");
-        return 1;
+        id = get_last_job_id();
+        if (id == 0) {
+            fprintf(stderr, "fg: no current job\n");
+            return 1;
+        }
+    } else {
+        id = atoi(args[1]);
     }
-    int id = atoi(args[1]);
     wait_job(id);
     return 1;
 }
@@ -124,11 +129,16 @@ int builtin_fg(char **args) {
 /* builtin_bg - usage: bg ID
  * Resume a stopped job in the background via bg_job and return 1. */
 int builtin_bg(char **args) {
+    int id;
     if (!args[1]) {
-        fprintf(stderr, "usage: bg ID\n");
-        return 1;
+        id = get_last_job_id();
+        if (id == 0) {
+            fprintf(stderr, "bg: no current job\n");
+            return 1;
+        }
+    } else {
+        id = atoi(args[1]);
     }
-    int id = atoi(args[1]);
     bg_job(id);
     return 1;
 }

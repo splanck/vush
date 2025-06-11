@@ -37,6 +37,8 @@ static Job *jobs = NULL;
 static int next_job_id = 1;
 /* PID of the most recently started background job */
 pid_t last_bg_pid = 0;
+/* ID of the most recently started background job */
+static int last_bg_id = 0;
 
 /*
  * Record a child process that was started in the background.
@@ -44,11 +46,13 @@ pid_t last_bg_pid = 0;
  */
 void add_job(pid_t pid, const char *cmd) {
     last_bg_pid = pid;
+    last_bg_id = next_job_id;
     if (!opt_monitor)
         return;
     Job *job = malloc(sizeof(Job));
     if (!job) return;
     job->id = next_job_id++;
+    last_bg_id = job->id;
     job->pid = pid;
     job->state = JOB_RUNNING;
     strncpy(job->cmd, cmd, MAX_LINE - 1);
@@ -216,5 +220,13 @@ int bg_job(int id) {
     }
     fprintf(stderr, "bg: job %d not found\n", id);
     return -1;
+}
+
+/*
+ * Return the ID of the most recently started background job.
+ * Returns 0 when no such job exists.
+ */
+int get_last_job_id(void) {
+    return last_bg_id;
 }
 

@@ -275,8 +275,8 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
 - `pwd [-L|-P]` - print the current working directory. `-P` displays the
   physical directory from `getcwd()` while `-L` (the default) prints `$PWD`.
 - `jobs [-l|-p] [ID]` - list background jobs. `-l` prints the PID and status and `-p` prints only the PID. With IDs only those jobs are shown.
-- `fg ID` - wait for background job `ID`.
-- `bg ID` - resume a stopped background job `ID`.
+- `fg [ID]` - wait for background job `ID` or the most recent job when omitted.
+- `bg [ID]` - resume the specified job or the last started job if no ID is given.
 - `kill [-s SIGNAL|-SIGNAL] [-l] ID|PID` - send a signal to the given job or process. Use `-l` to list signals.
 - `wait [ID|PID]` - wait for the given job or process to finish.
 - `trap [-p|-l | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received, list traps with `-p` or with no arguments, or show available signals with `-l`. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
