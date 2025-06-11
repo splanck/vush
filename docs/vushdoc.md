@@ -200,6 +200,7 @@ exported but persists for later use:
 vush> BAR=baz
 vush> echo $BAR
 baz
+vush> export BAR
 ```
 
 ### Arrays
@@ -243,9 +244,10 @@ The `set -o` form enables additional options: `pipefail` makes a pipeline return
 - `kill [-s SIGNAL|-SIGNAL] [-l] ID|PID` - send a signal to the given job or process. Use `-l` to list signals.
 - `wait [ID|PID]` - wait for the given job or process to finish.
  - `trap [-p | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received or list traps with `-p` or with no arguments. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
-- `export [-p|-n NAME] NAME=value` - manage exported variables or set one.
+- `export [-p|-n NAME] NAME[=VALUE]` - manage exported variables or set one.
   Use `-p` to list all exported variables. `-n NAME` stops exporting `NAME`
-  without removing it.
+  without removing it. Without `=VALUE` the variable's current value is
+  exported and it is created with an empty value if undefined.
 - `readonly [-p] NAME[=VALUE]` - mark variables as read-only or list them.
   With `-p` the variables are printed using `readonly NAME=value` format.
 - `local NAME[=VALUE]` - define a variable scoped to the current function.

@@ -10,7 +10,7 @@ Current version: 0.1.0
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
  - Built-in commands: `alias [-p]`, `bg`, `break [N]`, `cd`, `command [-p|-v|-V]`, `continue [N]`,
- `dirs`, `echo`, `eval`, `exec`, `exit`, `export [-p|-n NAME]`, `false`, `fc`, `fg`, `getopts`, `hash`,
+ `dirs`, `echo`, `eval`, `exec`, `exit`, `export [-p|-n NAME] NAME[=VALUE]`, `false`, `fc`, `fg`, `getopts`, `hash`,
   `help`, `history`, `jobs [-l|-p]`, `kill [-s SIG|-l]`, `let`, `local`, `popd`, `printf`, `pushd`,
  `pwd`, `read`, `readonly [-p]`, `return`, `set`, `shift`, `source` (or `.`), `test`,
  `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit`, `umask [-S] [mask]` (mask may be octal or symbolic like `u=rwx,g=rx,o=rx`), `unalias [-a]`, `unset`, `wait`, and `:`
@@ -128,6 +128,10 @@ export CDPATH=~/projects:/tmp
 cd repo
 # Follow symlinks using -P
 cd -P /tmp/my_link
+
+# Mark a variable for export without changing its value
+MYVAR=example
+export MYVAR
 ```
 
 ## Usage
