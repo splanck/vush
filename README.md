@@ -9,20 +9,8 @@ Current version: 0.1.0
 
 - Command line parsing with rudimentary quoting support
 - Execution of external commands via `fork` and `exec`
- - Built-in commands: `alias [-p]`, `bg`, `break [N]`, `cd`, `command [-p|-v|-V]`, `continue [N]`,
- `dirs`, `echo`, `eval`, `exec`, `exit`, `export [-p|-n NAME] NAME[=VALUE]`, `false`, `fc`, `fg`, `getopts`, `hash`,
-  `help`, `history`, `jobs [-l|-p]`, `kill [-s SIG|-l]`, `let`, `local`, `popd`, `printf`, `pushd`,
- `pwd`, `read`, `readonly [-p]`, `return`, `set`, `shift`, `source` (or `.`), `test`,
- `time`, `times`, `trap [-p]` (or no arguments to list traps), `true`, `type`, `ulimit [-a|-c|-d|-f|-n|-s|-t|-v [limit]]`, `umask [-S] [mask]` (mask may be octal or symbolic like `u=rwx,g=rx,o=rx`), `unalias [-a]`, `unset`, `wait`, and `:`
-- The `command` builtin uses `/bin:/usr/bin` instead of `$PATH` when given `-p`.
-- The `source` builtin searches `$PATH` when the filename has no `/`.
-- The `printf` builtin supports `%b` which interprets backslash escapes
-  in the argument before printing.
-
-- `export -p` lists all exported variables and `export -n NAME` removes the export
-  attribute while leaving the variable defined.
-- `set` with no arguments prints all shell variables and functions.
-- `readonly NAME[=VALUE]` marks a variable as read-only, creating it with an empty value when `VALUE` is omitted. `readonly -p` lists read-only variables using `readonly NAME=value` format.
+- Extensive built-in commands handle job control, variable management and file
+  operations (see "Built-in Commands" below).
 
 - Environment variable expansion using `$VAR`, `${VAR}` and forms like
   `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
@@ -73,6 +61,59 @@ Current version: 0.1.0
 - Array assignments and `${name[index]}` access
 - Here-documents (`<<`) and here-strings (`<<<`)
 - History expansion with `!!`, `!n`, `!prefix`, `!$`, `!*`
+
+### Built-in Commands
+
+The shell includes many built-ins. The brief summaries below show what each one
+does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
+
+#### Job Control
+- `bg` &ndash; resume a stopped job in the background
+- `fg` &ndash; bring a background job to the foreground
+- `jobs [-l|-p] [ID]` &ndash; list active jobs
+- `kill [-s SIG|-l] ID|PID` &ndash; send a signal
+- `wait [ID|PID]` &ndash; wait for a job or process to finish
+- `trap [-p|'cmd' SIGNAL]` &ndash; run a command when a signal is received
+- `set -b` &ndash; notify when background jobs complete
+- `set -m` &ndash; enable job control features
+
+#### Variable Management
+- `export [-p|-n NAME] NAME[=VALUE]` &ndash; set or display exported variables
+- `readonly [-p] NAME[=VALUE]` &ndash; mark variables read-only
+- `local NAME[=VALUE]` &ndash; define a local variable in a function
+- `unset [-f] NAME` &ndash; remove variables or functions
+- `set [options] [-- args...]` &ndash; change shell options or parameters
+- `shift [N]` &ndash; rotate positional parameters
+- `alias [-p] [NAME[=VALUE]]` &ndash; define command aliases
+- `unalias [-a] NAME` &ndash; remove command aliases
+- `let EXPR` &ndash; evaluate arithmetic expressions
+- `getopts OPTSTRING VAR` &ndash; parse positional parameters
+
+#### File and Resource Operations
+- `cd [-L|-P] [dir]` &ndash; change directories
+- `pushd dir`, `popd`, `dirs` &ndash; manage the directory stack
+- `pwd [-L|-P]` &ndash; print the current directory
+- `umask [-S] [mask]` &ndash; set or display the file creation mask
+- `ulimit [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` &ndash; view or set resource limits
+
+#### Command Execution and Utilities
+- `command [-p|-v|-V] NAME [args...]` &ndash; run a command without function lookup
+- `eval WORDS...` &ndash; execute constructed commands
+- `exec command [args...]` &ndash; replace the shell with a command
+- `source file [args...]` (or `.`) &ndash; read commands from a file
+- `time command` and `times` &ndash; report timing statistics
+- `hash [-r] [name...]` &ndash; manage the command path cache
+- `type NAME...` &ndash; show how a command would be interpreted
+- `fc` and `history` &ndash; edit or list command history
+- `echo [-n] [-e] [args...]` &ndash; print text
+- `printf FORMAT [args...]` &ndash; formatted output
+- `read [-r] VAR...` &ndash; read a line of input
+- `test EXPR` and `[[ EXPR ]]` &ndash; evaluate conditions
+- `:`/`true`/`false` &ndash; return fixed status codes
+- `return [status]` &ndash; exit from a function
+- `break [N]` and `continue [N]` &ndash; loop control
+- `help` &ndash; display summaries of built-ins
+- `exit [status]` &ndash; terminate the shell
 - Extended parameter expansion for pattern replacement `${var/pat/repl}`, substrings `${var:off[:len]}` and error checking `${var?word}`
 
 ## Building
