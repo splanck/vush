@@ -52,6 +52,7 @@ int opt_noclobber = 0;
 int opt_noexec = 0;
 int opt_noglob = 0;
 int opt_allexport = 0;
+int opt_monitor = 1;
 int current_lineno = 0;
 
 static void process_rc_file(const char *path, FILE *input);
@@ -237,7 +238,11 @@ static void repl_loop(FILE *input)
     int interactive = (input == stdin);
 
     while (1) {
-        check_jobs();
+        if (opt_monitor)
+            check_jobs();
+        else
+            while (waitpid(-1, NULL, WNOHANG) > 0)
+                ;
         if (interactive) {
             const char *ps = getenv("PS1");
             char *prompt = expand_prompt(ps ? ps : "vush> ");

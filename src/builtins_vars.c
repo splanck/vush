@@ -92,6 +92,8 @@ int builtin_set(char **args) {
             opt_noclobber = 1;
         else if (strcmp(args[i], "-a") == 0)
             opt_allexport = 1;
+        else if (strcmp(args[i], "-m") == 0)
+            opt_monitor = 1;
         else if (strcmp(args[i], "-o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 1;
@@ -119,6 +121,8 @@ int builtin_set(char **args) {
             opt_noclobber = 0;
         else if (strcmp(args[i], "+a") == 0)
             opt_allexport = 0;
+        else if (strcmp(args[i], "+m") == 0)
+            opt_monitor = 0;
         else if (strcmp(args[i], "+o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 0;
