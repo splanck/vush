@@ -80,6 +80,35 @@ location if desired. Uninstall with:
 make uninstall
 ```
 
+## Configuration
+
+Startup behavior and saved state can be customized with a few files and
+environment variables:
+
+- `~/.vushrc` runs before the first prompt if present.
+- `VUSH_HISTFILE` controls where history is saved (default `~/.vush_history`).
+- `VUSH_HISTSIZE` limits how many entries are kept in the history file
+  (default 1000).
+- `VUSH_ALIASFILE` holds persistent aliases (default `~/.vush_aliases`).
+- `VUSH_FUNCFILE` holds persistent functions (default `~/.vush_funcs`).
+- `PS1` sets the command prompt displayed before each input line.
+- `CDPATH` provides directories searched by `cd` for relative paths.
+
+Examples:
+
+```sh
+# Save only 200 entries to a custom history file
+export VUSH_HISTFILE=~/my_history
+export VUSH_HISTSIZE=200
+
+# Change the prompt
+export PS1='mysh> '
+
+# Search projects and /tmp when changing directories
+export CDPATH=~/projects:/tmp
+cd repo
+```
+
 ## Usage
 
 Run `./vush` for an interactive shell or pass a script file or `-c` string.
