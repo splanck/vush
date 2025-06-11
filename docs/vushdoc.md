@@ -1,3 +1,11 @@
+## Synopsis
+
+`vush [scriptfile]`
+`vush -c "command"`
+`vush --version`
+
+Invoke without arguments for an interactive shell.
+
 ## Usage
 
 Run the `vush` binary and enter commands as you would in a normal shell.  You
@@ -13,6 +21,15 @@ interactively or pass `-c` followed by a command string.
 When invoked without a script file, commands from `~/.vushrc` are executed
 before the first prompt if that file exists.  If the `ENV` environment
 variable is set, its file is processed afterwards.
+
+## Options
+
+- `-c command` - execute the specified command string and exit.
+- `-V`, `--version` - display version information and exit.
+
+## Startup Files
+
+`~/.vushrc` is executed before the first prompt if it exists. When the `ENV` environment variable is set, the file it names is read after `~/.vushrc`.
 
 ### Shebang Scripts
 
