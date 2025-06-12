@@ -41,6 +41,26 @@ static int add_proc_sub(const char *path, pid_t pid) {
     return 1;
 }
 
+static void remove_proc_sub(const char *path) {
+    struct proc_sub **pp = &proc_subs;
+    while (*pp) {
+        if (strcmp((*pp)->path, path) == 0) {
+            struct proc_sub *ps = *pp;
+            *pp = ps->next;
+            if (ps->pid > 0) {
+                kill(ps->pid, SIGTERM);
+                waitpid(ps->pid, NULL, 0);
+            }
+            if (ps->path)
+                unlink(ps->path);
+            free(ps->path);
+            free(ps);
+            return;
+        }
+        pp = &(*pp)->next;
+    }
+}
+
 void cleanup_proc_subs(void) {
     struct proc_sub *ps = proc_subs;
     while (ps) {
@@ -226,6 +246,7 @@ char *process_substitution(char **p, int read_from) {
         return NULL;
     }
     pid_t pid = fork();
+    int added = 0;
     if (pid == 0) {
         signal(SIGINT, SIG_DFL);
         int f = open(template, read_from ? O_RDONLY : O_WRONLY);
@@ -246,12 +267,24 @@ char *process_substitution(char **p, int read_from) {
             free(body);
             return NULL;
         }
+        added = 1;
     } else {
         perror("fork");
         unlink(template);
+        free_commands(cmd);
+        free(body);
+        return NULL;
     }
     free_commands(cmd);
     free(body);
-    return strdup(template);
+    char *res = strdup(template);
+    if (!res) {
+        if (added)
+            remove_proc_sub(template);
+        else
+            unlink(template);
+        return NULL;
+    }
+    return res;
 }
 
