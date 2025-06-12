@@ -65,7 +65,7 @@ Current version: 0.1.0
 - `set -k` treats `NAME=value` after the command name as a temporary
   environment assignment. Example:\
 `vush$ set -k; sh -c 'echo $FOO' FOO=bar` prints `bar`.
-- Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
+ - Prompt string configurable via the `PS1` environment variable, which may be exported safely (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
   `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m`,

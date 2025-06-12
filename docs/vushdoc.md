@@ -550,7 +550,7 @@ vush> echo $((16#ff + 2#10))
 ## Configuration
 
 ### Environment Variables
-- `PS1` sets the prompt before each command (default `vush> `).
+ - `PS1` sets the prompt before each command (default `vush> `) and may be exported safely.
 - `PS2` appears when more input is needed such as after an unclosed quote (default `> `).
 - `PS3` is used by the `select` builtin when prompting for a choice.
 - `PS4` prefixes tracing output produced by `set -x`.

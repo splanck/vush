@@ -6,6 +6,7 @@ tests="
     test_basic_cmd.expect
     test_env.expect
     test_ps1.expect
+    test_export_ps1.expect
     test_ps1_cmdsub.expect
     test_pwd.expect
     test_cd_dash.expect
