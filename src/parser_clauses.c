@@ -96,7 +96,16 @@ static Command *parse_for_clause(char **p) {
         char *w = read_token(p, &q);
         if (!w) { free(var); free(words); return NULL; }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
-        words = realloc(words, sizeof(char *) * (count + 1));
+        char **tmp = realloc(words, sizeof(char *) * (count + 1));
+        if (!tmp) {
+            free(w);
+            free(var);
+            for (int i = 0; i < count; i++)
+                free(words[i]);
+            free(words);
+            return NULL;
+        }
+        words = tmp;
         words[count++] = w;
     }
     const char *stop2[] = {"done"};
@@ -130,7 +139,16 @@ static Command *parse_select_clause(char **p) {
         char *w = read_token(p, &q);
         if (!w) { free(var); free(words); return NULL; }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
-        words = realloc(words, sizeof(char *) * (count + 1));
+        char **tmp = realloc(words, sizeof(char *) * (count + 1));
+        if (!tmp) {
+            free(w);
+            free(var);
+            for (int i = 0; i < count; i++)
+                free(words[i]);
+            free(words);
+            return NULL;
+        }
+        words = tmp;
         words[count++] = w;
     }
     const char *stop2[] = {"done"};
@@ -223,7 +241,17 @@ static Command *parse_case_clause(char **p) {
             if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
             size_t len = strlen(ptok);
             if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
-            patterns = realloc(patterns, sizeof(char*) * (pc + 1));
+            char **tmp = realloc(patterns, sizeof(char*) * (pc + 1));
+            if (!tmp) {
+                free(ptok);
+                for (int i = 0; i < pc; i++)
+                    free(patterns[i]);
+                free(patterns);
+                free_case_items(head);
+                free(word);
+                return NULL;
+            }
+            patterns = tmp;
             patterns[pc++] = ptok;
             if (done) break;
         }
@@ -363,7 +391,15 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
             free(tok);
             break;
         }
-        words = realloc(words, sizeof(char*)*(count+1));
+        char **tmp = realloc(words, sizeof(char*) * (count + 1));
+        if (!tmp) {
+            free(tok);
+            for (int i = 0; i < count; i++)
+                free(words[i]);
+            free(words);
+            return NULL;
+        }
+        words = tmp;
         words[count++] = tok;
     }
     if (!words && count==0)
