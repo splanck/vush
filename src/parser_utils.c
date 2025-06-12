@@ -109,6 +109,11 @@ char *gather_until(char **p, const char **stops, int nstops, int *idx) {
             res = tmp;
         } else {
             res = strdup(tok);
+            if (!res) {
+                free(tok);
+                free(res);
+                return NULL;
+            }
         }
         free(tok);
     }
