@@ -22,7 +22,10 @@ extern int last_status;
  * allocated string with any trailing newline removed. */
 static char *command_output(const char *cmd) {
     FILE *fp = popen(cmd, "r");
-    if (!fp) return strdup("");
+    if (!fp) {
+        char *tmp = strdup("");
+        return tmp ? tmp : NULL;
+    }
     char out[MAX_LINE];
     size_t total = 0;
     while (fgets(out + total, sizeof(out) - total, fp)) {
@@ -32,12 +35,16 @@ static char *command_output(const char *cmd) {
     pclose(fp);
     if (total > 0 && out[total - 1] == '\n')
         out[total - 1] = '\0';
-    return strdup(out);
+    char *ret = strdup(out);
+    if (!ret)
+        return NULL;
+    return ret;
 }
 
 /* Parse a command substitution starting at *p. Supports both $(...) and
  * backtick forms. On success *p is advanced past the closing delimiter and
- * the command's output is returned. NULL is returned on syntax errors. */
+ * the command's output is returned. NULL is returned on syntax errors or
+ * allocation failures. */
 char *parse_substitution(char **p) {
     int depth = 0;
     int is_dollar = (**p == '$');
@@ -79,7 +86,10 @@ char *parse_substitution(char **p) {
         }
     }
     cmd[clen] = '\0';
-    return command_output(cmd);
+    char *res = command_output(cmd);
+    if (!res)
+        return NULL;
+    return res;
 }
 
 /* -- Expansion helper functions --------------------------------------- */
