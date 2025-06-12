@@ -16,6 +16,7 @@ extern int opt_monitor;
 extern int opt_notify;
 extern int opt_privileged;
 extern int opt_onecmd;
+extern int opt_hashall;
 extern int current_lineno;
 extern pid_t parent_pid;
 

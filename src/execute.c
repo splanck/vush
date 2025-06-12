@@ -283,8 +283,6 @@ static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
     int i = 0;
     int in_fd = -1;
     for (PipelineSegment *seg = pipeline; seg; seg = seg->next) {
-        if (seg->argv[0] && !strchr(seg->argv[0], '/'))
-            hash_add(seg->argv[0]);
         pid_t pid = fork_segment(seg, &in_fd);
         if (pid < 0) {
             free(pids);
@@ -575,6 +573,12 @@ static int exec_group(Command *cmd, const char *line) {
 int run_pipeline(Command *cmd, const char *line) {
     if (!cmd)
         return 0;
+    if (opt_hashall && cmd->type == CMD_PIPELINE) {
+        for (PipelineSegment *seg = cmd->pipeline; seg; seg = seg->next) {
+            if (seg->argv[0] && !strchr(seg->argv[0], '/'))
+                hash_add(seg->argv[0]);
+        }
+    }
     int r = 0;
     switch (cmd->type) {
     case CMD_PIPELINE:
