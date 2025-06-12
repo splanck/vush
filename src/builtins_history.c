@@ -124,10 +124,17 @@ int builtin_fc(char **args)
             cmd = temp ? temp : cmd;
         }
         printf("%s\n", cmd);
-        Command *cmds = parse_line(cmd);
+        char *mutable = strdup(cmd);
+        if (!mutable) {
+            perror("strdup");
+            free(temp);
+            return 1;
+        }
+        Command *cmds = parse_line(mutable);
         if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
             run_command_list(cmds, cmd);
         free_commands(cmds);
+        free(mutable);
         free(temp);
         return 1;
     }
