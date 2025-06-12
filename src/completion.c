@@ -43,8 +43,14 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                 continue;
             if (count == cap) {
                 cap *= 2;
-                matches = realloc(matches, cap * sizeof(char *));
-                if (!matches) break;
+                char **tmp = realloc(matches, cap * sizeof(char *));
+                if (!tmp) {
+                    for (int j = 0; j < count; j++)
+                        free(matches[j]);
+                    free(matches);
+                    return NULL;
+                }
+                matches = tmp;
             }
             matches[count++] = strdup(bn[i]);
         }
@@ -59,8 +65,15 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                     continue;
                 if (count == cap) {
                     cap *= 2;
-                    matches = realloc(matches, cap * sizeof(char *));
-                    if (!matches) break;
+                    char **tmp = realloc(matches, cap * sizeof(char *));
+                    if (!tmp) {
+                        for (int j = 0; j < count; j++)
+                            free(matches[j]);
+                        free(matches);
+                        closedir(d);
+                        return NULL;
+                    }
+                    matches = tmp;
                 }
                 matches[count++] = strdup(de->d_name);
             }
@@ -87,8 +100,16 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                             if (access(full, X_OK) == 0) {
                                 if (count == cap) {
                                     cap *= 2;
-                                    matches = realloc(matches, cap * sizeof(char *));
-                                    if (!matches) break;
+                                    char **tmp = realloc(matches, cap * sizeof(char *));
+                                    if (!tmp) {
+                                        for (int j = 0; j < count; j++)
+                                            free(matches[j]);
+                                        free(matches);
+                                        closedir(pd);
+                                        free(pdup);
+                                        return NULL;
+                                    }
+                                    matches = tmp;
                                 }
                                 matches[count++] = strdup(pe->d_name);
                             }
