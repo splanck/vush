@@ -242,6 +242,14 @@ baz
 vush> export BAR
 ```
 
+With `set -k` enabled, assignment words may appear after the command name:
+
+```sh
+vush> set -k
+vush> sh -c 'echo $FOO' FOO=bar
+bar
+```
+
 ### Arrays
 
 Arrays are defined using `NAME=(word ...)` and expanded with `${NAME[index]}` or
@@ -258,7 +266,7 @@ three
 ```
 ### Shell Options
 
-Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable), `set -C` prevents `>` from overwriting existing files (use `set +C` to allow clobbering again), `set -a` exports all assignments to the environment, `set -b`/`set +b` enable or disable background job completion messages, `set -m`/`set +m` toggle job tracking, `set -t`/`set +t` exit after one command, `set -p`/`set +p` toggle privileged mode which skips startup files and `set -h`/`set +h` automatically cache commands in the hash table.
+Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable), `set -C` prevents `>` from overwriting existing files (use `set +C` to allow clobbering again), `set -a` exports all assignments to the environment, `set -b`/`set +b` enable or disable background job completion messages, `set -m`/`set +m` toggle job tracking, `set -t`/`set +t` exit after one command, `set -p`/`set +p` toggle privileged mode which skips startup files, `set -h`/`set +h` automatically cache commands in the hash table and `set -k`/`set +k` treat `NAME=value` after the command name as temporary environment variables.
 The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` (the same as `set -C`) prevents `>` from overwriting existing files. Use `set +o OPTION` or `set +C` to disable an option.
 Use `>| file` to override `noclobber` and force truncation of `file`.
 
