@@ -28,6 +28,7 @@ Current version: 0.1.0
 - Command substitution using backticks or `$(...)`
 - Arithmetic expansion using `$((...))` and a `let` builtin
 - Numbers may specify a base using `<base>#<digits>` inside arithmetic expressions
+  (bases 2–36)
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Process substitution using `<(cmd)` and `>(cmd)`

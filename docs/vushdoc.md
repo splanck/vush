@@ -519,6 +519,9 @@ two
 
 ## Arithmetic Example
 
+Numbers inside arithmetic expressions may begin with `<base>#` to specify
+bases 2–36.
+
 ```sh
 vush> echo $((16#ff + 2#10))
 257
