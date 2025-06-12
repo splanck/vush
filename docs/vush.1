@@ -76,6 +76,10 @@ split using the first character of \fB$IFS\fP:
 Displayed when additional input is needed.
 .TP
 .B PS3
+.PP
+The \fBprintf\fP builtin translates backslash escapes in the format
+string before examining \% conversions. The \%b conversion still interprets
+escapes in its argument.
 Prompt used by the select builtin.
 .TP
 .B PS4

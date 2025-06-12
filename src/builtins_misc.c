@@ -1001,10 +1001,58 @@ static const char *next_format_spec(const char *p, char spec[32], char *conv)
     return p;
 }
 
+/* Translate backslash escapes like \n and \0NNN in SRC.  Returns newly
+ * allocated memory which the caller must free. */
+static char *unescape_string(const char *src)
+{
+    size_t len = strlen(src);
+    char *out = malloc(len + 1);
+    if (!out)
+        return NULL;
+    char *d = out;
+    for (const char *s = src; *s; s++) {
+        if (*s == '\\' && s[1]) {
+            s++;
+            switch (*s) {
+            case 'n': *d++ = '\n'; break;
+            case 't': *d++ = '\t'; break;
+            case 'r': *d++ = '\r'; break;
+            case 'b': *d++ = '\b'; break;
+            case 'a': *d++ = '\a'; break;
+            case 'f': *d++ = '\f'; break;
+            case 'v': *d++ = '\v'; break;
+            case '\\': *d++ = '\\'; break;
+            case '0': {
+                int val = 0, cnt = 0;
+                while (cnt < 3 && s[1] >= '0' && s[1] <= '7') {
+                    s++; cnt++; val = val * 8 + (*s - '0');
+                }
+                *d++ = (char)val;
+                break;
+            }
+            default:
+                *d++ = '\\';
+                *d++ = *s;
+                break;
+            }
+        } else {
+            *d++ = *s;
+        }
+    }
+    *d = '\0';
+    return out;
+}
+
 /* Formatted printing similar to printf(1); stores result in last_status. */
 int builtin_printf(char **args)
 {
-    const char *fmt = args[1] ? args[1] : "";
+    const char *srcfmt = args[1] ? args[1] : "";
+    char *fmt = unescape_string(srcfmt);
+    if (!fmt) {
+        perror("printf");
+        last_status = 1;
+        return 1;
+    }
     int ai = 2;
     for (const char *p = fmt; *p; ) {
         if (*p != '%') {
@@ -1087,6 +1135,7 @@ int builtin_printf(char **args)
         }
     }
     fflush(stdout);
+    free(fmt);
     last_status = 0;
     return 1;
 }
