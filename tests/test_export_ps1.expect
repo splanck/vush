@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+set timeout 5
+spawn ../vush
+expect "vush> "
+send "export PS1='custom> '\r"
+expect "custom> "
+send "exit\r"
+expect eof

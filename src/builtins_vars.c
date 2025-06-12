@@ -315,9 +315,13 @@ int builtin_export(char **args) {
         char *eq = strchr(arg, '=');
         if (eq) {
             *eq = '\0';
-            if (setenv(arg, eq + 1, 1) != 0)
-                perror("export");
-            set_shell_var(arg, eq + 1);
+            char *valdup = strdup(eq + 1);
+            if (valdup) {
+                if (setenv(arg, valdup, 1) != 0)
+                    perror("export");
+                set_shell_var(arg, valdup);
+                free(valdup);
+            }
             *eq = '=';
         } else {
             const char *val = get_shell_var(arg);
