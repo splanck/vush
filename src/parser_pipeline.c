@@ -417,6 +417,10 @@ static char **expand_token_braces(char *tok, int quoted, int *count) {
         btoks = expand_braces(tok, count);
     if (!btoks) {
         btoks = malloc(2 * sizeof(char *));
+        if (!btoks) {
+            free(tok);
+            return NULL;
+        }
         btoks[0] = tok;
         btoks[1] = NULL;
         if (count) *count = 1;
@@ -492,6 +496,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         if (h == 1) continue;
         int bcount = 0;
         char **btoks = expand_token_braces(tok, quoted, &bcount);
+        if (!btoks)
+            return -1;
         for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
             char *bt = btoks[bi];
             if (!quoted && !opt_noglob && (strchr(bt, '*') || strchr(bt, '?')) ) {
