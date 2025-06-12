@@ -83,30 +83,37 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
                 char *body = strndup(val+1, vlen-2);
                 char *p = body;
-                char **vals = NULL; int count=0;
+                char **vals = NULL; int count=0; int failed = 0;
                 while (*p) {
                     while (*p==' '||*p=='\t') p++;
                     if (*p=='\0') break;
                     char *start=p;
                     while (*p && *p!=' ' && *p!='\t') p++;
                     if (*p) *p++='\0';
-                    vals = realloc(vals,sizeof(char*)*(count+1));
+                    char **tmp = realloc(vals, sizeof(char*)*(count+1));
+                    if (!tmp) {
+                        failed = 1;
+                        break;
+                    }
+                    vals = tmp;
                     vals[count++] = strdup(start);
                 }
-                set_shell_array(name, vals, count);
-                if (opt_allexport) {
-                    size_t joinlen = 0;
-                    for (int j=0;j<count;j++)
-                        joinlen += strlen(vals[j]) + 1;
-                    char *joined = malloc(joinlen+1);
-                    if (joined) {
-                        joined[0] = '\0';
-                        for (int j=0;j<count;j++) {
-                            strcat(joined, vals[j]);
-                            if (j < count-1) strcat(joined, " ");
+                if (!failed) {
+                    set_shell_array(name, vals, count);
+                    if (opt_allexport) {
+                        size_t joinlen = 0;
+                        for (int j=0;j<count;j++)
+                            joinlen += strlen(vals[j]) + 1;
+                        char *joined = malloc(joinlen+1);
+                        if (joined) {
+                            joined[0] = '\0';
+                            for (int j=0;j<count;j++) {
+                                strcat(joined, vals[j]);
+                                if (j < count-1) strcat(joined, " ");
+                            }
+                            setenv(name, joined, 1);
+                            free(joined);
                         }
-                        setenv(name, joined, 1);
-                        free(joined);
                     }
                 }
                 for(int j=0;j<count;j++) free(vals[j]);
@@ -152,7 +159,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
         if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
             char *body = strndup(val+1, vlen-2);
             char *p = body;
-            char **vals = NULL; int count=0;
+            char **vals = NULL; int count=0; int failed = 0;
             size_t joinlen = 0;
             while (*p) {
                 while (*p==' '||*p=='\t') p++;
@@ -160,21 +167,28 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
                 char *start=p;
                 while (*p && *p!=' ' && *p!='\t') p++;
                 if (*p) *p++='\0';
-                vals = realloc(vals,sizeof(char*)*(count+1));
+                char **tmp = realloc(vals, sizeof(char*)*(count+1));
+                if (!tmp) {
+                    failed = 1;
+                    break;
+                }
+                vals = tmp;
                 vals[count++] = strdup(start);
                 joinlen += strlen(start) + 1;
             }
-            char *joined = malloc(joinlen+1);
-            if (joined) {
-                joined[0] = '\0';
-                for (int j=0;j<count;j++) {
-                    strcat(joined, vals[j]);
-                    if (j < count-1) strcat(joined, " ");
+            if (!failed) {
+                char *joined = malloc(joinlen+1);
+                if (joined) {
+                    joined[0] = '\0';
+                    for (int j=0;j<count;j++) {
+                        strcat(joined, vals[j]);
+                        if (j < count-1) strcat(joined, " ");
+                    }
                 }
+                setenv(backs[i].name, joined ? joined : "", 1);
+                set_shell_array(backs[i].name, vals, count);
+                free(joined);
             }
-            setenv(backs[i].name, joined ? joined : "", 1);
-            set_shell_array(backs[i].name, vals, count);
-            free(joined);
             for(int j=0;j<count;j++) free(vals[j]);
             free(vals);
             free(body);
