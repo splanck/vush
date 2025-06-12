@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -190,7 +191,11 @@ char *process_substitution(char **p, int read_from) {
     char *body = gather_parens(p);
     if (!body)
         return NULL;
-    char template[] = "/tmp/vushpsXXXXXX";
+    const char *tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !*tmpdir)
+        tmpdir = "/tmp";
+    char template[PATH_MAX];
+    snprintf(template, sizeof(template), "%s/vushpsXXXXXX", tmpdir);
     int fd = mkstemp(template);
     if (fd < 0) {
         perror("mkstemp");
