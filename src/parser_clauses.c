@@ -167,18 +167,49 @@ static Command *parse_select_clause(char **p) {
 static char *parse_for_arith_exprs(char **p, char **init, char **cond, char **incr) {
     while (**p == ' ' || **p == '\t') (*p)++;
     char *exprs = gather_dbl_parens(p);
-    if (!exprs) return NULL;
+    if (!exprs)
+        return NULL;
     char *s1 = strchr(exprs, ';');
-    if (!s1) { free(exprs); return NULL; }
+    if (!s1) {
+        free(exprs);
+        return NULL;
+    }
     char *s2 = strchr(s1 + 1, ';');
-    if (!s2) { free(exprs); return NULL; }
+    if (!s2) {
+        free(exprs);
+        return NULL;
+    }
+
     *init = strndup(exprs, s1 - exprs);
+    if (!*init) {
+        free(exprs);
+        return NULL;
+    }
     *cond = strndup(s1 + 1, s2 - (s1 + 1));
+    if (!*cond) {
+        free(exprs);
+        free(*init);
+        return NULL;
+    }
     *incr = strdup(s2 + 1);
+    if (!*incr) {
+        free(exprs);
+        free(*init);
+        free(*cond);
+        return NULL;
+    }
+
     free(exprs);
-    char *ti = trim_ws(*init); free(*init); *init = ti;
-    char *tc = trim_ws(*cond); free(*cond); *cond = tc;
-    char *tu = trim_ws(*incr); free(*incr); *incr = tu;
+
+    char *ti = trim_ws(*init);
+    char *tc = trim_ws(*cond);
+    char *tu = trim_ws(*incr);
+    free(*init);
+    free(*cond);
+    free(*incr);
+    *init = ti;
+    *cond = tc;
+    *incr = tu;
     return *init;
 }
 
