@@ -43,9 +43,15 @@ static char **split_array_values(char *line, int *count, char sep) {
             p++;
         if (*p)
             *p++ = '\0';
-        vals = realloc(vals, sizeof(char *) * (*count + 1));
-        if (!vals)
+        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
+        if (!tmp) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            *count = 0;
             return NULL;
+        }
+        vals = tmp;
         vals[*count] = strdup(start);
         (*count)++;
     }
