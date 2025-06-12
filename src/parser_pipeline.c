@@ -394,10 +394,14 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     }
 }
 
-static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
+static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
     PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
+    if (!next) {
+        perror("calloc");
+        return -1;
+    }
     next->dup_out = -1;
     next->dup_err = -1;
     next->out_fd = STDOUT_FILENO;
@@ -409,6 +413,7 @@ static void start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     *argc = 0;
     (*p)++;
     clear_temp_vars();
+    return 0;
 }
 
 static char **expand_token_braces(char *tok, int quoted, int *count) {
@@ -441,7 +446,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; break; }
         if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; break; }
         if (**p == '|') {
-            start_new_segment(p, &seg, argc);
+            if (start_new_segment(p, &seg, argc) == -1)
+                return -1;
             continue;
         }
         if (**p == '<' && *(*p + 1) == '(') {
