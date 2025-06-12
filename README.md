@@ -57,10 +57,13 @@ Current version: 0.1.0
 - Startup commands read from `~/.vushrc` if the file exists
 - Additional startup commands read from the file named by the `ENV`
   environment variable if set
+- `set -p` enters privileged mode and skips startup files; use `set +p` to
+  re-enable them
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
-  `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m` and `set -o OPTION` such as
+  `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m`,
+  `set -p`/`set +p` and `set -o OPTION` such as
   `pipefail` or `noclobber`
 - Use `>| file` to force overwriting a file when `noclobber` is active
 - `set --` can replace positional parameters inside the running shell
@@ -165,6 +168,8 @@ environment variables:
 
 - `~/.vushrc` runs before the first prompt if present.
 - `ENV` can specify an additional startup file executed after `~/.vushrc`.
+- Use `set -p` to skip these startup files inside scripts that require a
+  predictable environment.
 - `VUSH_HISTFILE` controls where history is saved (default `~/.vush_history`).
 - `VUSH_HISTSIZE` limits how many entries are kept in the history file
   (default 1000).
