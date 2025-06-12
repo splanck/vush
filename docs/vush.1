@@ -24,7 +24,10 @@ If no script file or -c option is given, \fB~/.vushrc\fP is read before the firs
 Built-in commands cover common shell tasks such as variable
 management, flow control and job handling. Refer to README.md for the
 complete list.
-The BtestP builtin recognizes the unary B!P operator and the binary B-aP and B-oP operators with standard precedence. It also supports binary comparisons Ifile1P -nt Ifile2P, Ifile1P -ot Ifile2P and Ifile1P -ef Ifile2P.
+functions, history and background jobs are available. Special
+parameters like \$\$, \$!, \$PPID and \$LINENO provide process and
+status information. Expanded examples reside in docs/vushdoc.md.
+P builtin recognizes the unary B!P operator and the binary B-aP and B-oP operators with standard precedence. It also supports binary comparisons Ifile1P -nt Ifile2P, Ifile1P -ot Ifile2P and Ifile1P -ef Ifile2P.
 The \fBtrap\fP builtin lists available signal names when invoked with \-l.
 The \fBkill\fP builtin prints a signal name when \-l is followed by a number.
 The \fBunset\fP builtin removes variables and functions; \-v targets variables and \-f functions.

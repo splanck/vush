@@ -19,6 +19,7 @@ Current version: 0.1.0
 - `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
 - `$?` expands to the exit status of the last foreground command
 - `$$` expands to the PID of the running shell and `$!` to the last background job
+- `$PPID` expands to the PID of the shell's parent process
 - `$-` expands to the currently enabled option letters
 - `$LINENO` expands to the current input line number
  - Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`,

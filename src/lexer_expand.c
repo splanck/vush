@@ -368,6 +368,11 @@ static char *expand_special(const char *token) {
         snprintf(buf, sizeof(buf), "%d", (int)getpid());
         return strdup(buf);
     }
+    if (strcmp(token, "$PPID") == 0 || strcmp(token, "${PPID}") == 0) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%d", (int)parent_pid);
+        return strdup(buf);
+    }
     if (strcmp(token, "$!") == 0) {
         char buf[16];
         if (last_bg_pid == 0)

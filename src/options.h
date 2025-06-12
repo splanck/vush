@@ -1,6 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <sys/types.h>
+
 extern int opt_errexit;
 extern int opt_nounset;
 extern int opt_xtrace;
@@ -13,5 +15,6 @@ extern int opt_allexport;
 extern int opt_monitor;
 extern int opt_notify;
 extern int current_lineno;
+extern pid_t parent_pid;
 
 #endif /* OPTIONS_H */
