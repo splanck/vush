@@ -24,7 +24,8 @@ interactively or pass `-c` followed by a command string.
 When invoked without a script file, commands from `~/.vushrc` are executed
 before the first prompt if that file exists.  If the `ENV` environment
 variable is set, its file is processed afterwards.  The `set -p` option
-suppresses both files when enabled.
+suppresses both files when enabled.  The `set -t` option exits after one
+command is executed.
 
 ## Options
 
@@ -256,9 +257,17 @@ three
 ```
 ### Shell Options
 
-Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable), `set -C` prevents `>` from overwriting existing files (use `set +C` to allow clobbering again), `set -a` exports all assignments to the environment, `set -b`/`set +b` enable or disable background job completion messages, `set -m`/`set +m` toggle job tracking and `set -p`/`set +p` enable or disable privileged mode which skips startup files.
+Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable), `set -C` prevents `>` from overwriting existing files (use `set +C` to allow clobbering again), `set -a` exports all assignments to the environment, `set -b`/`set +b` enable or disable background job completion messages, `set -m`/`set +m` toggle job tracking, `set -t`/`set +t` exit after one command and `set -p`/`set +p` enable or disable privileged mode which skips startup files.
 The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` (the same as `set -C`) prevents `>` from overwriting existing files. Use `set +o OPTION` or `set +C` to disable an option.
 Use `>| file` to override `noclobber` and force truncation of `file`.
+
+Example one-command mode:
+
+```sh
+vush> set -t
+vush> echo hi
+hi
+```
 
 
 ## Built-in Commands
