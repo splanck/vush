@@ -33,10 +33,7 @@ extern int builtin_alias(char **);
 extern int builtin_unalias(char **);
 extern int builtin_read(char **);
 extern int builtin_getopts(char **);
-extern int builtin_eval(char **);
 extern int builtin_printf(char **);
-extern int builtin_exec(char **);
-extern int builtin_command(char **);
 extern int builtin_time(char **);
 extern int builtin_times(char **);
 extern int builtin_umask(char **);
@@ -51,7 +48,6 @@ extern int builtin_trap(char **);
 extern int builtin_test(char **);
 extern int builtin_cond(char **);
 extern int builtin_type(char **);
-extern int builtin_source(char **);
 extern int builtin_help(char **);
 
 const struct builtin builtin_table[] = {
