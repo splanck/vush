@@ -172,10 +172,14 @@ void record_local_var(const char *name) {
     char **arr = get_shell_array(name, &len);
     if (arr) {
         lv->array = calloc(len, sizeof(char *));
-        if (lv->array)
+        if (lv->array) {
             for (int i = 0; i < len; i++)
                 lv->array[i] = strdup(arr[i]);
-        lv->array_len = len;
+            lv->array_len = len;
+        } else {
+            fprintf(stderr, "calloc failed in record_local_var\n");
+            lv->array_len = 0;
+        }
         lv->had_shell = 1;
     } else if (val) {
         lv->value = strdup(val);
