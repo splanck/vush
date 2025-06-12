@@ -143,8 +143,10 @@ int builtin_cd(char **args) {
     char newpwd[PATH_MAX];
     if (physical) {
         if (!realpath(".", newpwd)) {
-            if (!getcwd(newpwd, sizeof(newpwd)))
-                strcpy(newpwd, dir);
+            if (!getcwd(newpwd, sizeof(newpwd))) {
+                strncpy(newpwd, dir, sizeof(newpwd) - 1);
+                newpwd[PATH_MAX - 1] = '\0';
+            }
         }
     } else {
         if (dir[0] == '/') {
