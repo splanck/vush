@@ -46,19 +46,19 @@ static int last_bg_id = 0;
  */
 void add_job(pid_t pid, const char *cmd) {
     last_bg_pid = pid;
-    last_bg_id = next_job_id;
     if (!opt_monitor)
         return;
     Job *job = malloc(sizeof(Job));
-    if (!job) return;
+    if (!job)
+        return;
     job->id = next_job_id++;
-    last_bg_id = job->id;
     job->pid = pid;
     job->state = JOB_RUNNING;
     strncpy(job->cmd, cmd, MAX_LINE - 1);
     job->cmd[MAX_LINE - 1] = '\0';
     job->next = jobs;
     jobs = job;
+    last_bg_id = job->id;
 }
 
 /*
