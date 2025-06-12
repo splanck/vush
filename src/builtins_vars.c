@@ -257,13 +257,21 @@ int builtin_unset(char **args) {
                 *lb = '\0';
                 int len = 0;
                 char **arr = get_shell_array(name, &len);
-                if (arr && idx >=0 && idx < len) {
+                if (arr && idx >= 0 && idx < len) {
                     char **tmp = NULL;
-                    if (len > 1)
-                        tmp = malloc(sizeof(char*)*(len-1));
-                    int j=0;
-                    for(int k=0;k<len;k++) if(k!=idx) tmp[j++]=arr[k];
-                    set_shell_array(name, tmp, len-1);
+                    if (len > 1) {
+                        tmp = malloc(sizeof(char*) * (len - 1));
+                        if (!tmp) {
+                            perror("malloc");
+                            *lb = '[';
+                            continue;
+                        }
+                    }
+                    int j = 0;
+                    for (int k = 0; k < len; k++)
+                        if (k != idx)
+                            tmp[j++] = arr[k];
+                    set_shell_array(name, tmp, len - 1);
                     free(tmp);
                 }
                 *lb = '[';
