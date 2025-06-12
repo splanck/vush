@@ -105,11 +105,20 @@ void define_function(const char *name, Command *body, const char *text)
 {
     for (struct func_entry *f = functions; f; f = f->next) {
         if (strcmp(f->name, name) == 0) {
+            char *new_name = strdup(name);
+            char *new_text = strdup(text);
+            if (!new_name || !new_text) {
+                perror("strdup");
+                free(new_name);
+                free(new_text);
+                free_commands(body);
+                return;
+            }
             free(f->name);
             free(f->text);
             free_commands(f->body);
-            f->name = strdup(name);
-            f->text = strdup(text);
+            f->name = new_name;
+            f->text = new_text;
             f->body = body;
             return;
         }
@@ -117,10 +126,21 @@ void define_function(const char *name, Command *body, const char *text)
     struct func_entry *fn = malloc(sizeof(struct func_entry));
     if (!fn) {
         perror("malloc");
+        free_commands(body);
         return;
     }
-    fn->name = strdup(name);
-    fn->text = strdup(text);
+    char *name_copy = strdup(name);
+    char *text_copy = strdup(text);
+    if (!name_copy || !text_copy) {
+        perror("strdup");
+        free(name_copy);
+        free(text_copy);
+        free(fn);
+        free_commands(body);
+        return;
+    }
+    fn->name = name_copy;
+    fn->text = text_copy;
     fn->body = body;
     fn->next = functions;
     functions = fn;
