@@ -57,6 +57,7 @@ int opt_allexport = 0;
 int opt_monitor = 1;
 int opt_notify = 1;
 int current_lineno = 0;
+pid_t parent_pid = 0;
 
 static void process_rc_file(const char *path, FILE *input);
 static void process_startup_file(FILE *input);
@@ -431,6 +432,8 @@ int main(int argc, char **argv) {
 
     FILE *input = stdin;
     char *dash_c = NULL;
+
+    parent_pid = getppid();
 
     if (argc > 1) {
         if (strcmp(argv[1], "-V") == 0 || strcmp(argv[1], "--version") == 0) {

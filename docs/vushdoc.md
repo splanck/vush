@@ -108,6 +108,8 @@ vush> echo $(echo hi)
 hi
 vush> echo $$
 12345
+vush> echo $PPID
+12344
 vush> sleep 1 &
 vush> echo $!
 12346
@@ -120,9 +122,9 @@ vush> echo $?
 ```
 
 `$$` expands to the PID of the running shell while `$!` gives the PID of the
-most recent background job. `$-` expands to a string of the current option
-letters such as `eu` when `set -e` and `set -u` are enabled. `$LINENO` holds
-the current input line number.
+most recent background job. `$PPID` yields the parent process ID. `$-` expands
+to a string of the current option letters such as `eu` when `set -e` and
+`set -u` are enabled. `$LINENO` holds the current input line number.
 
 Additional parameter expansion forms (doubling `#` or `%` removes the
 longest matching prefix or suffix):
