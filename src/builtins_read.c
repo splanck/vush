@@ -53,6 +53,13 @@ static char **split_array_values(char *line, int *count, char sep) {
         }
         vals = tmp;
         vals[*count] = strdup(start);
+        if (!vals[*count]) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            *count = 0;
+            return NULL;
+        }
         (*count)++;
     }
     return vals;
@@ -121,12 +128,12 @@ int builtin_read(char **args) {
     if (array_mode) {
         int count = 0;
         char **vals = split_array_values(line, &count, sep);
-        if (!vals)
-            count = 0;
-        set_shell_array(array_name, vals, count);
-        for (int i = 0; i < count; i++)
-            free(vals[i]);
-        free(vals);
+        if (vals) {
+            set_shell_array(array_name, vals, count);
+            for (int i = 0; i < count; i++)
+                free(vals[i]);
+            free(vals);
+        }
     } else {
         int var_count = 0;
         for (int i = idx; args[i]; i++)
