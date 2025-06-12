@@ -80,6 +80,15 @@ Displayed when additional input is needed.
 The \fBprintf\fP builtin translates backslash escapes in the format
 string before examining \% conversions. The \%b conversion still interprets
 escapes in its argument.
+.PP
+Measuring command duration:
+.PP
+.nf
+$ time -p sleep 0.1
+real 0.10
+user 0.00
+sys  0.00
+.fi
 Prompt used by the select builtin.
 .TP
 .B PS4

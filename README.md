@@ -110,7 +110,7 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `eval WORDS...` &ndash; execute constructed commands
 - `exec command [args...]` &ndash; replace the shell with a command
 - `source file [args...]` (or `.`) &ndash; read commands from a file
-- `time command` and `times` &ndash; report timing statistics
+- `time [-p] command` and `times` &ndash; report timing statistics
 - `hash [-r] [name...]` &ndash; manage the command path cache
 - `type NAME...` &ndash; show how a command would be interpreted
 - `fc` and `history` &ndash; edit or list command history
@@ -233,6 +233,11 @@ ulimit -S -s
 ```sh
 # Arithmetic using different bases
 echo $((16#ff + 2#10))
+```
+
+```sh
+# Measure execution time with POSIX formatting
+time -p sleep 0.1
 ```
 
 ## Usage
