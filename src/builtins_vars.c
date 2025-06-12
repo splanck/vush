@@ -389,6 +389,7 @@ static char **parse_array_values(const char *val, int *count) {
     char *body = strndup(val + 1, strlen(val) - 2);
     if (!body)
         return NULL;
+
     char **vals = NULL;
     char *p = body;
     while (*p) {
@@ -401,11 +402,26 @@ static char **parse_array_values(const char *val, int *count) {
             p++;
         if (*p)
             *p++ = '\0';
+
         char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
-        if (!tmp)
-            break;
+        if (!tmp) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            free(body);
+            *count = 0;
+            return NULL;
+        }
         vals = tmp;
         vals[*count] = strdup(start);
+        if (!vals[*count]) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            free(body);
+            *count = 0;
+            return NULL;
+        }
         (*count)++;
     }
     free(body);
@@ -428,12 +444,12 @@ int builtin_local(char **args) {
             if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {
                 int count = 0;
                 char **vals = parse_array_values(val, &count);
-                if (!vals)
-                    count = 0;
-                set_shell_array(name, vals, count);
-                for (int j = 0; j < count; j++)
-                    free(vals[j]);
-                free(vals);
+                if (vals) {
+                    set_shell_array(name, vals, count);
+                    for (int j = 0; j < count; j++)
+                        free(vals[j]);
+                    free(vals);
+                }
             } else {
                 set_shell_var(name, val);
             }
