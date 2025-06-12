@@ -8,12 +8,16 @@
 /* Forward declaration from lexer_expand.c */
 char *parse_substitution(char **p);
 
+/* set when a memory allocation fails inside parse_redirect_token */
+static int token_alloc_failed = 0;
+
 /* If *p points at a redirection or control operator, extract the operator
  * token and advance *p.  Returns the allocated token string or NULL when
  * no operator is found. */
 static char *parse_redirect_token(char **p) {
     char buf[MAX_LINE];
     int len = 0;
+    token_alloc_failed = 0;
     if (**p == '2' && *(*p + 1) == '>') {
         buf[len++] = '2';
         (*p)++;
@@ -24,7 +28,12 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     if (**p == '&' && *(*p + 1) == '>') {
         buf[len++] = '&';
@@ -36,7 +45,12 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     if (**p == '>' && *(*p + 1) == '|') {
         buf[len++] = '>';
@@ -44,7 +58,12 @@ static char *parse_redirect_token(char **p) {
         buf[len++] = '|';
         (*p)++;
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
         buf[len++] = '&';
@@ -55,7 +74,12 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     if (**p == '<' && *(*p + 1) == '<') {
         buf[len++] = '<';
@@ -68,7 +92,12 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     if (**p == '>' || **p == '<' || **p == '|' || **p == '&' || **p == ';') {
         buf[len++] = **p;
@@ -80,7 +109,12 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        return strdup(buf);
+        char *tmp = strdup(buf);
+        if (!tmp) {
+            token_alloc_failed = 1;
+            return NULL;
+        }
+        return tmp;
     }
     return NULL;
 }
@@ -254,6 +288,8 @@ char *read_token(char **p, int *quoted) {
     int do_expand = 1;
     *quoted = 0;
     char *redir = parse_redirect_token(p);
+    if (token_alloc_failed)
+        return NULL;
     if (redir)
         return redir;
     if (**p == '\'' || **p == '"') {
