@@ -20,6 +20,10 @@ struct builtin {
 extern const struct builtin builtin_table[];
 
 int run_builtin(char **args);
+int builtin_exit(char **args);
+int builtin_colon(char **args);
+int builtin_true(char **args);
+int builtin_false(char **args);
 int builtin_type(char **args);
 int builtin_dirs(char **args);
 int builtin_read(char **args);
