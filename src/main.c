@@ -56,6 +56,7 @@ int opt_noglob = 0;
 int opt_allexport = 0;
 int opt_monitor = 1;
 int opt_notify = 1;
+int opt_privileged = 0;
 int current_lineno = 0;
 pid_t parent_pid = 0;
 
@@ -479,7 +480,8 @@ int main(int argc, char **argv) {
     load_aliases();
     load_functions();
 
-    process_startup_file(input);
+    if (!opt_privileged)
+        process_startup_file(input);
 
     const char *envfile = getenv("ENV");
     if (envfile && *envfile)
