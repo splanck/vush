@@ -595,6 +595,8 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         return cmd;
     }
     PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
+    if (!seg_head)
+        return NULL;
     seg_head->dup_out = -1;
     seg_head->dup_err = -1;
     seg_head->out_fd = STDOUT_FILENO;
@@ -611,6 +613,10 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     }
     finalize_segment(seg, argc, &background);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_pipeline(seg_head);
+        return NULL;
+    }
     cmd->pipeline = seg_head;
     cmd->background = background;
     cmd->negate = negate;
