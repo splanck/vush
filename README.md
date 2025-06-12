@@ -181,7 +181,7 @@ environment variables:
   (default 1000).
 - `VUSH_ALIASFILE` holds persistent aliases (default `~/.vush_aliases`).
 - `VUSH_FUNCFILE` holds persistent functions (default `~/.vush_funcs`).
-- `PS1` sets the command prompt displayed before each input line.
+- `PS1` sets the command prompt displayed before each input line and may be exported safely.
 - `PS2` is shown when more input is needed, such as for unmatched quotes.
 - `PS3` is the prompt used by the `select` builtin.
 - `PS4` prefixes trace output produced by `set -x`.
