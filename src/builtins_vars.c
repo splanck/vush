@@ -100,6 +100,8 @@ int builtin_set(char **args) {
             opt_privileged = 1;
         else if (strcmp(args[i], "-t") == 0)
             opt_onecmd = 1;
+        else if (strcmp(args[i], "-h") == 0)
+            opt_hashall = 1;
         else if (strcmp(args[i], "-o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 1;
@@ -135,6 +137,8 @@ int builtin_set(char **args) {
             opt_privileged = 0;
         else if (strcmp(args[i], "+t") == 0)
             opt_onecmd = 0;
+        else if (strcmp(args[i], "+h") == 0)
+            opt_hashall = 0;
         else if (strcmp(args[i], "+o") == 0 && args[i+1]) {
             if (strcmp(args[i+1], "pipefail") == 0)
                 opt_pipefail = 0;

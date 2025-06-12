@@ -58,6 +58,7 @@ int opt_monitor = 1;
 int opt_notify = 1;
 int opt_privileged = 0;
 int opt_onecmd = 0;
+int opt_hashall = 0;
 int current_lineno = 0;
 pid_t parent_pid = 0;
 

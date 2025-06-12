@@ -60,12 +60,13 @@ Current version: 0.1.0
 - `set -p` enters privileged mode and skips startup files; use `set +p` to
   re-enable them
 - `set -t` exits after a single command. Example:\
-  `vush$ set -t; echo hi` prints `hi` and the shell terminates.
+`vush$ set -t; echo hi` prints `hi` and the shell terminates.
+- `set -h` automatically caches command paths; use `set +h` to disable.
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
   `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m`,
-  `set -t`/`set +t`, `set -p`/`set +p` and `set -o OPTION` such as
+ `set -t`/`set +t`, `set -p`/`set +p`, `set -h`/`set +h` and `set -o OPTION` such as
   `pipefail` or `noclobber`
 - Use `>| file` to force overwriting a file when `noclobber` is active
 - `set --` can replace positional parameters inside the running shell
