@@ -343,12 +343,13 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
             do {
                 int q2 = 0;
                 tmp = read_token(p, &q2);
-                if (!tmp) { free(assign); return -1; }
+                if (!tmp) { free(assign); free(tok); return -1; }
                 char *new_assign = NULL;
                 int ret = asprintf(&new_assign, "%s %s", assign, tmp);
                 if (ret < 0 || !new_assign) {
                     free(assign);
                     free(tmp);
+                    free(tok);
                     return -1;
                 }
                 free(assign);
@@ -481,13 +482,13 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             fprintf(stderr, "parse_pipeline token: '%s'\n", tok ? tok : "(null)");
         if (!tok) return -1;
         int h = handle_assignment_or_alias(seg, argc, p, &tok, quoted);
-        if (h == -1) { free(tok); return -1; }
+        if (h == -1) return -1;
         if (h == 1) { if (tok) free(tok); continue; }
         h = process_here_doc(seg, p, tok, quoted);
-        if (h == -1) { free(tok); return -1; }
+        if (h == -1) return -1;
         if (h == 1) continue;
         h = parse_redirection(seg, p, tok, quoted);
-        if (h == -1) { free(tok); return -1; }
+        if (h == -1) return -1;
         if (h == 1) continue;
         int bcount = 0;
         char **btoks = expand_token_braces(tok, quoted, &bcount);
