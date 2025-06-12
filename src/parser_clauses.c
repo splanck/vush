@@ -39,6 +39,12 @@ static Command *parse_if_clause(char **p) {
         else_cmd = parse_if_clause(p);
     }
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_commands(cond_cmd);
+        free_commands(body_cmd);
+        free_commands(else_cmd);
+        return NULL;
+    }
     cmd->type = CMD_IF;
     cmd->cond = cond_cmd;
     cmd->body = body_cmd;
@@ -56,6 +62,11 @@ static Command *parse_while_clause(char **p) {
     if (!body) { free_commands(cond_cmd); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_commands(cond_cmd);
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_WHILE;
     cmd->cond = cond_cmd;
     cmd->body = body_cmd;
@@ -72,6 +83,11 @@ static Command *parse_until_clause(char **p) {
     if (!body) { free_commands(cond_cmd); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_commands(cond_cmd);
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_UNTIL;
     cmd->cond = cond_cmd;
     cmd->body = body_cmd;
@@ -113,6 +129,14 @@ static Command *parse_for_clause(char **p) {
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free(var);
+        for (int i=0; i<count; i++)
+            free(words[i]);
+        free(words);
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_FOR;
     cmd->var = var;
     cmd->words = words;
@@ -156,6 +180,14 @@ static Command *parse_select_clause(char **p) {
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free(var);
+        for (int i=0;i<count;i++)
+            free(words[i]);
+        free(words);
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_SELECT;
     cmd->var = var;
     cmd->words = words;
@@ -226,6 +258,13 @@ static Command *parse_for_arith_clause(char **p) {
     if (!body) { free(init); free(cond); free(incr); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free(init);
+        free(cond);
+        free(incr);
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_FOR_ARITH;
     cmd->arith_init = init;
     cmd->arith_cond = cond;
@@ -293,6 +332,15 @@ static Command *parse_case_clause(char **p) {
         if (!body) { free_case_items(head); free(word); return NULL; }
         Command *body_cmd = parse_line(body); free(body);
         CaseItem *ci = calloc(1, sizeof(CaseItem));
+        if (!ci) {
+            for (int i = 0; i < pc; i++)
+                free(patterns[i]);
+            free(patterns);
+            free_case_items(head);
+            free(word);
+            free_commands(body_cmd);
+            return NULL;
+        }
         ci->patterns = patterns;
         ci->pattern_count = pc;
         ci->body = body_cmd;
@@ -301,6 +349,11 @@ static Command *parse_case_clause(char **p) {
     }
 
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free(word);
+        free_case_items(head);
+        return NULL;
+    }
     cmd->type = CMD_CASE;
     cmd->var = word;
     cmd->cases = head;
@@ -343,6 +396,12 @@ Command *parse_function_def(char **p, CmdOp *op_out) {
         if (!bodytxt) goto fail;
         Command *body_cmd = parse_line(bodytxt);
         Command *cmd = calloc(1, sizeof(Command));
+        if (!cmd) {
+            free(tok);
+            free(bodytxt);
+            free_commands(body_cmd);
+            return NULL;
+        }
         cmd->type = CMD_FUNCDEF;
         cmd->var = fname;
         cmd->text = bodytxt;
@@ -370,6 +429,10 @@ Command *parse_subshell(char **p, CmdOp *op_out) {
     Command *body_cmd = parse_line(bodytxt);
     free(bodytxt);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_SUBSHELL;
     cmd->group = body_cmd;
     while (**p == ' ' || **p == '\t') (*p)++;
@@ -389,6 +452,10 @@ Command *parse_brace_group(char **p, CmdOp *op_out) {
     Command *body_cmd = parse_line(bodytxt);
     free(bodytxt);
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        free_commands(body_cmd);
+        return NULL;
+    }
     cmd->type = CMD_GROUP;
     cmd->group = body_cmd;
     while (**p == ' ' || **p == '\t') (*p)++;
@@ -441,6 +508,12 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
     else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
     Command *cmd = calloc(1, sizeof(Command));
+    if (!cmd) {
+        for (int i = 0; i < count; i++)
+            free(words[i]);
+        free(words);
+        return NULL;
+    }
     cmd->type = CMD_COND;
     cmd->words = words;
     cmd->word_count = count;
