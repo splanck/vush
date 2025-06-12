@@ -82,42 +82,54 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             size_t vlen = strlen(val);
             if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
                 char *body = strndup(val+1, vlen-2);
+                if (!body) { free(name); continue; }
                 char *p = body;
-                char **vals = NULL; int count=0;
+                char **vals = NULL; int count = 0;
+                int fail = 0;
                 while (*p) {
                     while (*p==' '||*p=='\t') p++;
                     if (*p=='\0') break;
-                    char *start=p;
+                    char *start = p;
                     while (*p && *p!=' ' && *p!='\t') p++;
                     if (*p) *p++='\0';
-                    vals = realloc(vals,sizeof(char*)*(count+1));
-                    vals[count++] = strdup(start);
+                    char **tmp = realloc(vals, sizeof(char*)*(count+1));
+                    if (!tmp) { fail = 1; break; }
+                    vals = tmp;
+                    vals[count] = strdup(start);
+                    if (!vals[count]) { fail = 1; break; }
+                    count++;
                 }
-                set_shell_array(name, vals, count);
-                if (opt_allexport) {
-                    size_t joinlen = 0;
-                    for (int j=0;j<count;j++)
-                        joinlen += strlen(vals[j]) + 1;
-                    char *joined = malloc(joinlen+1);
-                    if (joined) {
-                        joined[0] = '\0';
-                        for (int j=0;j<count;j++) {
-                            strcat(joined, vals[j]);
-                            if (j < count-1) strcat(joined, " ");
+                if (!fail) {
+                    set_shell_array(name, vals, count);
+                    if (opt_allexport) {
+                        size_t joinlen = 0;
+                        for (int j=0; j<count; j++)
+                            joinlen += strlen(vals[j]) + 1;
+                        char *joined = malloc(joinlen+1);
+                        if (joined) {
+                            joined[0] = '\0';
+                            for (int j=0; j<count; j++) {
+                                strcat(joined, vals[j]);
+                                if (j < count-1) strcat(joined, " ");
+                            }
+                            setenv(name, joined, 1);
+                            free(joined);
                         }
-                        setenv(name, joined, 1);
-                        free(joined);
                     }
                 }
-                for(int j=0;j<count;j++) free(vals[j]);
+                for (int j=0; j<count; j++)
+                    free(vals[j]);
                 free(vals);
                 free(body);
+                free(name);
+                if (fail)
+                    continue;
             } else {
                 set_shell_var(name, val);
                 if (opt_allexport)
                     setenv(name, val, 1);
+                free(name);
             }
-            free(name);
         }
         last_status = 0;
         return 1;
@@ -141,43 +153,83 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             continue;
         }
         backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+        if (!backs[i].name) {
+            backs[i].env = backs[i].var = NULL;
+            backs[i].had_env = backs[i].had_var = 0;
+            continue;
+        }
         const char *oe = getenv(backs[i].name);
         backs[i].had_env = oe != NULL;
         backs[i].env = oe ? strdup(oe) : NULL;
+        if (oe && !backs[i].env) {
+            free(backs[i].name);
+            backs[i].name = NULL;
+            backs[i].had_env = backs[i].had_var = 0;
+            continue;
+        }
         const char *ov = get_shell_var(backs[i].name);
         backs[i].had_var = ov != NULL;
         backs[i].var = ov ? strdup(ov) : NULL;
+        if (ov && !backs[i].var) {
+            free(backs[i].name);
+            free(backs[i].env);
+            backs[i].name = NULL;
+            backs[i].env = NULL;
+            backs[i].had_env = backs[i].had_var = 0;
+            continue;
+        }
         char *val = eq + 1;
         size_t vlen = strlen(val);
         if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
             char *body = strndup(val+1, vlen-2);
+            if (!body) {
+                free(backs[i].name);
+                free(backs[i].env);
+                free(backs[i].var);
+                backs[i].name = NULL;
+                continue;
+            }
             char *p = body;
             char **vals = NULL; int count=0;
-            size_t joinlen = 0;
+            size_t joinlen = 0; int fail = 0;
             while (*p) {
                 while (*p==' '||*p=='\t') p++;
                 if (*p=='\0') break;
                 char *start=p;
                 while (*p && *p!=' ' && *p!='\t') p++;
                 if (*p) *p++='\0';
-                vals = realloc(vals,sizeof(char*)*(count+1));
-                vals[count++] = strdup(start);
+                char **tmp = realloc(vals,sizeof(char*)*(count+1));
+                if (!tmp) { fail = 1; break; }
+                vals = tmp;
+                vals[count] = strdup(start);
+                if (!vals[count]) { fail = 1; break; }
                 joinlen += strlen(start) + 1;
+                count++;
             }
-            char *joined = malloc(joinlen+1);
-            if (joined) {
-                joined[0] = '\0';
-                for (int j=0;j<count;j++) {
-                    strcat(joined, vals[j]);
-                    if (j < count-1) strcat(joined, " ");
+            if (!fail) {
+                char *joined = malloc(joinlen+1);
+                if (joined) {
+                    joined[0] = '\0';
+                    for (int j=0;j<count;j++) {
+                        strcat(joined, vals[j]);
+                        if (j < count-1) strcat(joined, " ");
+                    }
                 }
+                setenv(backs[i].name, joined ? joined : "", 1);
+                set_shell_array(backs[i].name, vals, count);
+                free(joined);
             }
-            setenv(backs[i].name, joined ? joined : "", 1);
-            set_shell_array(backs[i].name, vals, count);
-            free(joined);
-            for(int j=0;j<count;j++) free(vals[j]);
+            for(int j=0;j<count;j++)
+                free(vals[j]);
             free(vals);
             free(body);
+            if (fail) {
+                free(backs[i].name);
+                free(backs[i].env);
+                free(backs[i].var);
+                backs[i].name = NULL;
+                continue;
+            }
         } else {
             setenv(backs[i].name, val, 1);
             set_shell_var(backs[i].name, val);
