@@ -389,6 +389,13 @@ static void repl_loop(FILE *input)
                 size_t len1 = strlen(cmdline);
                 size_t len2 = strlen(more);
                 char *tmp = malloc(len1 + len2 + 2);
+                if (!tmp) {
+                    perror("malloc");
+                    free(cmdline);
+                    free(more);
+                    cmdline = NULL;
+                    break;
+                }
                 memcpy(tmp, cmdline, len1);
                 tmp[len1] = '\n';
                 memcpy(tmp + len1 + 1, more, len2 + 1);
