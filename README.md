@@ -50,6 +50,7 @@ Current version: 0.1.0
 - Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
 - Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
 - Function definitions persisted in `~/.vush_funcs` (overridable with `VUSH_FUNCFILE`)
+- Logical path cleanup handles at most `PATH_MAX/2` components
 - Variables can be removed with `unset -v` and functions with `unset -f`
 - Arrow-key command line editing with history recall
 - `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
