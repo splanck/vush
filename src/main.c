@@ -446,6 +446,9 @@ int main(int argc, char **argv) {
     FILE *input = stdin;
     char *dash_c = NULL;
 
+    /* Always expose the running shell as $SHELL */
+    setenv("SHELL", argv[0], 1);
+
     parent_pid = getppid();
 
     if (argc > 1) {
