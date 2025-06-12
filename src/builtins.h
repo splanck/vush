@@ -51,6 +51,7 @@ void print_functions(void);
 int builtin_local(char **args);
 int builtin_break(char **args);
 int builtin_continue(char **args);
+int builtin_test(char **args);
 int builtin_cond(char **args);
 void list_signals(void);
 
