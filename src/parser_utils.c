@@ -26,13 +26,19 @@ struct proc_sub {
 };
 static struct proc_sub *proc_subs = NULL;
 
-static void add_proc_sub(const char *path, pid_t pid) {
+static int add_proc_sub(const char *path, pid_t pid) {
     struct proc_sub *ps = malloc(sizeof(struct proc_sub));
-    if (!ps) return;
+    if (!ps)
+        return 0;
     ps->path = strdup(path);
+    if (!ps->path) {
+        free(ps);
+        return 0;
+    }
     ps->pid = pid;
     ps->next = proc_subs;
     proc_subs = ps;
+    return 1;
 }
 
 void cleanup_proc_subs(void) {
@@ -232,7 +238,14 @@ char *process_substitution(char **p, int read_from) {
         run_command_list(cmd, body);
         exit(last_status);
     } else if (pid > 0) {
-        add_proc_sub(template, pid);
+        if (!add_proc_sub(template, pid)) {
+            kill(pid, SIGTERM);
+            waitpid(pid, NULL, 0);
+            unlink(template);
+            free_commands(cmd);
+            free(body);
+            return NULL;
+        }
     } else {
         perror("fork");
         unlink(template);
