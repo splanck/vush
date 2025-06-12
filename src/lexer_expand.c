@@ -734,7 +734,9 @@ char *expand_prompt(const char *prompt) {
     if (!prompt)
         return strdup("");
     size_t len = strlen(prompt);
-    char tmp[len + 3];
+    char *tmp = malloc(len + 3);
+    if (!tmp)
+        return strdup("");
     tmp[0] = '"';
     memcpy(tmp + 1, prompt, len);
     tmp[len + 1] = '"';
@@ -742,6 +744,7 @@ char *expand_prompt(const char *prompt) {
     char *p = tmp;
     int quoted = 0;
     char *res = read_token(&p, &quoted);
+    free(tmp);
     if (!res)
         return strdup("");
     return res;
