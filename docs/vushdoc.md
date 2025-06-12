@@ -265,8 +265,9 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
 - `cd [-L|-P] [dir]` - change the current directory. Without an argument it switches to `$HOME`. `~user` names are expanded using the password database. After a successful change `PWD` and `OLDPWD` are updated. Use `cd -` to print and switch to `$OLDPWD`. `-L` (default) keeps `PWD` as the logical path while `-P` resolves the target with `realpath()` and sets `PWD` to the physical location. If `dir` does not begin with `/` or `.`, each directory listed in the `CDPATH` environment variable is searched. When a `CDPATH` entry is used the resulting path is printed.
 - `pushd dir` - push the current directory and change to `dir`.
 - `popd` - return to the directory from the stack.
- - `printf FORMAT [args...]` - print formatted text. The `%b` conversion
-   interprets backslash escapes in the argument before printing.
+- `printf FORMAT [args...]` - print formatted text. Backslash escapes in
+  `FORMAT` are translated before examining `%` conversions. The `%b`
+  conversion interprets escapes in its argument before printing.
 - `echo [-n] [-e] [args...]` - print arguments separated by spaces. With `-n` no newline is added and `-e` enables backslash escapes.
 - `dirs` - display the directory stack.
 - `exit [status]` - terminate the shell with an optional status code.

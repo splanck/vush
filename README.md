@@ -115,7 +115,9 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `type NAME...` &ndash; show how a command would be interpreted
 - `fc` and `history` &ndash; edit or list command history
 - `echo [-n] [-e] [args...]` &ndash; print text
-- `printf FORMAT [args...]` &ndash; formatted output
+- `printf FORMAT [args...]` &ndash; formatted output. Backslash escapes in `FORMAT`
+  are translated before `%` conversions are handled; `%b` still expands escapes
+  in its argument.
 - `read [-r] [-a NAME] [VAR...]` &ndash; read a line of input, splitting fields
   using the first character of `$IFS` and storing it in `$REPLY` when no
   variables are listed
