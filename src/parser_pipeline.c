@@ -344,17 +344,28 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
                 int q2 = 0;
                 tmp = read_token(p, &q2);
                 if (!tmp) { free(assign); return -1; }
-                char *old = assign;
-                asprintf(&assign, "%s %s", assign, tmp);
-                free(old);
+                char *new_assign = NULL;
+                int ret = asprintf(&new_assign, "%s %s", assign, tmp);
+                if (ret < 0 || !new_assign) {
+                    free(assign);
+                    free(tmp);
+                    return -1;
+                }
+                free(assign);
+                assign = new_assign;
                 free(tmp);
             } while (assign[strlen(assign) - 1] != ')');
             free(tok);
             tok = assign;
             eq = strchr(tok, '=');
         }
-        seg->assigns = realloc(seg->assigns,
-                               sizeof(char *) * (seg->assign_count + 1));
+        char **new_assigns = realloc(seg->assigns,
+                                    sizeof(char *) * (seg->assign_count + 1));
+        if (!new_assigns) {
+            free(tok);
+            return -1;
+        }
+        seg->assigns = new_assigns;
         seg->assigns[seg->assign_count++] = tok;
         if (eq) {
             char *name = strndup(tok, eq - tok);
@@ -454,8 +465,13 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                 int q2 = 0;
                 char *op = read_token(p, &q2);
                 if (!op) { free(tok); return -1; }
-                char *nt;
-                asprintf(&nt, "%s%s", tok, op);
+                char *nt = NULL;
+                int ret = asprintf(&nt, "%s%s", tok, op);
+                if (ret < 0 || !nt) {
+                    free(op);
+                    free(tok);
+                    return -1;
+                }
                 free(op);
                 free(tok);
                 tok = nt;
