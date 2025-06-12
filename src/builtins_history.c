@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <limits.h>
 
 extern int last_status;
 
@@ -182,8 +183,13 @@ int builtin_fc(char **args)
         return 1;
     }
 
-    char tmpname[] = "/tmp/vush_fcXXXXXX";
-    int fd = mkstemp(tmpname);
+    const char *tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !*tmpdir)
+        tmpdir = "/tmp";
+    char template[PATH_MAX];
+    snprintf(template, sizeof(template), "%s/vush_fcXXXXXX", tmpdir);
+
+    int fd = mkstemp(template);
     if (fd < 0) {
         perror("mkstemp");
         return 1;
@@ -192,7 +198,7 @@ int builtin_fc(char **args)
     if (!f) {
         perror("fdopen");
         close(fd);
-        unlink(tmpname);
+        unlink(template);
         return 1;
     }
     for (int id = start;; id += step) {
@@ -211,7 +217,7 @@ int builtin_fc(char **args)
 
     pid_t pid = fork();
     if (pid == 0) {
-        execlp(editor, editor, tmpname, NULL);
+        execlp(editor, editor, template, NULL);
         perror(editor);
         _exit(127);
     } else if (pid > 0) {
@@ -220,7 +226,7 @@ int builtin_fc(char **args)
     } else {
         perror("fork");
         fclose(f);
-        unlink(tmpname);
+        unlink(template);
         return 1;
     }
 
@@ -237,7 +243,7 @@ int builtin_fc(char **args)
     }
 
     fclose(f);
-    unlink(tmpname);
+    unlink(template);
     return 1;
 }
 
