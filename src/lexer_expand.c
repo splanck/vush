@@ -609,8 +609,10 @@ char *expand_history(const char *line) {
     size_t exp_len = strlen(expansion);
     size_t rest_len = strlen(rest);
     char *res = malloc(pre_len + exp_len + rest_len + 1);
-    if (!res)
+    if (!res) {
+        free(expansion);
         return NULL;
+    }
     memcpy(res, line, pre_len);
     memcpy(res + pre_len, expansion, exp_len);
     memcpy(res + pre_len + exp_len, rest, rest_len + 1);
