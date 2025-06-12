@@ -561,6 +561,7 @@ vush> echo $((16#ff + 2#10))
 - `VUSH_HISTFILE` names the history file; `VUSH_HISTSIZE` limits retained entries (defaults `~/.vush_history` and `1000`).
 - `VUSH_ALIASFILE` and `VUSH_FUNCFILE` store persistent aliases and functions (defaults `~/.vush_aliases` and `~/.vush_funcs`).
 - `CDPATH` lists directories searched by `cd` for relative paths.
+- `SHELL` holds the path used to invoke `vush`.
 - `ENV` names an optional startup file read after `~/.vushrc`.
 - `set -p` can be used to skip these startup files when a clean
   environment is required.
