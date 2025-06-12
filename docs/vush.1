@@ -67,7 +67,8 @@ Primary command prompt string.
 .B PS2
 .PP
 .nf
-$ echo $((16#ff + 2#10))
+Reading without naming a variable stores the line in \fBREPLY\fP. Fields are
+split using the first character of \fB$IFS\fP:
 257
 .fi
 Displayed when additional input is needed.

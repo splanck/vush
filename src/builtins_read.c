@@ -29,17 +29,17 @@ static int parse_read_options(char **args, int *raw, const char **array_name,
     return 0;
 }
 
-static char **split_array_values(char *line, int *count) {
+static char **split_array_values(char *line, int *count, char sep) {
     char **vals = NULL;
     *count = 0;
     char *p = line;
     while (*p) {
-        while (*p == ' ' || *p == '\t')
+        while (*p == sep)
             p++;
         if (*p == '\0')
             break;
         char *start = p;
-        while (*p && *p != ' ' && *p != '\t')
+        while (*p && *p != sep)
             p++;
         if (*p)
             *p++ = '\0';
@@ -52,18 +52,18 @@ static char **split_array_values(char *line, int *count) {
     return vals;
 }
 
-static void assign_read_vars(char **args, int idx, char *line) {
+static void assign_read_vars(char **args, int idx, char *line, char sep) {
     int var_count = 0;
     for (int i = idx; args[i]; i++)
         var_count++;
 
     char *p = line;
     for (int i = 0; i < var_count; i++) {
-        while (*p == ' ' || *p == '\t')
+        while (*p == sep)
             p++;
         char *val = p;
         if (i < var_count - 1) {
-            while (*p && *p != ' ' && *p != '\t')
+            while (*p && *p != sep)
                 p++;
             if (*p)
                 *p++ = '\0';
@@ -106,10 +106,15 @@ int builtin_read(char **args) {
         *dst = '\0';
     }
 
+    const char *ifs = get_shell_var("IFS");
+    if (!ifs)
+        ifs = getenv("IFS");
+    char sep = (ifs && *ifs) ? ifs[0] : ' ';
+
     int array_mode = array_name != NULL;
     if (array_mode) {
         int count = 0;
-        char **vals = split_array_values(line, &count);
+        char **vals = split_array_values(line, &count, sep);
         if (!vals)
             count = 0;
         set_shell_array(array_name, vals, count);
@@ -123,7 +128,7 @@ int builtin_read(char **args) {
         if (var_count == 0) {
             set_shell_var("REPLY", line);
         } else {
-            assign_read_vars(args, idx, line);
+            assign_read_vars(args, idx, line, sep);
         }
     }
     last_status = 0;

@@ -115,8 +115,9 @@ does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
 - `fc` and `history` &ndash; edit or list command history
 - `echo [-n] [-e] [args...]` &ndash; print text
 - `printf FORMAT [args...]` &ndash; formatted output
-- `read [-r] [-a NAME] [VAR...]` &ndash; read a line of input, storing it in
-  `$REPLY` when no variables are listed
+- `read [-r] [-a NAME] [VAR...]` &ndash; read a line of input, splitting fields
+  using the first character of `$IFS` and storing it in `$REPLY` when no
+  variables are listed
 - `test EXPR` and `[[ EXPR ]]` &ndash; evaluate conditions
 - `:`/`true`/`false` &ndash; return fixed status codes
 - `return [status]` &ndash; exit from a function

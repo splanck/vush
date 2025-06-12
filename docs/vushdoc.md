@@ -303,7 +303,8 @@ Use `>| file` to override `noclobber` and force truncation of `file`.
 - `hash [-r] [name...]` - manage cached command paths.
 - `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
 - `unalias [-a] NAME` - remove aliases. With `-a` all aliases are cleared.
-- `read [-r] VAR...` - read a line of input into variables.
+- `read [-r] VAR...` - read a line of input into variables using the first
+  character of `$IFS` to split fields.
 - `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).
 - `break [N]` - exit `N` levels of loops (default 1).
@@ -450,7 +451,8 @@ Hello foo
 
 ## Read Example
 
-Create a small script that reads a line and prints it back:
+Create a small script that reads a line and prints it back. The input is
+split into fields using the first character of `$IFS`:
 
 ```sh
 echo "Enter something:";
