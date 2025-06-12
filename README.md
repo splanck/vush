@@ -26,6 +26,7 @@ Current version: 0.1.0
 - Brace expansion for patterns like `{foo,bar}` and `{1..3}`
 - Command substitution using backticks or `$(...)`
 - Arithmetic expansion using `$((...))` and a `let` builtin
+- Numbers may specify a base using `<base>#<digits>` inside arithmetic expressions
 - Background job management using `&`
 - Simple pipelines using `|` to connect commands
 - Process substitution using `<(cmd)` and `>(cmd)`
@@ -222,6 +223,11 @@ ulimit -a
 # Set a hard file descriptor limit and view the soft stack limit
 ulimit -H -n 4096
 ulimit -S -s
+```
+
+```sh
+# Arithmetic using different bases
+echo $((16#ff + 2#10))
 ```
 
 ## Usage

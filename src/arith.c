@@ -59,6 +59,15 @@ static long parse_primary(const char **s) {
         return val ? strtol(val, NULL, 10) : 0;
     }
     char *end;
+    long base = strtol(*s, &end, 10);
+    if (end > *s && *end == '#') {
+        if (base >= 2 && base <= 36) {
+            const char *num = end + 1;
+            long val = strtol(num, &end, (int)base);
+            *s = end;
+            return val;
+        }
+    }
     long v = strtol(*s, &end, 10);
     *s = end;
     return v;

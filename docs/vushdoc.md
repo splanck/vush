@@ -513,6 +513,13 @@ one
 two
 ```
 
+## Arithmetic Example
+
+```sh
+vush> echo $((16#ff + 2#10))
+257
+```
+
 ## Configuration
 
 ### Environment Variables
