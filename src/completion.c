@@ -52,7 +52,14 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                 }
                 matches = tmp;
             }
-            matches[count++] = strdup(bn[i]);
+            char *dup = strdup(bn[i]);
+            if (!dup) {
+                for (int j = 0; j < count; j++)
+                    free(matches[j]);
+                free(matches);
+                return NULL;
+            }
+            matches[count++] = dup;
         }
     }
 
@@ -75,7 +82,15 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                     }
                     matches = tmp;
                 }
-                matches[count++] = strdup(de->d_name);
+                char *dup = strdup(de->d_name);
+                if (!dup) {
+                    for (int j = 0; j < count; j++)
+                        free(matches[j]);
+                    free(matches);
+                    closedir(d);
+                    return NULL;
+                }
+                matches[count++] = dup;
             }
         }
         closedir(d);
@@ -84,14 +99,19 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     const char *path = getenv("PATH");
     if (path && matches) {
         char *pdup = strdup(path);
-        if (pdup) {
-            char *saveptr = NULL;
-            char *dir = strtok_r(pdup, ":", &saveptr);
-            while (dir) {
-                DIR *pd = opendir(dir);
-                if (pd) {
-                    struct dirent *pe;
-                    while ((pe = readdir(pd))) {
+        if (!pdup) {
+            for (int j = 0; j < count; j++)
+                free(matches[j]);
+            free(matches);
+            return NULL;
+        }
+        char *saveptr = NULL;
+        char *dir = strtok_r(pdup, ":", &saveptr);
+        while (dir) {
+            DIR *pd = opendir(dir);
+            if (pd) {
+                struct dirent *pe;
+                while ((pe = readdir(pd))) {
                         if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
                             if (has_match(matches, count, pe->d_name))
                                 continue;
@@ -111,7 +131,16 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                     }
                                     matches = tmp;
                                 }
-                                matches[count++] = strdup(pe->d_name);
+                                char *dup = strdup(pe->d_name);
+                                if (!dup) {
+                                    for (int j = 0; j < count; j++)
+                                        free(matches[j]);
+                                    free(matches);
+                                    closedir(pd);
+                                    free(pdup);
+                                    return NULL;
+                                }
+                                matches[count++] = dup;
                             }
                         }
                     }
@@ -120,9 +149,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                         break;
                 }
                 dir = strtok_r(NULL, ":", &saveptr);
-            }
-            free(pdup);
         }
+        free(pdup);
     }
 
     if (countp)
