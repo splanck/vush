@@ -465,21 +465,20 @@ static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
 }
 
 static char **expand_token_braces(char *tok, int quoted, int *count) {
-    char **btoks = NULL;
-    if (!quoted)
-        btoks = expand_braces(tok, count);
-    if (!btoks) {
-        btoks = malloc(2 * sizeof(char *));
-        if (!btoks) {
-            free(tok);
-            return NULL;
-        }
-        btoks[0] = tok;
-        btoks[1] = NULL;
-        if (count) *count = 1;
-    } else {
+    if (!quoted) {
+        char **btoks = expand_braces(tok, count);
         free(tok);
+        return btoks;
     }
+
+    char **btoks = malloc(2 * sizeof(char *));
+    if (!btoks) {
+        free(tok);
+        return NULL;
+    }
+    btoks[0] = tok;
+    btoks[1] = NULL;
+    if (count) *count = 1;
     return btoks;
 }
 

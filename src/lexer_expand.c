@@ -632,6 +632,10 @@ char **expand_braces(const char *word, int *count_out) {
         char **res = malloc(2 * sizeof(char *));
         if (!res) return NULL;
         res[0] = strdup(word);
+        if (!res[0]) {
+            free(res);
+            return NULL;
+        }
         res[1] = NULL;
         if (count_out) *count_out = 1;
         return res;
