@@ -62,11 +62,14 @@ Current version: 0.1.0
 - `set -t` exits after a single command. Example:\
 `vush$ set -t; echo hi` prints `hi` and the shell terminates.
 - `set -h` automatically caches command paths; use `set +h` to disable.
+- `set -k` treats `NAME=value` after the command name as a temporary
+  environment assignment. Example:\
+`vush$ set -k; sh -c 'echo $FOO' FOO=bar` prints `bar`.
 - Prompt string configurable via the `PS1` environment variable (see [docs/vush.1](docs/vush.1) for details)
 - `exit` accepts an optional status argument
  - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
   `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m`,
- `set -t`/`set +t`, `set -p`/`set +p`, `set -h`/`set +h` and `set -o OPTION` such as
+ `set -t`/`set +t`, `set -p`/`set +p`, `set -h`/`set +h`, `set -k`/`set +k` and `set -o OPTION` such as
   `pipefail` or `noclobber`
 - Use `>| file` to force overwriting a file when `noclobber` is active
 - `set --` can replace positional parameters inside the running shell

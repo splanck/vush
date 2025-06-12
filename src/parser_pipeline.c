@@ -335,7 +335,7 @@ static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quot
 static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
                                       char **tok_ptr, int quoted) {
     char *tok = *tok_ptr;
-    if (!quoted && *argc == 0 && is_assignment(tok)) {
+    if (!quoted && (*argc == 0 || opt_keyword) && is_assignment(tok)) {
         char *eq = strchr(tok, '=');
         if (eq && eq[1] == '(' && tok[strlen(tok) - 1] != ')') {
             char *assign = strdup(tok);

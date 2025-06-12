@@ -19,7 +19,7 @@ Execute the provided command string and exit.
 .BR -V , --version
 Print version information and exit.
 .SH STARTUP
-If no script file or -c option is given, \fB~/.vushrc\fP is read before the first prompt if it exists. When the \fBENV\fP variable is set, the file it names is processed afterward. Enabling \fBset -p\fP prevents both files from being loaded. The \fBset -t\fP option exits after a single command is executed. The \fBset -h\fP option caches each command after it runs.
+If no script file or -c option is given, \fB~/.vushrc\fP is read before the first prompt if it exists. When the \fBENV\fP variable is set, the file it names is processed afterward. Enabling \fBset -p\fP prevents both files from being loaded. The \fBset -t\fP option exits after a single command is executed. The \fBset -h\fP option caches each command after it runs. The \fBset -k\fP option treats \fINAME=value\fP words after the command name as temporary environment assignments; for example, \fBset -k; sh -c 'echo $FOO' FOO=bar\fP prints \fBbar\fP.
 .SH BUILTINS
 Built-in commands cover common shell tasks such as variable
 management, flow control and job handling. Refer to README.md for the
