@@ -252,7 +252,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
     if (run_builtin(pipeline->argv))
         handled = 1;
     else {
-        Command *fn = get_function(pipeline->argv[0]);
+        FuncEntry *fn = find_function(pipeline->argv[0]);
         if (fn) {
             run_function(fn, pipeline->argv);
             handled = 1;
@@ -442,7 +442,8 @@ static int exec_pipeline(Command *cmd, const char *line) {
  */
 static int exec_funcdef(Command *cmd, const char *line) {
     (void)line;
-    define_function(cmd->var, cmd->body, cmd->text);
+    define_function(cmd->var, NULL, cmd->text);
+    free_commands(cmd->body);
     cmd->body = NULL;
     return last_status;
 }

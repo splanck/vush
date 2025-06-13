@@ -37,7 +37,7 @@ int func_return = 0;
  * Returns the exit status of the function body or 1 if memory allocation
  * fails during setup.
  */
-int run_function(Command *body, char **args) {
+int run_function(FuncEntry *fn, char **args) {
     int argc = 0;
     while (args[argc]) argc++;
     int old_argc = script_argc;
@@ -71,7 +71,10 @@ int run_function(Command *body, char **args) {
         return 1;
     }
     func_return = 0;
-    run_command_list(body, NULL);
+    Command *body = parse_line(strdup(fn->text));
+    if (body)
+        run_command_list(body, fn->text);
+    free_commands(body);
     pop_local_scope();
     for (int i = 0; i < argc; i++)
         free(script_argv[i]);

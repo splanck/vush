@@ -1,7 +1,7 @@
 /*
  * Shell function support
  *
- * Function definitions are kept in a linked list of struct func_entry
+ * Function definitions are kept in a linked list of FuncEntry
  * records. Each entry stores the function name, the parsed command body
  * and the original source text so it can be written back verbatim.
  *
@@ -23,14 +23,16 @@
 
 extern int last_status;
 
-struct func_entry {
-    char *name;
-    char *text;
-    Command *body;
-    struct func_entry *next;
-};
+static FuncEntry *functions = NULL;
 
-static struct func_entry *functions = NULL;
+FuncEntry *find_function(const char *name)
+{
+    for (FuncEntry *f = functions; f; f = f->next) {
+        if (strcmp(f->name, name) == 0)
+            return f;
+    }
+    return NULL;
+}
 
 /*
  * Determine the file used to persist shell functions.  If the
@@ -63,7 +65,7 @@ static void save_functions(void)
     FILE *f = fopen(path, "w");
     if (!f)
         return;
-    for (struct func_entry *fn = functions; fn; fn = fn->next)
+    for (FuncEntry *fn = functions; fn; fn = fn->next)
         fprintf(f, "%s() { %s }\n", fn->name, fn->text);
     fclose(f);
 }
@@ -88,7 +90,8 @@ void load_functions(void)
         Command *cmds = parse_line(line);
         for (Command *c = cmds; c; c = c->next) {
             if (c->type == CMD_FUNCDEF) {
-                define_function(c->var, c->body, c->text);
+                define_function(c->var, NULL, c->text);
+                free_commands(c->body);
                 c->body = NULL;
             }
         }
@@ -103,7 +106,7 @@ void load_functions(void)
  */
 void define_function(const char *name, Command *body, const char *text)
 {
-    for (struct func_entry *f = functions; f; f = f->next) {
+    for (FuncEntry *f = functions; f; f = f->next) {
         if (strcmp(f->name, name) == 0) {
             char *new_name = strdup(name);
             char *new_text = strdup(text);
@@ -119,11 +122,12 @@ void define_function(const char *name, Command *body, const char *text)
             free_commands(f->body);
             f->name = new_name;
             f->text = new_text;
-            f->body = body;
+            f->body = NULL;
+            free_commands(body);
             return;
         }
     }
-    struct func_entry *fn = malloc(sizeof(struct func_entry));
+    FuncEntry *fn = malloc(sizeof(FuncEntry));
     if (!fn) {
         perror("malloc");
         free_commands(body);
@@ -141,7 +145,8 @@ void define_function(const char *name, Command *body, const char *text)
     }
     fn->name = name_copy;
     fn->text = text_copy;
-    fn->body = body;
+    fn->body = NULL;
+    free_commands(body);
     fn->next = functions;
     functions = fn;
 }
@@ -149,24 +154,21 @@ void define_function(const char *name, Command *body, const char *text)
 /* Look up the parsed body of a function by name. */
 Command *get_function(const char *name)
 {
-    for (struct func_entry *f = functions; f; f = f->next) {
-        if (strcmp(f->name, name) == 0)
-            return f->body;
-    }
-    return NULL;
+    FuncEntry *f = find_function(name);
+    return f ? f->body : NULL;
 }
 
 void print_functions(void)
 {
-    for (struct func_entry *fn = functions; fn; fn = fn->next)
+    for (FuncEntry *fn = functions; fn; fn = fn->next)
         printf("%s() { %s }\n", fn->name, fn->text);
 }
 
 /* Remove NAME from the function list if present. */
 void remove_function(const char *name)
 {
-    struct func_entry *prev = NULL;
-    for (struct func_entry *f = functions; f; prev = f, f = f->next) {
+    FuncEntry *prev = NULL;
+    for (FuncEntry *f = functions; f; prev = f, f = f->next) {
         if (strcmp(f->name, name) == 0) {
             if (prev)
                 prev->next = f->next;
@@ -184,9 +186,9 @@ void remove_function(const char *name)
 /* Free all function entries without saving them. */
 static void free_function_entries(void)
 {
-    struct func_entry *f = functions;
+    FuncEntry *f = functions;
     while (f) {
-        struct func_entry *next = f->next;
+        FuncEntry *next = f->next;
         free(f->name);
         free(f->text);
         free_commands(f->body);

@@ -7,6 +7,7 @@
 
 FILE *parse_input = NULL;
 int parse_need_more = 0;
+int parse_noexpand = 0;
 
 /* Free a linked list of PipelineSegment structures */
 void free_pipeline(PipelineSegment *p) {

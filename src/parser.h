@@ -103,5 +103,6 @@ void free_commands(Command *c);
 void cleanup_proc_subs(void);
 extern FILE *parse_input;
 extern int parse_need_more;
+extern int parse_noexpand;
 
 #endif /* PARSER_H */

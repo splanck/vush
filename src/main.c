@@ -86,7 +86,7 @@ void trap_handler(int sig)
     FILE *prev = parse_input;
     parse_input = stdin;
     Command *cmds = parse_line(cmd);
-    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+    if (cmds) {
         CmdOp prevop = OP_SEMI;
         for (Command *c = cmds; c; c = c->next) {
             int run = 1;
@@ -113,7 +113,7 @@ void run_exit_trap(void)
     FILE *prev = parse_input;
     parse_input = stdin;
     Command *cmds = parse_line(exit_trap_cmd);
-    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+    if (cmds) {
         CmdOp prevop = OP_SEMI;
         for (Command *c = cmds; c; c = c->next) {
             int run = 1;
@@ -155,7 +155,7 @@ static void process_rc_file(const char *path, FILE *input)
             continue;
         parse_input = rc;
         Command *cmds = parse_line(exp);
-        if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+        if (!cmds) {
             free_commands(cmds);
             if (exp != rcline)
                 free(exp);
@@ -216,7 +216,7 @@ static void run_command_string(const char *cmd)
 
     parse_input = stdin;
     Command *cmds = parse_line(expanded);
-    if (cmds && cmds->pipeline && cmds->pipeline->argv[0]) {
+    if (cmds) {
         add_history(line);
 
         CmdOp prev = OP_SEMI;
@@ -430,7 +430,7 @@ static void repl_loop(FILE *input)
                 continue;
             }
 
-            if (!cmds || !cmds->pipeline || !cmds->pipeline->argv[0]) {
+            if (!cmds) {
                 free_commands(cmds);
                 free(expanded);
                 break;
