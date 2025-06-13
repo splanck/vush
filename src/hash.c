@@ -27,14 +27,19 @@ static char *search_path(const char *name) {
         return NULL;
     char *save = NULL;
     char *dir = strtok_r(paths, ":", &save);
-    char full[PATH_MAX];
     char *result = NULL;
     while (dir) {
-        snprintf(full, sizeof(full), "%s/%s", dir, name);
-        if (access(full, X_OK) == 0) {
-            result = strdup(full);
+        const char *d = *dir ? dir : ".";
+        char *full = NULL;
+        if (asprintf(&full, "%s/%s", d, name) < 0) {
+            result = NULL;
             break;
         }
+        if (access(full, X_OK) == 0) {
+            result = full;
+            break;
+        }
+        free(full);
         dir = strtok_r(NULL, ":", &save);
     }
     free(paths);

@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [exec mktemp -d]
+set scriptdir [file normalize [file dirname [info script]]]
+set f [open "$dir/foo" "w"]
+puts $f "#!/bin/sh"
+puts $f "echo blankpath"
+close $f
+exec chmod +x "$dir/foo"
+cd $dir
+set env(PATH) ":/bin"
+spawn $scriptdir/../vush
+expect "vush> "
+send "foo\r"
+expect {
+    -re "[\r\n]+blankpath[\r\n]+vush> " {}
+    timeout { send_user "blank PATH entry failed\n"; cd $scriptdir; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect eof
+cd $scriptdir
+exec rm -rf $dir
