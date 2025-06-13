@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <limits.h>
 
 typedef struct DirNode {
     char *dir;
@@ -60,6 +62,17 @@ char *dirstack_pop(void) {
  * Each entry is separated by a space and a trailing newline is added.
  */
 void dirstack_print(void) {
+    const char *pwd = getenv("PWD");
+    char cwd[PATH_MAX];
+    if (!pwd) {
+        if (getcwd(cwd, sizeof(cwd)))
+            pwd = cwd;
+        else
+            pwd = "";
+    }
+
+    printf("%s ", pwd);
+
     DirNode *n = top;
     while (n) {
         printf("%s ", n->dir);
