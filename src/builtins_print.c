@@ -206,6 +206,7 @@ int builtin_printf(char **args)
             if (!buf) {
                 perror("printf");
                 last_status = 1;
+                free(fmt);
                 return 1;
             }
             char *bp = buf;
