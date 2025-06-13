@@ -1,4 +1,4 @@
-#!/usr/bin/expect -f
+#!/usr/bin/env expect
 set timeout 5
 set start $env(PWD)
 set parent [file dirname $start]
