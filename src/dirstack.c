@@ -67,3 +67,15 @@ void dirstack_print(void) {
     }
     printf("\n");
 }
+
+/* Free all directory stack entries. */
+void dirstack_clear(void) {
+    DirNode *n = top;
+    while (n) {
+        DirNode *next = n->next;
+        free(n->dir);
+        free(n);
+        n = next;
+    }
+    top = NULL;
+}

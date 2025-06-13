@@ -34,6 +34,7 @@
 #include "lineedit.h"
 #include "scriptargs.h"
 #include "options.h"
+#include "dirstack.h"
 #include "util.h"
 #include "version.h"
 
@@ -518,6 +519,7 @@ int main(int argc, char **argv) {
         fclose(input);
     run_exit_trap();
     clear_history();
+    dirstack_clear();
     free(script_argv);
     free_aliases();
     free_mail_list();
