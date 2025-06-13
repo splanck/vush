@@ -164,8 +164,11 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
     }
 
     free(orig);
-    for (int i = 0; i < count && *argc < MAX_TOKENS - 1; i++)
-        seg->argv[(*argc)++] = tokens[i];
+    int used = 0;
+    for (; used < count && *argc < MAX_TOKENS - 1; used++)
+        seg->argv[(*argc)++] = tokens[used];
+    for (int i = used; i < count; i++)
+        free(tokens[i]);
     return 1;
 }
 
@@ -551,6 +554,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         char **btoks = expand_token_braces(tok, quoted, &bcount);
         if (!btoks)
             return -1;
+        int used = 0;
         for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
             char *bt = btoks[bi];
             if (!quoted && !opt_noglob && (strchr(bt, '*') || strchr(bt, '?')) ) {
@@ -576,12 +580,16 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                     }
                     free(bt);
                     globfree(&g);
+                    used = bi + 1;
                     continue;
                 }
                 globfree(&g);
             }
             seg->argv[(*argc)++] = bt;
+            used = bi + 1;
         }
+        for (int bi = used; bi < bcount; bi++)
+            free(btoks[bi]);
         free(btoks);
     }
     if (op_out) *op_out = op;

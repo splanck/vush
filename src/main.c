@@ -489,11 +489,27 @@ int main(int argc, char **argv) {
             script_argv = calloc(argc, sizeof(char *));
             if (!script_argv) {
                 perror("calloc");
+                fclose(input);
                 return 1;
             }
-            script_argv[0] = argv[1];
-            for (int i = 0; i < script_argc; i++)
-                script_argv[i + 1] = argv[i + 2];
+            script_argv[0] = strdup(argv[1]);
+            if (!script_argv[0]) {
+                perror("strdup");
+                free(script_argv);
+                fclose(input);
+                return 1;
+            }
+            for (int i = 0; i < script_argc; i++) {
+                script_argv[i + 1] = strdup(argv[i + 2]);
+                if (!script_argv[i + 1]) {
+                    perror("strdup");
+                    for (int j = 0; j <= i; j++)
+                        free(script_argv[j]);
+                    free(script_argv);
+                    fclose(input);
+                    return 1;
+                }
+            }
             script_argv[script_argc + 1] = NULL;
         }
     }

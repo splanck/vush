@@ -65,43 +65,70 @@ int builtin_echo(char **args)
 }
 
 /* Helper parsing the next printf format specification. */
-static const char *next_format_spec(const char *p, char spec[32], char *conv)
+/* Maximum length of a printf format specification including the '%' and
+ * trailing conversion character.  One byte is reserved for the null terminator. */
+#define SPEC_BUF_LEN 32
+
+static const char *next_format_spec(const char *p, char spec[SPEC_BUF_LEN], char *conv)
 {
     int si = 0;
+    int remaining = SPEC_BUF_LEN - 1;
     if (*p != '%') {
         spec[0] = '\0';
         *conv = '\0';
         return p;
     }
 
+    if (remaining-- <= 0) {
+        spec[0] = '\0';
+        *conv = '\0';
+        return p;
+    }
     spec[si++] = *p++;
 
     if (*p == '%') {
-        spec[si++] = *p++;
+        if (remaining-- > 0)
+            spec[si++] = *p++;
         spec[si] = '\0';
         *conv = '%';
         return p;
     }
 
-    while (*p && strchr("-+ #0", *p))
+    while (*p && strchr("-+ #0", *p) && remaining > 0) {
         spec[si++] = *p++;
-    while (*p && isdigit((unsigned char)*p))
+        remaining--;
+    }
+    while (*p && isdigit((unsigned char)*p) && remaining > 0) {
         spec[si++] = *p++;
+        remaining--;
+    }
     if (*p == '.') {
-        spec[si++] = *p++;
-        while (*p && isdigit((unsigned char)*p))
+        if (remaining-- > 0)
             spec[si++] = *p++;
+        while (*p && isdigit((unsigned char)*p) && remaining > 0) {
+            spec[si++] = *p++;
+            remaining--;
+        }
     }
     if (strchr("hlLjzt", *p)) {
-        spec[si++] = *p++;
-        if ((*p == 'h' && spec[si-1] == 'h') ||
-            (*p == 'l' && spec[si-1] == 'l'))
+        if (remaining-- > 0)
             spec[si++] = *p++;
+        if ((*p == 'h' && spec[si-1] == 'h') ||
+            (*p == 'l' && spec[si-1] == 'l')) {
+            if (remaining-- > 0)
+                spec[si++] = *p++;
+        }
     }
 
     if (*p) {
-        *conv = *p;
-        spec[si++] = *p++;
+        if (remaining-- > 0) {
+            *conv = *p;
+            spec[si++] = *p++;
+        } else {
+            spec[si] = '\0';
+            *conv = '\0';
+            return p;
+        }
     } else {
         *conv = '\0';
     }
@@ -168,7 +195,7 @@ int builtin_printf(char **args)
             putchar(*p++);
             continue;
         }
-        char spec[32];
+        char spec[SPEC_BUF_LEN];
         char conv;
         p = next_format_spec(p, spec, &conv);
         if (!conv)
