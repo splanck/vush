@@ -128,6 +128,8 @@ void run_exit_trap(void)
     }
     free_commands(cmds);
     parse_input = prev;
+    free(exit_trap_cmd);
+    exit_trap_cmd = NULL;
 }
 
 /*
@@ -519,6 +521,7 @@ int main(int argc, char **argv) {
     free_aliases();
     free_mail_list();
     free_functions();
+    free_trap_cmds();
     return dash_c ? last_status : 0;
 }
 
