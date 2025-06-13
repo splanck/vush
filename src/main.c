@@ -36,6 +36,7 @@
 #include "options.h"
 #include "util.h"
 #include "version.h"
+#include "hash.h"
 
 extern FILE *parse_input;
 extern char *trap_cmds[NSIG];
@@ -521,6 +522,7 @@ int main(int argc, char **argv) {
     free_aliases();
     free_mail_list();
     free_functions();
+    hash_clear();
     free_trap_cmds();
     return dash_c ? last_status : 0;
 }
