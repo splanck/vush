@@ -10,7 +10,7 @@ send "hello\r"
 send "world\r"
 send "EOF\r"
 expect {
-    -re "\[\r\n\]+hello\[\r\n\]+world\[\r\n\]+vush> " {}
+    -re {\r?\nhello\r?\nworld\r?\nvush> } {}
     timeout { send_user "heredoc output mismatch\n"; exit 1 }
 }
 send "exit\r"
