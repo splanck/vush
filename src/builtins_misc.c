@@ -99,8 +99,7 @@ int builtin_type(char **args) {
             printf("%s is an alias for '%s'\n", args[i], alias);
             continue;
         }
-        Command *fn = get_function(args[i]);
-        if (fn) {
+        if (find_function(args[i])) {
             printf("%s is a function\n", args[i]);
             continue;
         }

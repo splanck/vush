@@ -221,8 +221,7 @@ int builtin_command(char **args) {
                     printf("alias %s='%s'\n", args[i], alias);
                 continue;
             }
-            Command *fn = get_function(args[i]);
-            if (fn) {
+            if (find_function(args[i])) {
                 if (opt_V)
                     printf("%s is a function\n", args[i]);
                 else

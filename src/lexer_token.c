@@ -298,7 +298,7 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
 char *read_token(char **p, int *quoted) {
     char buf[MAX_LINE];
     int len = 0;
-    int do_expand = 1;
+    int do_expand = parse_noexpand ? 0 : 1;
     *quoted = 0;
     char *redir = parse_redirect_token(p);
     if (token_alloc_failed)

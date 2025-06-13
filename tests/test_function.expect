@@ -10,6 +10,11 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+send "type foo\r"
+expect {
+    -re "\[\r\n\]+foo is a function\[\r\n\]+vush> " {}
+    timeout { send_user "type failed\n"; exit 1 }
+}
 send "foo there\r"
 expect {
     -re "\[\r\n\]+hi there\[\r\n\]+vush> " {}

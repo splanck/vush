@@ -394,7 +394,7 @@ Command *parse_function_def(char **p, CmdOp *op_out) {
     if (**p == '{') {
         char *bodytxt = gather_braced(p);
         if (!bodytxt) goto fail;
-        Command *body_cmd = parse_line(bodytxt);
+        Command *body_cmd = NULL;
         Command *cmd = calloc(1, sizeof(Command));
         if (!cmd) {
             free(tok);

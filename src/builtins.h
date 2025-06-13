@@ -44,8 +44,15 @@ const char **get_builtin_names(void);
 const char *get_alias(const char *name);
 void load_aliases(void);
 void free_aliases(void);
+typedef struct func_entry {
+    char *name;
+    char *text;
+    Command *body;
+    struct func_entry *next;
+} FuncEntry;
 void define_function(const char *name, Command *body, const char *text);
-Command *get_function(const char *name);
+FuncEntry *find_function(const char *name);
+Command *get_function(const char *name); /* deprecated */
 void remove_function(const char *name);
 void load_functions(void);
 void free_functions(void);
