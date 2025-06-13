@@ -10,6 +10,21 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+send "echo \${FOO:+alt}\r"
+expect {
+    "vush> " {}
+    timeout { send_user "plus unset failed\n"; exit 1 }
+}
+send "echo \${FOO#b*}\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prefix unset failed\n"; exit 1 }
+}
+send "echo \${FOO%z}\r"
+expect {
+    "vush> " {}
+    timeout { send_user "suffix unset failed\n"; exit 1 }
+}
 send "echo \${FOO:-bar}\r"
 expect {
     -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
