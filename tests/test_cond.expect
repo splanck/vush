@@ -6,19 +6,19 @@ expect "vush> "
 send "x=foo\r"
 expect "vush> "
 
-send "[[ $x == foo ]]; echo \$?\r"
+send "[[ \$x == foo ]]; echo \$?\r"
 expect {
     -re "[\r\n]+0[\r\n]+vush> " {}
     timeout { send_user "equality failed\n"; exit 1 }
 }
 
-send "[[ $x == f* ]]; echo \$?\r"
+send "[[ \$x == f* ]]; echo \$?\r"
 expect {
     -re "[\r\n]+0[\r\n]+vush> " {}
     timeout { send_user "pattern match failed\n"; exit 1 }
 }
 
-send "[[ $x == b* ]]; echo \$?\r"
+send "[[ \$x == b* ]]; echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "pattern negative failed\n"; exit 1 }

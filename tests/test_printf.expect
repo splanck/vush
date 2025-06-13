@@ -7,7 +7,7 @@ expect {
     -re "[\r\n]+foo 0005 ff[\r\n]+vush> " {}
     timeout { send_user "printf output mismatch\n"; exit 1 }
 }
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+0[\r\n]+vush> " {}
     timeout { send_user "printf status mismatch\n"; exit 1 }

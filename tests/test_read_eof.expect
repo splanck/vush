@@ -5,7 +5,7 @@ expect "vush> "
 send "read foo\r"
 send \004
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "read EOF status failed\n"; exit 1 }

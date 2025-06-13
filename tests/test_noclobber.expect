@@ -8,7 +8,7 @@ send "set -o noclobber\r"
 expect "vush> "
 send "echo hi >nc.tmp\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "noclobber status mismatch\n"; exit 1 }

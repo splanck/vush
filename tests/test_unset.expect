@@ -6,7 +6,7 @@ send "export FOO=bar\r"
 expect "vush> "
 send "unset FOO\r"
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+vush> " {}
     timeout { send_user "unset failed\n"; exit 1 }

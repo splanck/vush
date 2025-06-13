@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "sleep 5 &\r"
 expect "vush> "
-send "echo $!\r"
+send "echo \$!\r"
 expect {
     -re "\r\n([0-9]+)\r\nvush> " { set pid $expect_out(1,string) }
     timeout { send_user "$! expansion failed\n"; exit 1 }

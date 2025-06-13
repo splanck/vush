@@ -16,7 +16,7 @@ expect {
     -re "\r\nvush> " {}
     timeout { send_user "export -n failed\n"; exit 1 }
 }
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "export -n removed variable\n"; exit 1 }

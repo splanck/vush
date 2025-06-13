@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "true\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+0[\r\n]+vush> " {}
     timeout { send_user "true builtin status mismatch\n"; exit 1 }

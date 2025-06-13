@@ -5,25 +5,25 @@ expect "vush> "
 send "FOO=hello\r"
 expect "vush> "
 # replace first occurrence
-send "echo ${FOO/l/x}\r"
+send "echo \${FOO/l/x}\r"
 expect {
     -re "[\r\n]+hexlo[\r\n]+vush> " {}
     timeout { send_user "single replace failed\n"; exit 1 }
 }
 # global replacement
-send "echo ${FOO//l/x}\r"
+send "echo \${FOO//l/x}\r"
 expect {
     -re "[\r\n]+hexxo[\r\n]+vush> " {}
     timeout { send_user "global replace failed\n"; exit 1 }
 }
 # wildcard pattern
-send "echo ${FOO/l*/Z}\r"
+send "echo \${FOO/l*/Z}\r"
 expect {
     -re "[\r\n]+heZ[\r\n]+vush> " {}
     timeout { send_user "wildcard replace failed\n"; exit 1 }
 }
 # no match
-send "echo ${FOO/z/0}\r"
+send "echo \${FOO/z/0}\r"
 expect {
     -re "[\r\n]+hello[\r\n]+vush> " {}
     timeout { send_user "no match failed\n"; exit 1 }

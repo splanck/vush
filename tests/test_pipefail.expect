@@ -6,7 +6,7 @@ send "set -o pipefail\r"
 expect "vush> "
 send "false | true\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "pipefail status mismatch\n"; exit 1 }

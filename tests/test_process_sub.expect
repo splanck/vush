@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "diff <(echo a) <(echo a)\r"
+send "diff <\$(echo a) <\$(echo a)\r"
 expect {
     -re "[\r\n]+vush> " {}
     timeout { send_user "process substitution failed\n"; exit 1 }

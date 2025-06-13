@@ -4,7 +4,7 @@ set start $env(PWD)
 set parent [file dirname $start]
 spawn ../vush
 expect "vush> "
-send "export PS1='$(pwd)> '\r"
+send "export PS1='\$(pwd)> '\r"
 expect "$start> "
 send "cd ..\r"
 expect "$parent> "

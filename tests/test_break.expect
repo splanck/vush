@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "for x in a b c; do echo $x; break; done\r"
+send "for x in a b c; do echo \$x; break; done\r"
 expect {
     -re "a[\r\n]+vush> " {}
     timeout { send_user "break failed\n"; exit 1 }

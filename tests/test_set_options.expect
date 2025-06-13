@@ -5,14 +5,14 @@ spawn ../vush
 expect "vush> "
 send "set -u\r"
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "UNDEF: unbound variable" { }
     -re "FOO: unbound variable" { }
     timeout { send_user "nounset message missing\n"; exit 1 }
 }
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "nounset status mismatch\n"; exit 1 }

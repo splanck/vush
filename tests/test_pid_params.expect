@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 # Test $$ expansion
 set pid [exp_pid]
-send "echo $$\r"
+send "echo \$\$\r"
 expect {
     -re "[\r\n]+$pid[\r\n]+vush> " {}
     timeout { send_user "\$\$ expansion failed\n"; exit 1 }
@@ -12,7 +12,7 @@ expect {
 # Test $! expansion
 send "sleep 1 &\r"
 expect "vush> "
-send "echo $!\r"
+send "echo \$!\r"
 expect {
     -re "[\r\n]+([0-9]+)[\r\n]+vush> " { set bg $expect_out(1,string) }
     timeout { send_user "\$! expansion failed\n"; exit 1 }
@@ -24,7 +24,7 @@ expect {
 }
 send "set -e -u\r"
 expect "vush> "
-send "echo $-\r"
+send "echo \$-\r"
 expect {
     -re "[\r\n]+eu[\r\n]+vush> " {}
     timeout { send_user "\$- expansion failed\n"; exit 1 }

@@ -4,19 +4,19 @@ spawn ../vush
 expect "vush> "
 send "nums=(one two three)\r"
 expect "vush> "
-send "echo ${nums[1]}\r"
+send "echo \${nums\[1\]}\r"
 expect {
     -re "[\r\n]+two[\r\n]+vush> " {}
     timeout { send_user "subscript failed\n"; exit 1 }
 }
-send "for n in ${nums[@]}; do echo $n; done\r"
+send "for n in \${nums\[@\]}; do echo \$n; done\r"
 expect {
     -re "one[\r\n]+two[\r\n]+three[\r\n]+vush> " {}
     timeout { send_user "iteration failed\n"; exit 1 }
 }
 send "unset nums[1]\r"
 expect "vush> "
-send "for n in ${nums[@]}; do echo $n; done\r"
+send "for n in \${nums\[@\]}; do echo \$n; done\r"
 expect {
     -re "one[\r\n]+three[\r\n]+vush> " {}
     timeout { send_user "unset index failed\n"; exit 1 }

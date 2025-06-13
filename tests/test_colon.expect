@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send ":\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+0[\r\n]+vush> " {}
     timeout { send_user ": status mismatch\n"; exit 1 }

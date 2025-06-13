@@ -10,7 +10,7 @@ expect {
     timeout { send_user "missing readonly error\n"; exit 1 }
 }
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "readonly value modified\n"; exit 1 }
@@ -21,7 +21,7 @@ expect {
     timeout { send_user "unset allowed\n"; exit 1 }
 }
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "readonly unset changed value\n"; exit 1 }

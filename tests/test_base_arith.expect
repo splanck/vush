@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "echo $((16#ff + 2#10))\r"
+send "echo \$((16#ff + 2#10))\r"
 expect {
     -re "[\r\n]+257[\r\n]+vush> " {}
     timeout { send_user "base arithmetic failed\n"; exit 1 }

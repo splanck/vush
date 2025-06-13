@@ -2,19 +2,19 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "FOO=bar echo $FOO\r"
+send "FOO=bar echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "assignment failed\n"; exit 1 }
 }
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+vush> " {}
     timeout { send_user "variable persisted\n"; exit 1 }
 }
 send "FOO=bar\r"
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "persistent assignment failed\n"; exit 1 }

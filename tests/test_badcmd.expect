@@ -7,7 +7,7 @@ expect {
     -re "[\r\n]+idontexist: command not found[\r\n]+vush> " {}
     timeout { send_user "missing command not found message\n"; exit 1 }
 }
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+127[\r\n]+vush> " {}
     timeout { send_user "status code mismatch\n"; exit 1 }
