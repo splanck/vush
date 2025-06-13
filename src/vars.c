@@ -278,8 +278,16 @@ void set_shell_array(const char *name, char **values, int count) {
                 perror("calloc");
                 return;
             }
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++) {
                 new_arr[i] = strdup(values[i]);
+                if (!new_arr[i]) {
+                    perror("strdup");
+                    for (int j = 0; j < i; j++)
+                        free(new_arr[j]);
+                    free(new_arr);
+                    return;
+                }
+            }
 
             if (v->value) {
                 free(v->value);
@@ -298,6 +306,11 @@ void set_shell_array(const char *name, char **values, int count) {
     struct var_entry *v = calloc(1, sizeof(struct var_entry));
     if (!v) { perror("malloc"); return; }
     v->name = strdup(name);
+    if (!v->name) {
+        perror("strdup");
+        free(v);
+        return;
+    }
     v->value = NULL;
 
     char **new_arr = calloc(count, sizeof(char *));
@@ -307,8 +320,18 @@ void set_shell_array(const char *name, char **values, int count) {
         free(v);
         return;
     }
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < count; i++) {
         new_arr[i] = strdup(values[i]);
+        if (!new_arr[i]) {
+            perror("strdup");
+            for (int j = 0; j < i; j++)
+                free(new_arr[j]);
+            free(new_arr);
+            free(v->name);
+            free(v);
+            return;
+        }
+    }
 
     v->array = new_arr;
     v->array_len = count;
