@@ -521,7 +521,11 @@ int main(int argc, char **argv) {
     run_exit_trap();
     clear_history();
     dirstack_clear();
-    free(script_argv);
+    if (script_argv) {
+        for (int i = 1; i <= script_argc; i++)
+            free(script_argv[i]);
+        free(script_argv);
+    }
     free_aliases();
     free_mail_list();
     free_functions();
