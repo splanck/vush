@@ -148,7 +148,16 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
         char *var;
         int had_env;
         int had_var;
-    } backs[pipeline->assign_count];
+    } *backs = NULL;
+
+    if (pipeline->assign_count > 0) {
+        backs = calloc(pipeline->assign_count, sizeof(*backs));
+        if (!backs) {
+            perror("calloc");
+            last_status = 1;
+            return 1;
+        }
+    }
 
     for (int i = 0; i < pipeline->assign_count; i++) {
         char *eq = strchr(pipeline->assigns[i], '=');
@@ -265,6 +274,8 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
         free(backs[i].env);
         free(backs[i].var);
     }
+
+    free(backs);
 
     return handled;
 }
