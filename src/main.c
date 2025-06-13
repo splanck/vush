@@ -276,6 +276,19 @@ static void remember_mail_time(const char *path, time_t mtime)
     mail_list = e;
 }
 
+/* Free all MailEntry structures tracked for mail notifications. */
+static void free_mail_list(void)
+{
+    MailEntry *e = mail_list;
+    while (e) {
+        MailEntry *next = e->next;
+        free(e->path);
+        free(e);
+        e = next;
+    }
+    mail_list = NULL;
+}
+
 static void check_mail(void)
 {
     char *mpath = getenv("MAILPATH");
@@ -504,6 +517,7 @@ int main(int argc, char **argv) {
     run_exit_trap();
     free(script_argv);
     free_aliases();
+    free_mail_list();
     free_functions();
     return dash_c ? last_status : 0;
 }

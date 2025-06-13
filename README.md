@@ -189,7 +189,8 @@ environment variables:
 - `MAIL` names a mailbox file checked before each prompt. A notice is printed
   when it is modified.
 - `MAILPATH` may list multiple mailbox files separated by `:`. Each triggers a
-  `New mail in <file>` message when updated.
+  `New mail in <file>` message when updated. Memory used to remember mailbox
+  timestamps is released when the shell exits.
 - `CDPATH` provides directories searched by `cd` for relative paths. `cd` also
   accepts `-L` (logical, default) and `-P` (physical) to control how paths are
   resolved. With `-L` `PWD` reflects the logical path while `-P` resolves the
