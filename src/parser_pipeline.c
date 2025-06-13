@@ -551,7 +551,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         char **btoks = expand_token_braces(tok, quoted, &bcount);
         if (!btoks)
             return -1;
-        for (int bi = 0; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
+        int bi = 0;
+        for (; bi < bcount && *argc < MAX_TOKENS - 1; bi++) {
             char *bt = btoks[bi];
             if (!quoted && !opt_noglob && (strchr(bt, '*') || strchr(bt, '?')) ) {
                 glob_t g;
@@ -582,6 +583,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             }
             seg->argv[(*argc)++] = bt;
         }
+        for (int bj = bi; bj < bcount; bj++)
+            free(btoks[bj]);
         free(btoks);
     }
     if (op_out) *op_out = op;
