@@ -3,6 +3,8 @@ CFLAGS ?= -Wall -Wextra -std=c99
 PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
 
+.PHONY: clean test install uninstall
+
 SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c \
        src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
        src/builtins_read.c src/builtins_getopts.c src/builtins_exec.c src/vars.c \
