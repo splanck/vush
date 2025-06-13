@@ -132,8 +132,9 @@ int builtin_read(char **args) {
             set_shell_array(array_name, vals, count);
             for (int i = 0; i < count; i++)
                 free(vals[i]);
-            free(vals);
         }
+        /* free(NULL) is safe; handles split_array_values() failure gracefully */
+        free(vals);
     } else {
         int var_count = 0;
         for (int i = idx; args[i]; i++)
