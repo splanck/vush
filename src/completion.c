@@ -64,7 +64,12 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     }
 
     DIR *d = opendir(".");
-    if (d && matches) {
+    if (!matches) {
+        if (d)
+            closedir(d); /* early return when initial allocation failed */
+        return NULL;
+    }
+    if (d) {
         struct dirent *de;
         while ((de = readdir(d))) {
             if (strncmp(de->d_name, prefix, prefix_len) == 0) {
