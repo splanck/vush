@@ -7,7 +7,7 @@ expect {
 }
 send "pushd /tmp\r"
 expect {
-    -re "\[\r\n\]+$env(PWD)\[\r\n\]+vush> " {}
+    -re "\[\r\n\]+/tmp $env(PWD) \[\r\n\]+vush> " {}
     timeout { send_user "pushd output mismatch\n"; exit 1 }
 }
 send "pwd\r"
@@ -17,7 +17,7 @@ expect {
 }
 send "popd\r"
 expect {
-    -re "\[\r\n\]+vush> " {}
+    -re "\[\r\n\]+$env(PWD) \[\r\n\]+vush> " {}
     timeout { send_user "popd output mismatch\n"; exit 1 }
 }
 send "pwd\r"
