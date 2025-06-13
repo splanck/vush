@@ -113,15 +113,23 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
         char *saveptr = NULL;
         char *dir = strtok_r(pdup, ":", &saveptr);
         while (dir) {
-            DIR *pd = opendir(dir);
+            const char *d = *dir ? dir : ".";
+            DIR *pd = opendir(d);
             if (pd) {
                 struct dirent *pe;
                 while ((pe = readdir(pd))) {
                         if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
                             if (has_match(matches, count, pe->d_name))
                                 continue;
-                            char full[PATH_MAX];
-                            snprintf(full, sizeof(full), "%s/%s", dir, pe->d_name);
+                            char *full = NULL;
+                            if (asprintf(&full, "%s/%s", d, pe->d_name) < 0) {
+                                for (int j = 0; j < count; j++)
+                                    free(matches[j]);
+                                free(matches);
+                                closedir(pd);
+                                free(pdup);
+                                return NULL;
+                            }
                             if (access(full, X_OK) == 0) {
                                 if (count == cap) {
                                     cap *= 2;
@@ -143,17 +151,19 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                     free(matches);
                                     closedir(pd);
                                     free(pdup);
+                                    free(full);
                                     return NULL;
                                 }
                                 matches[count++] = dup;
                             }
+                            free(full);
                         }
                     }
                     closedir(pd);
                     if (!matches)
                         break;
                 }
-                dir = strtok_r(NULL, ":", &saveptr);
+            dir = strtok_r(NULL, ":", &saveptr);
         }
         free(pdup);
     }

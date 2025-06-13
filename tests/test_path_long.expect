@@ -1,0 +1,24 @@
+#!/usr/bin/env expect
+set timeout 5
+set base [exec mktemp -d]
+set long $base
+for {set i 0} {$i < 350} {incr i} {
+    append long "/abcdefghij"
+    file mkdir $long
+}
+set f [open "$long/foo" "w"]
+puts $f "#!/bin/sh"
+puts $f "echo longpath"
+close $f
+exec chmod +x "$long/foo"
+set env(PATH) "$long:/bin"
+spawn ../vush
+expect "vush> "
+send "foo\r"
+expect {
+    -re "[\r\n]+longpath[\r\n]+vush> " {}
+    timeout { send_user "long PATH failed\n"; exec rm -rf $base; exit 1 }
+}
+send "exit\r"
+expect eof
+exec rm -rf $base
