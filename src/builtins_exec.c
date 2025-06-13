@@ -114,9 +114,15 @@ int builtin_source(char **args) {
                 char *save = NULL;
                 for (char *p = strtok_r(paths, ":", &save); p; p = strtok_r(NULL, ":", &save)) {
                     const char *base = *p ? p : ".";
-                    char full[PATH_MAX];
-                    snprintf(full, sizeof(full), "%s/%s", base, args[1]);
+                    size_t len = strlen(base) + strlen(args[1]) + 2;
+                    char *full = malloc(len);
+                    if (!full) {
+                        input = NULL;
+                        break;
+                    }
+                    snprintf(full, len, "%s/%s", base, args[1]);
                     input = fopen(full, "r");
+                    free(full);
                     if (input)
                         break;
                 }
@@ -246,16 +252,21 @@ int builtin_command(char **args) {
             char *dir = strtok_r(paths, ":", &saveptr);
             int found = 0;
             while (dir) {
-                char full[PATH_MAX];
-                snprintf(full, sizeof(full), "%s/%s", dir, args[i]);
+                size_t len = strlen(dir) + strlen(args[i]) + 2;
+                char *full = malloc(len);
+                if (!full)
+                    break;
+                snprintf(full, len, "%s/%s", dir, args[i]);
                 if (access(full, X_OK) == 0) {
                     if (opt_V)
                         printf("%s is %s\n", args[i], full);
                     else
                         printf("%s\n", full);
                     found = 1;
+                    free(full);
                     break;
                 }
+                free(full);
                 dir = strtok_r(NULL, ":", &saveptr);
             }
             free(paths);
