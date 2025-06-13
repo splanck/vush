@@ -66,6 +66,7 @@ tests="
     test_custom_aliasfile.expect
     test_dash_c.expect
     test_dash_c_quotes.expect
+    test_echo_options.expect
     test_set_options.expect
     test_heredoc.expect
     test_herestring.expect
