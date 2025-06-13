@@ -18,11 +18,16 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/hash.c \
        src/main.c
 
-vush: $(SRCS)
-	$(CC) $(CFLAGS) -o $@ $(SRCS)
+OBJS := $(patsubst src/%.c,%.o,$(SRCS))
+
+vush: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS)
+
+%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f vush *.o
+	rm -f vush $(OBJS)
 
 
 test: vush
