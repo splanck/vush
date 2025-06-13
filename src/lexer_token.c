@@ -7,6 +7,7 @@
 
 /* Forward declaration from lexer_expand.c */
 char *parse_substitution(char **p);
+static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out);
 
 /* set when a memory allocation fails inside parse_redirect_token */
 static int token_alloc_failed = 0;
@@ -190,6 +191,18 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 fprintf(stderr, "syntax error: unmatched ')'\n");
                 return -1;
             }
+            first = 0;
+            continue;
+        }
+        if (**p == '\'' || **p == '"') {
+            int q = 0; int de = 1;
+            char *part = parse_quoted_word(p, &q, &de);
+            if (!part)
+                return -1;
+            for (int ci = 0; part[ci] && *len < MAX_LINE - 1; ci++)
+                buf[(*len)++] = part[ci];
+            free(part);
+            *do_expand = 0;
             first = 0;
             continue;
         }
