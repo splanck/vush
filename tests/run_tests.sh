@@ -1,5 +1,11 @@
 #!/bin/sh
 set -e
+
+if ! command -v expect >/dev/null; then
+    echo "Expect is not installed. Please install Expect to run tests." >&2
+    exit 1
+fi
+
 failed=0
 
 tests="
