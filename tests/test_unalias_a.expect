@@ -1,4 +1,6 @@
 #!/usr/bin/env expect
+set dir [exec mktemp -d]
+set env(HOME) $dir
 set timeout 5
 spawn ../vush
 expect {
@@ -25,3 +27,4 @@ expect {
     eof {}
     timeout { send_user "eof timeout\n"; exit 1 }
 }
+exec rm -rf $dir
