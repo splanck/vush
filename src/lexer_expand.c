@@ -756,8 +756,8 @@ char *expand_prompt(const char *prompt) {
     tmp[len + 1] = '"';
     tmp[len + 2] = '\0';
     char *p = tmp;
-    int quoted = 0;
-    char *res = read_token(&p, &quoted);
+    int quoted = 0; int de = 1;
+    char *res = read_token(&p, &quoted, &de);
     free(tmp);
     if (!res)
         return strdup("");

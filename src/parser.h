@@ -15,6 +15,7 @@
 
 typedef struct PipelineSegment {
     char *argv[MAX_TOKENS];
+    int expand[MAX_TOKENS];
     char *in_file;
     int here_doc;     /* input file is temporary here-doc */
     char *out_file;

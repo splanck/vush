@@ -96,20 +96,20 @@ static Command *parse_until_clause(char **p) {
 
 static Command *parse_for_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
-    int q = 0;
-    char *var = read_token(p, &q);
+    int q = 0; int de = 1;
+    char *var = read_token(p, &q, &de);
     if (!var || q) { free(var); return NULL; }
     while (**p == ' ' || **p == '\t') (*p)++;
-    q = 0;
-    char *tok = read_token(p, &q);
+    q = 0; de = 1;
+    char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
     char **words = NULL; int count = 0;
     while (1) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (**p == '\0') { free(var); free(words); return NULL; }
-        q = 0;
-        char *w = read_token(p, &q);
+        q = 0; de = 1;
+        char *w = read_token(p, &q, &de);
         if (!w) { free(var); free(words); return NULL; }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
         char **tmp = realloc(words, sizeof(char *) * (count + 1));
@@ -147,20 +147,20 @@ static Command *parse_for_clause(char **p) {
 
 static Command *parse_select_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
-    int q = 0;
-    char *var = read_token(p, &q);
+    int q = 0; int de = 1;
+    char *var = read_token(p, &q, &de);
     if (!var || q) { free(var); return NULL; }
     while (**p == ' ' || **p == '\t') (*p)++;
-    q = 0;
-    char *tok = read_token(p, &q);
+    q = 0; de = 1;
+    char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
     char **words = NULL; int count = 0;
     while (1) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (**p == '\0') { free(var); free(words); return NULL; }
-        q = 0;
-        char *w = read_token(p, &q);
+        q = 0; de = 1;
+        char *w = read_token(p, &q, &de);
         if (!w) { free(var); free(words); return NULL; }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
         char **tmp = realloc(words, sizeof(char *) * (count + 1));
@@ -250,7 +250,7 @@ static Command *parse_for_arith_clause(char **p) {
     if (!parse_for_arith_exprs(p, &init, &cond, &incr))
         return NULL;
     while (**p == ' ' || **p == '\t') (*p)++;
-    int q = 0; char *tok = read_token(p, &q);
+    int q = 0; int de = 1; char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "do") != 0) { free(init); free(cond); free(incr); free(tok); return NULL; }
     free(tok);
     const char *stop[] = {"done"};
@@ -287,12 +287,12 @@ void free_case_items(CaseItem *ci) {
 
 static Command *parse_case_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
-    int q = 0;
-    char *word = read_token(p, &q);
+    int q = 0; int de = 1;
+    char *word = read_token(p, &q, &de);
     if (!word) return NULL;
     while (**p == ' ' || **p == '\t') (*p)++;
-    q = 0;
-    char *tok = read_token(p, &q);
+    q = 0; de = 1;
+    char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "in") != 0) { free(word); free(tok); return NULL; }
     free(tok);
 
@@ -306,7 +306,7 @@ static Command *parse_case_clause(char **p) {
         while (!done) {
             while (**p == ' ' || **p == '\t') (*p)++;
             if (**p == '(') { (*p)++; continue; }
-            int q = 0; char *ptok = read_token(p, &q); if (!ptok) { free_case_items(head); free(word); return NULL; }
+            int q = 0; int de2 = 1; char *ptok = read_token(p, &q, &de2); if (!ptok) { free_case_items(head); free(word); return NULL; }
             if (!q && strcmp(ptok, "|") == 0) { free(ptok); continue; }
             if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
             size_t len = strlen(ptok);
@@ -362,8 +362,8 @@ static Command *parse_case_clause(char **p) {
 
 Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
-    int qfunc = 0;
-    char *tok = read_token(p, &qfunc);
+    int qfunc = 0; int de = 1;
+    char *tok = read_token(p, &qfunc, &de);
     if (!tok)
         return NULL;
 
@@ -372,7 +372,7 @@ Command *parse_function_def(char **p, CmdOp *op_out) {
         using_kw = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
         free(tok);
-        tok = read_token(p, &qfunc);
+        tok = read_token(p, &qfunc, &de);
         if (!tok || qfunc) { goto fail; }
     }
 
@@ -478,8 +478,8 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (!**p)
             break;
-        int q = 0;
-        char *tok = read_token(p, &q);
+        int q = 0; int de = 1;
+        char *tok = read_token(p, &q, &de);
         if (!tok) {
             for (int i=0;i<count;i++) free(words[i]);
             free(words);
