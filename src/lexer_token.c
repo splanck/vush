@@ -198,6 +198,7 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
         }
         if (**p == '`' || (**p == '$' && *(*p + 1) == '(')) {
             int depth = 0;
+            int closed = 0;
             char startc = **p;
             if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
             if (startc == '$') {
@@ -205,7 +206,7 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 depth = 1;
             }
             while (**p && ((startc == '`' && **p != '`') ||
-                          (startc == '$' && (depth > 0)))) {
+                          (startc == '$' && depth > 0))) {
                 if (startc == '$') {
                     if (**p == '(') depth++;
                     else if (**p == ')') {
@@ -213,6 +214,7 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                         if (depth == 0) {
                             if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
                             (*p)++;
+                            closed = 1;
                             break;
                         }
                     }
@@ -220,14 +222,15 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
                 (*p)++;
             }
-            if (!**p) {
+            if (!closed && !**p) {
                 parse_need_more = 1;
                 return -1;
             }
             if (startc == '`') {
                 if (**p == '`') {
                     if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-                } else {
+                    closed = 1;
+                } else if (!closed) {
                     parse_need_more = 1;
                     return -1;
                 }
