@@ -8,12 +8,18 @@ close $f
 exec chmod +x "$dir/foo"
 set env(PATH) "$dir:$env(PATH)"
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "fo\t\r"
 expect {
     -re "\[\r\n\]+pathcomplete\[\r\n\]+vush> " {}
     timeout { send_user "PATH completion failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

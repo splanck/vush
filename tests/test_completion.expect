@@ -1,7 +1,10 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 # complete unique builtin 'pwd'
 send "pw\t\r"
 expect {
@@ -16,4 +19,7 @@ expect {
 }
 # finish command
 send "it\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

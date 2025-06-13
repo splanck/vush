@@ -4,7 +4,10 @@ set dir [exec mktemp -d]
 set env(HOME) $dir
 set env(VUSH_HISTSIZE) 3
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo one\r"
 expect {
     -re "\[\r\n\]+one\[\r\n\]+vush> " {}
@@ -31,5 +34,8 @@ expect {
     timeout { send_user "history limit mismatch\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

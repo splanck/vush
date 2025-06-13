@@ -1,7 +1,10 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "select x in foo bar; do echo \$x; break; done\r"
 expect {
     -re "1\\) foo\[\r\n\]+2\\) bar\[\r\n\]+\\? " {}
@@ -13,5 +16,8 @@ expect {
     timeout { send_user "select output mismatch\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 

@@ -1,10 +1,16 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "exec /bin/echo hi\r"
 expect {
     -re "\[\r\n\]+hi\r?\n" {}
     timeout { send_user "exec builtin failed\n"; exit 1 }
 }
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

@@ -3,7 +3,10 @@ set timeout 5
 set start $env(PWD)
 set parent [file dirname $start]
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "export PS1='\$(pwd)> '\r"
 expect "$start> "
 send "cd ..\r"
@@ -14,4 +17,7 @@ expect {
     timeout { send_user "prompt not updated after cd -\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

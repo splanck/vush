@@ -4,7 +4,10 @@ set dir [exec mktemp -d]
 file mkdir "$dir/a"
 set env(CDPATH) $dir
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "cd a\r"
 expect {
     -re "\[\r\n\]+$dir/a\[\r\n\]+vush> " {}
@@ -16,5 +19,8 @@ expect {
     timeout { send_user "cdpath didn't cd\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

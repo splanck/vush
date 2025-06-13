@@ -13,12 +13,18 @@ close $f
 exec chmod +x "$long/foo"
 set env(PATH) "$long:/bin"
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "foo\r"
 expect {
     -re "\[\r\n\]+longpath\[\r\n\]+vush> " {}
     timeout { send_user "long PATH failed\n"; exec rm -rf $base; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $base

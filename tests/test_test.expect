@@ -4,7 +4,10 @@ set dir [exec mktemp -d]
 set file "$dir/file"
 exec touch $file
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 
 send "test -e $file; echo \$?\r"
 expect {
@@ -49,7 +52,10 @@ expect {
 }
 
 send "chmod +x $file\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 
 send "test -x $file; echo \$?\r"
 expect {
@@ -64,5 +70,8 @@ expect {
 }
 
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

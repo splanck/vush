@@ -1,9 +1,15 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "alias hi='echo hello'\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 # print single alias
 send "alias hi\r"
 expect {
@@ -18,7 +24,10 @@ expect {
 }
 # change alias normally
 send "alias hi='echo bye'\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 # verify change
 send "alias hi\r"
 expect {
@@ -26,4 +35,7 @@ expect {
     timeout { send_user "alias assignment failed\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

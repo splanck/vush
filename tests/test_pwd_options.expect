@@ -4,9 +4,15 @@ set dir [exec mktemp -d]
 file mkdir "$dir/real"
 file symlink "$dir/real" "$dir/link"
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "cd $dir/link\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "pwd -L\r"
 expect {
     -re "\[\r\n\]+$dir/link\[\r\n\]+vush> " {}
@@ -18,5 +24,8 @@ expect {
     timeout { send_user "pwd -P failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

@@ -7,12 +7,18 @@ puts $f "shift"
 puts $f "echo \"$0,$1,$2,$#,$@\""
 close $f
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "source $script foo bar\r"
 expect {
     -re "\[\r\n\]+$script,foo,bar,2,foo bar\[\r\n\]+vush> " {}
     timeout { send_user "source args failed\n"; exec rm $script; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm $script
