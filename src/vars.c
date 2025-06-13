@@ -236,8 +236,13 @@ void set_shell_var(const char *name, const char *value) {
                 v->array = NULL;
                 v->array_len = 0;
             }
+            char *dup = strdup(value);
+            if (!dup) {
+                perror("strdup");
+                return;
+            }
             free(v->value);
-            v->value = strdup(value);
+            v->value = dup;
             if (opt_allexport)
                 setenv(name, v->value ? v->value : "", 1);
             return;
@@ -247,6 +252,12 @@ void set_shell_var(const char *name, const char *value) {
     if (!v) { perror("malloc"); return; }
     v->name = strdup(name);
     v->value = strdup(value);
+    if (!v->value) {
+        perror("strdup");
+        free(v->name);
+        free(v);
+        return;
+    }
     v->array = NULL;
     v->array_len = 0;
     v->next = shell_vars;
