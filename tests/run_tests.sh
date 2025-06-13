@@ -155,6 +155,7 @@ tests="
     test_base_arith.expect
     test_path_blank.expect
     test_path_long.expect
+    test_command_v_path_long.expect
 "
 for test in $tests; do
     echo "Running $test"

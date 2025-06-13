@@ -121,8 +121,9 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                         if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
                             if (has_match(matches, count, pe->d_name))
                                 continue;
-                            char *full = NULL;
-                            if (asprintf(&full, "%s/%s", d, pe->d_name) < 0) {
+                            size_t len = strlen(d) + strlen(pe->d_name) + 2;
+                            char *full = malloc(len);
+                            if (!full) {
                                 for (int j = 0; j < count; j++)
                                     free(matches[j]);
                                 free(matches);
@@ -130,6 +131,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                 free(pdup);
                                 return NULL;
                             }
+                            snprintf(full, len, "%s/%s", d, pe->d_name);
                             if (access(full, X_OK) == 0) {
                                 if (count == cap) {
                                     cap *= 2;

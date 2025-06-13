@@ -124,13 +124,18 @@ int builtin_type(char **args) {
         char *dir = strtok_r(paths, ":", &saveptr);
         int found = 0;
         while (dir) {
-            char full[PATH_MAX];
-            snprintf(full, sizeof(full), "%s/%s", dir, args[i]);
+            size_t len = strlen(dir) + strlen(args[i]) + 2;
+            char *full = malloc(len);
+            if (!full)
+                break;
+            snprintf(full, len, "%s/%s", dir, args[i]);
             if (access(full, X_OK) == 0) {
                 printf("%s is %s\n", args[i], full);
+                free(full);
                 found = 1;
                 break;
             }
+            free(full);
             dir = strtok_r(NULL, ":", &saveptr);
         }
         free(paths);
