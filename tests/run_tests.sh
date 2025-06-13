@@ -38,6 +38,7 @@ tests="
     test_history_delete.expect
     test_pipe.expect
     test_redir.expect
+    test_assign_redir.expect
     test_source.expect
     test_fg.expect
     test_bg.expect
