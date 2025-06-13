@@ -557,8 +557,23 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                 glob_t g;
                 int r = glob(bt, 0, NULL, &g);
                 if (r == 0 && g.gl_pathc > 0) {
-                    for (size_t gi = 0; gi < g.gl_pathc && *argc < MAX_TOKENS - 1; gi++)
-                        seg->argv[(*argc)++] = strdup(g.gl_pathv[gi]);
+                    size_t start = (size_t)*argc;
+                    for (size_t gi = 0; gi < g.gl_pathc && *argc < MAX_TOKENS - 1; gi++) {
+                        char *dup = strdup(g.gl_pathv[gi]);
+                        if (!dup) {
+                            while ((size_t)*argc > start) {
+                                free(seg->argv[--(*argc)]);
+                                seg->argv[*argc] = NULL;
+                            }
+                            free(bt);
+                            globfree(&g);
+                            for (int bj = bi + 1; bj < bcount; bj++)
+                                free(btoks[bj]);
+                            free(btoks);
+                            return -1;
+                        }
+                        seg->argv[(*argc)++] = dup;
+                    }
                     free(bt);
                     globfree(&g);
                     continue;
