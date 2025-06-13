@@ -117,12 +117,13 @@ static struct local_var *find_local_var(struct local_frame *f, const char *name)
     return NULL;
 }
 
-void push_local_scope(void) {
+int push_local_scope(void) {
     struct local_frame *f = calloc(1, sizeof(*f));
     if (!f)
-        return;
+        return 0;
     f->next = local_stack;
     local_stack = f;
+    return 1;
 }
 
 void pop_local_scope(void) {

@@ -61,7 +61,14 @@ int run_function(Command *body, char **args) {
         }
     }
     script_argv[argc] = NULL;
-    push_local_scope();
+    if (!push_local_scope()) {
+        for (int i = 0; i < argc; i++)
+            free(script_argv[i]);
+        free(script_argv);
+        script_argv = old_argv;
+        script_argc = old_argc;
+        return 1;
+    }
     func_return = 0;
     run_command_list(body, NULL);
     pop_local_scope();
