@@ -46,45 +46,47 @@ static char *command_output(const char *cmd) {
  * the command's output is returned. NULL is returned on syntax errors or
  * allocation failures. */
 char *parse_substitution(char **p) {
+    if (!p || !*p || !**p)
+        return NULL;
+
     int depth = 0;
     int is_dollar = (**p == '$');
     (*p)++;
     if (is_dollar) {
-        (*p)++;
+        if (**p != '(')
+            return NULL;
+        (*p)++; /* skip '(' */
         depth = 1;
     }
+
     char cmd[MAX_LINE];
     int clen = 0;
-    while (**p && ((is_dollar && depth > 0) || (!is_dollar && **p != '`')) &&
-           clen < MAX_LINE - 1) {
+    while (**p) {
         if (is_dollar) {
-            if (**p == '(') depth++;
-            else if (**p == ')') {
+            if (**p == '(') {
+                depth++;
+            } else if (**p == ')') {
                 depth--;
-                if (depth == 0) { (*p)++; break; }
+                if (depth == 0) {
+                    (*p)++; /* skip closing ')' */
+                    break;
+                }
             }
+        } else if (**p == '`') {
+            (*p)++; /* skip closing backtick */
+            break;
         }
-        if (!is_dollar && **p == '`') break;
-        cmd[clen++] = **p;
+
+        if (clen < MAX_LINE - 1)
+            cmd[clen++] = **p;
         (*p)++;
     }
-    if (!**p) {
+
+    if ((is_dollar && depth > 0) || (!is_dollar && *(*p - 1) != '`')) {
         parse_need_more = 1;
         return NULL;
     }
-    if (is_dollar) {
-        if (depth > 0) {
-            parse_need_more = 1;
-            return NULL;
-        }
-    } else {
-        if (**p == '`')
-            (*p)++;
-        else {
-            parse_need_more = 1;
-            return NULL;
-        }
-    }
+
     cmd[clen] = '\0';
     char *res = command_output(cmd);
     if (!res)
@@ -511,6 +513,14 @@ char *expand_var(const char *token) {
         return s;
     if (token[0] == '~')
         return expand_tilde(token);
+    if (token[0] == '`' || (token[0] == '$' && token[1] == '(')) {
+        char *p = (char *)token;
+        char *out = parse_substitution(&p);
+        if (out && *p == '\0')
+            return out;
+        free(out);
+        /* fall through to regular expansion on failure */
+    }
     if (token[0] != '$')
         return strdup(token);
 

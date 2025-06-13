@@ -53,6 +53,7 @@ tests="
     test_badcmd.expect
     test_badcmd_noninteractive.expect
     test_cmdsub.expect
+    test_cmdsub_regress.expect
     test_lineedit.expect
     test_completion.expect
     test_completion_path.expect

@@ -534,6 +534,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
         }
         int quoted = 0;
         char *tok = read_token(p, &quoted);
+        if (!tok)
+            return -1;
         if (!quoted) {
             const char *s = tok;
             int all_digits = (*s != '\0');
