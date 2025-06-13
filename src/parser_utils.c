@@ -82,8 +82,8 @@ char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     while (**p) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (**p == '\0') break;
-        int quoted = 0;
-        char *tok = read_token(p, &quoted);
+        int quoted = 0; int do_expand = 1;
+        char *tok = read_token(p, &quoted, &do_expand);
         if (!tok) {
             free(res); return NULL;
         }

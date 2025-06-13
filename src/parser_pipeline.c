@@ -165,8 +165,11 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
 
     free(orig);
     int i = 0;
-    for (; i < count && *argc < MAX_TOKENS - 1; i++)
-        seg->argv[(*argc)++] = tokens[i];
+    for (; i < count && *argc < MAX_TOKENS - 1; i++) {
+        seg->argv[*argc] = tokens[i];
+        seg->expand[*argc] = 1;
+        (*argc)++;
+    }
     for (; i < count; i++)
         free(tokens[i]);
     return 1;
@@ -192,8 +195,8 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         }
     } else {
         while (**p == ' ' || **p == '\t') (*p)++;
-        int q = 0;
-        delim = read_token(p, &q);
+        int q = 0; int de = 1;
+        delim = read_token(p, &q, &de);
         if (!delim) { free(tok); return -1; }
     }
     char template[] = "/tmp/vushXXXXXX";
@@ -250,8 +253,8 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
         word = strdup(tok + 3);
         if (!word) { free(tok); return -1; }
     } else if (**p) {
-        int q = 0;
-        word = read_token(p, &q);
+        int q = 0; int de = 1;
+        word = read_token(p, &q, &de);
         if (!word) { free(tok); return -1; }
     } else {
         word = strdup("");
@@ -288,8 +291,8 @@ static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
     seg->in_fd = fd;
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p) {
-        int q = 0;
-        seg->in_file = read_token(p, &q);
+        int q = 0; int de = 1;
+        seg->in_file = read_token(p, &q, &de);
         if (!seg->in_file) { free(tok); return -1; }
     }
     free(tok);
@@ -319,16 +322,16 @@ static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
         } else if (isdigit(**p)) {
             seg->dup_out = strtol(*p, p, 10);
         } else if (**p) {
-            int q = 0;
-            char *file = read_token(p, &q);
+            int q = 0; int de = 1;
+            char *file = read_token(p, &q, &de);
             if (!file) { free(tok); return -1; }
             seg->out_file = file;
             seg->err_file = file;
             seg->err_append = seg->append;
         }
     } else if (**p) {
-        int q = 0;
-        seg->out_file = read_token(p, &q);
+        int q = 0; int de = 1;
+        seg->out_file = read_token(p, &q, &de);
         if (!seg->out_file) { free(tok); return -1; }
     }
     free(tok);
@@ -349,14 +352,14 @@ static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
         } else if (isdigit(**p)) {
             seg->dup_err = strtol(*p, p, 10);
         } else if (**p) {
-            int q = 0;
-            char *file = read_token(p, &q);
+            int q = 0; int de = 1;
+            char *file = read_token(p, &q, &de);
             if (!file) { free(tok); return -1; }
             seg->err_file = file;
         }
     } else if (**p) {
-        int q = 0;
-        seg->err_file = read_token(p, &q);
+        int q = 0; int de = 1;
+        seg->err_file = read_token(p, &q, &de);
         if (!seg->err_file) { free(tok); return -1; }
     }
     free(tok);
@@ -371,8 +374,8 @@ static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
     seg->err_append = app;
     while (**p == ' ' || **p == '\t') (*p)++;
     if (**p) {
-        int q = 0;
-        char *file = read_token(p, &q);
+        int q = 0; int de = 1;
+        char *file = read_token(p, &q, &de);
         if (!file) { free(tok); return -1; }
         seg->out_file = file;
         seg->err_file = file;
@@ -407,8 +410,8 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
             char *assign = strdup(tok);
             char *tmp;
             do {
-                int q2 = 0;
-                tmp = read_token(p, &q2);
+                int q2 = 0; int de2 = 1;
+                tmp = read_token(p, &q2, &de2);
                 if (!tmp) { free(assign); free(tok); return -1; }
                 char *new_assign = NULL;
                 int ret = asprintf(&new_assign, "%s %s", assign, tmp);
@@ -460,12 +463,14 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
         seg->argv[argc - 1] = NULL;
     } else {
         seg->argv[argc] = NULL;
+        seg->expand[argc] = 0;
     }
 }
 
 static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
+    seg->expand[*argc] = 0;
     PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
     if (!next) {
         perror("calloc");
@@ -522,18 +527,22 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             (*p)++;
             char *path = process_substitution(p, 0);
             if (!path) return -1;
-            seg->argv[(*argc)++] = path;
+            seg->argv[*argc] = path;
+            seg->expand[*argc] = 0;
+            (*argc)++;
             continue;
         }
         if (**p == '>' && *(*p + 1) == '(') {
             (*p)++;
             char *path = process_substitution(p, 1);
             if (!path) return -1;
-            seg->argv[(*argc)++] = path;
+            seg->argv[*argc] = path;
+            seg->expand[*argc] = 0;
+            (*argc)++;
             continue;
         }
-        int quoted = 0;
-        char *tok = read_token(p, &quoted);
+        int quoted = 0; int de_tok = 1;
+        char *tok = read_token(p, &quoted, &de_tok);
         if (!tok)
             return -1;
         if (!quoted) {
@@ -543,8 +552,8 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                 if (!isdigit((unsigned char)*s))
                     all_digits = 0;
             if (all_digits && (**p == '>' || **p == '<')) {
-                int q2 = 0;
-                char *op = read_token(p, &q2);
+                int q2 = 0; int de2 = 1;
+                char *op = read_token(p, &q2, &de2);
                 if (!op) { free(tok); return -1; }
                 char *nt = NULL;
                 int ret = asprintf(&nt, "%s%s", tok, op);
@@ -596,7 +605,9 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                             free(btoks);
                             return -1;
                         }
-                        seg->argv[(*argc)++] = dup;
+                        seg->argv[*argc] = dup;
+                        seg->expand[*argc] = de_tok;
+                        (*argc)++;
                     }
                     free(bt);
                     globfree(&g);
@@ -604,7 +615,9 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                 }
                 globfree(&g);
             }
-            seg->argv[(*argc)++] = bt;
+            seg->argv[*argc] = bt;
+            seg->expand[*argc] = de_tok;
+            (*argc)++;
         }
         for (int bj = bi; bj < bcount; bj++)
             free(btoks[bj]);

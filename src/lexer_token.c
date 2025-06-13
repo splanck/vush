@@ -327,7 +327,7 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
 /* Read the next shell token from *p performing necessary expansions.
  * QUOTED is set when the token was quoted.  The returned string is
  * dynamically allocated and *p is advanced past the token. */
-char *read_token(char **p, int *quoted) {
+char *read_token(char **p, int *quoted, int *do_expand_out) {
     char buf[MAX_LINE];
     int len = 0;
     int do_expand = parse_noexpand ? 0 : 1;
@@ -338,7 +338,9 @@ char *read_token(char **p, int *quoted) {
     if (redir)
         return redir;
     if (**p == '\'' || **p == '"') {
-        return parse_quoted_word(p, quoted, &do_expand);
+        char *res = parse_quoted_word(p, quoted, &do_expand);
+        if (do_expand_out) *do_expand_out = do_expand;
+        return res;
     }
     if (read_simple_token(p, is_end_unquoted, buf, &len, &do_expand) < 0)
         return NULL;
@@ -346,6 +348,7 @@ char *read_token(char **p, int *quoted) {
     char *res = strdup(buf);
     if (getenv("VUSH_DEBUG"))
         fprintf(stderr, "read_token: '%s'\n", res);
+    if (do_expand_out) *do_expand_out = do_expand;
     return res;
 }
 

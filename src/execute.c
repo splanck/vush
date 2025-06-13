@@ -55,10 +55,12 @@ static int exec_group(Command *cmd, const char *line);
 
 static void expand_segment(PipelineSegment *seg) {
     for (int i = 0; seg->argv[i]; i++) {
-        char *new = expand_var(seg->argv[i]);
-        if (new) {
-            free(seg->argv[i]);
-            seg->argv[i] = new;
+        if (seg->expand[i]) {
+            char *new = expand_var(seg->argv[i]);
+            if (new) {
+                free(seg->argv[i]);
+                seg->argv[i] = new;
+            }
         }
     }
 

@@ -9,7 +9,7 @@
 /* Read the next token from *p applying quoting and command substitution.
  * The returned string is newly allocated and must be freed by the caller.
  * QUOTED is set non-zero when the token originated from quoted text. */
-char *read_token(char **p, int *quoted);
+char *read_token(char **p, int *quoted, int *do_expand);
 
 /* Expand variable, arithmetic and tilde expressions found in TOKEN.
  * Returns a newly allocated string that the caller must free. */
