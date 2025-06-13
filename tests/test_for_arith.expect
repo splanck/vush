@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "for ((i=0; i<3; i++)); do echo \$i; done\r"
 expect {
-    -re "0[\r\n]+1[\r\n]+2[\r\n]+vush> " {}
+    -re "0\[\r\n\]+1\[\r\n\]+2\[\r\n\]+vush> " {}
     timeout { send_user "arith for output mismatch\n"; exit 1 }
 }
 send "exit\r"

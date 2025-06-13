@@ -6,7 +6,7 @@ send "export PATH=/tmp\r"
 expect "vush> "
 send "command -pV ls nosuch\r"
 expect {
-    -re "[\r\n]+ls is .*/ls[\r\n]+nosuch not found[\r\n]+vush> " {}
+    -re "\[\r\n\]+ls is .*/ls\[\r\n\]+nosuch not found\[\r\n\]+vush> " {}
     timeout { send_user "command -pV output mismatch\n"; exit 1 }
 }
 send "exit\r"

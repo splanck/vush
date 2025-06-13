@@ -4,12 +4,12 @@ spawn ../vush
 expect "vush> "
 send "echo foo\r"
 expect {
-    -re "[\r\n]+foo[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo\[\r\n\]+vush> " {}
     timeout { send_user "echo foo failed\n"; exit 1 }
 }
 send "echo bar\r"
 expect {
-    -re "[\r\n]+bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "echo bar failed\n"; exit 1 }
 }
 # Recall 'echo foo' using up arrow twice
@@ -17,21 +17,21 @@ send "\033[A"
 send "\033[A"
 send "\r"
 expect {
-    -re "[\r\n]+foo[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo\[\r\n\]+vush> " {}
     timeout { send_user "history recall up failed\n"; exit 1 }
 }
 # Recall 'echo bar' using down arrow
 send "\033[B"
 send "\r"
 expect {
-    -re "[\r\n]+bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "history recall down failed\n"; exit 1 }
 }
 send "echo one two"
 send "\027"
 send "three\r"
 expect {
-    -re "[\r\n]+one three[\r\n]+vush> " {}
+    -re "\[\r\n\]+one three\[\r\n\]+vush> " {}
     timeout { send_user "Ctrl-W failed\n"; exit 1 }
 }
 send "echo foo bar"
@@ -41,14 +41,14 @@ send "\033[D"
 send "\013"
 send "baz\r"
 expect {
-    -re "[\r\n]+foo baz[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo baz\[\r\n\]+vush> " {}
     timeout { send_user "Ctrl-K failed\n"; exit 1 }
 }
 send "echo clear"
 send "\014"
 send "\r"
 expect {
-    -re "[\r\n]+clear[\r\n]+vush> " {}
+    -re "\[\r\n\]+clear\[\r\n\]+vush> " {}
     timeout { send_user "Ctrl-L failed\n"; exit 1 }
 }
 send "exit\r"

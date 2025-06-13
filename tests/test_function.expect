@@ -6,7 +6,7 @@ send "foo() { echo hi \$1; }\r"
 expect "vush> "
 send "foo there\r"
 expect {
-    -re "[\r\n]+hi there[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi there\[\r\n\]+vush> " {}
     timeout { send_user "function output failed\n"; exit 1 }
 }
 send "bar() { return 7; }\r"
@@ -15,7 +15,7 @@ send "bar\r"
 expect "vush> "
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+7[\r\n]+vush> " {}
+    -re "\[\r\n\]+7\[\r\n\]+vush> " {}
     timeout { send_user "return status failed\n"; exit 1 }
 }
 send "exit\r"

@@ -4,27 +4,27 @@ spawn ../vush
 expect "vush> "
 send "echo first\r"
 expect {
-    -re "[\r\n]+first[\r\n]+vush> " {}
+    -re "\[\r\n\]+first\[\r\n\]+vush> " {}
     timeout { send_user "echo first failed\n"; exit 1 }
 }
 send "!!\r"
 expect {
-    -re "[\r\n]+first[\r\n]+vush> " {}
+    -re "\[\r\n\]+first\[\r\n\]+vush> " {}
     timeout { send_user "bang repeat failed\n"; exit 1 }
 }
 send "echo second\r"
 expect {
-    -re "[\r\n]+second[\r\n]+vush> " {}
+    -re "\[\r\n\]+second\[\r\n\]+vush> " {}
     timeout { send_user "echo second failed\n"; exit 1 }
 }
 send "!ec\r"
 expect {
-    -re "[\r\n]+second[\r\n]+vush> " {}
+    -re "\[\r\n\]+second\[\r\n\]+vush> " {}
     timeout { send_user "bang prefix failed\n"; exit 1 }
 }
 send "!nope\r"
 expect {
-    -re "history: event not found: nope[\r\n]+vush> " {}
+    -re "history: event not found: nope\[\r\n\]+vush> " {}
     timeout { send_user "missing event not found\n"; exit 1 }
 }
 send "exit\r"

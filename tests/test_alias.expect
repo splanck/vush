@@ -6,12 +6,12 @@ send "alias ll='echo hi'\r"
 expect "vush> "
 send "alias\r"
 expect {
-    -re "[\r\n]+ll='echo hi'[\r\n]+vush> " {}
+    -re "\[\r\n\]+ll='echo hi'\[\r\n\]+vush> " {}
     timeout { send_user "alias listing failed\n"; exit 1 }
 }
 send "ll there\r"
 expect {
-    -re "[\r\n]+hi there[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi there\[\r\n\]+vush> " {}
     timeout { send_user "alias use failed\n"; exit 1 }
 }
 send "unalias ll\r"
@@ -26,7 +26,7 @@ send "alias second=first\r"
 expect "vush> "
 send "second test\r"
 expect {
-    -re "[\r\n]+nested test[\r\n]+vush> " {}
+    -re "\[\r\n\]+nested test\[\r\n\]+vush> " {}
     timeout { send_user "nested alias failed\n"; exit 1 }
 }
 send "unalias first second\r"
@@ -44,7 +44,7 @@ expect {
 }
 send "a39 world\r"
 expect {
-    -re "[\r\n]+hi39 world[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi39 world\[\r\n\]+vush> " {}
     timeout { send_user "alias expanded failed\n"; exit 1 }
 }
 send "exit\r"

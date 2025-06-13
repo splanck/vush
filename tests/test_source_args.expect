@@ -10,7 +10,7 @@ spawn ../vush
 expect "vush> "
 send "source $script foo bar\r"
 expect {
-    -re "[\r\n]+$script,foo,bar,2,foo bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+$script,foo,bar,2,foo bar\[\r\n\]+vush> " {}
     timeout { send_user "source args failed\n"; exec rm $script; exit 1 }
 }
 send "exit\r"

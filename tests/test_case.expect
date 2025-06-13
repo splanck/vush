@@ -4,12 +4,12 @@ spawn ../vush
 expect "vush> "
 send "case foo in f*) echo match ;; esac\r"
 expect {
-    -re "match[\r\n]+vush> " {}
+    -re "match\[\r\n\]+vush> " {}
     timeout { send_user "case match failed\n"; exit 1 }
 }
 send "case 1 in 1) echo one ;& 2) echo two ;; esac\r"
 expect {
-    -re "one[\r\n]+two[\r\n]+vush> " {}
+    -re "one\[\r\n\]+two\[\r\n\]+vush> " {}
     timeout { send_user "case fallthrough failed\n"; exit 1 }
 }
 send "exit\r"

@@ -6,12 +6,12 @@ send "sleep 5 &\r"
 expect "vush> "
 send "echo \$!\r"
 expect {
-    -re "\r\n([0-9]+)\r\nvush> " { set pid $expect_out(1,string) }
+    -re "\r\n(\[0-9\]+)\r\nvush> " { set pid $expect_out(1,string) }
     timeout { send_user "$! expansion failed\n"; exit 1 }
 }
 send "kill -s TERM $pid\r"
 expect {
-    -re "\[vush\] job [0-9]+ finished\r\nvush> " {}
+    -re "\[vush\] job \[0-9\]+ finished\r\nvush> " {}
     timeout { send_user "kill -s output mismatch\n"; exit 1 }
 }
 send "jobs\r"

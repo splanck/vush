@@ -6,7 +6,7 @@ send "function kwtest { echo hi \$1; }\r"
 expect "vush> "
 send "kwtest there\r"
 expect {
-    -re "[\r\n]+hi there[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi there\[\r\n\]+vush> " {}
     timeout { send_user "function keyword output failed\n"; exit 1 }
 }
 send "function kv() { return 5; }\r"
@@ -15,7 +15,7 @@ send "kv\r"
 expect "vush> "
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+5[\r\n]+vush> " {}
+    -re "\[\r\n\]+5\[\r\n\]+vush> " {}
     timeout { send_user "function keyword return failed\n"; exit 1 }
 }
 send "exit\r"

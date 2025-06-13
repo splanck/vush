@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "echo foo | grep foo\r"
 expect {
-    -re "[\r\n]+foo[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo\[\r\n\]+vush> " {}
     timeout { send_user "pipeline output mismatch\n"; exit 1 }
 }
 send "exit\r"

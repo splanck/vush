@@ -10,7 +10,7 @@ send "cd ..\r"
 expect "$parent> "
 send "cd -\r"
 expect {
-    -re "[\r\n]+$start[\r\n]+$start> " {}
+    -re "\[\r\n\]+$start\[\r\n\]+$start> " {}
     timeout { send_user "prompt not updated after cd -\n"; exit 1 }
 }
 send "exit\r"

@@ -6,22 +6,22 @@ send "cd /tmp\r"
 expect "vush> "
 send "cd -\r"
 expect {
-    -re "[\r\n]+$env(PWD)[\r\n]+vush> " {}
+    -re "\[\r\n\]+$env(PWD)\[\r\n\]+vush> " {}
     timeout { send_user "cd - output mismatch\n"; exit 1 }
 }
 send "pwd\r"
 expect {
-    -re "[\r\n]+$env(PWD)[\r\n]+vush> " {}
+    -re "\[\r\n\]+$env(PWD)\[\r\n\]+vush> " {}
     timeout { send_user "cd - didn't switch\n"; exit 1 }
 }
 send "cd -\r"
 expect {
-    -re "[\r\n]+/tmp[\r\n]+vush> " {}
+    -re "\[\r\n\]+/tmp\[\r\n\]+vush> " {}
     timeout { send_user "cd - toggle mismatch\n"; exit 1 }
 }
 send "pwd\r"
 expect {
-    -re "[\r\n]+/tmp[\r\n]+vush> " {}
+    -re "\[\r\n\]+/tmp\[\r\n\]+vush> " {}
     timeout { send_user "cd - didn't toggle back\n"; exit 1 }
 }
 send "exit\r"

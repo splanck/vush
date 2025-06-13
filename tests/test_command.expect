@@ -6,7 +6,7 @@ send "alias echo=echo_alias\r"
 expect "vush> "
 send "command echo hi\r"
 expect {
-    -re "[\r\n]+hi[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi\[\r\n\]+vush> " {}
     timeout { send_user "command builtin failed\n"; exit 1 }
 }
 send "exit\r"

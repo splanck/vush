@@ -6,34 +6,34 @@ expect "vush> "
 # ! operator
 send "test ! 1 -eq 2; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "negation failed\n"; exit 1 }
 }
 
 # -a operator
 send "test 1 -eq 1 -a 2 -eq 3; echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "and failed\n"; exit 1 }
 }
 
 # -o operator
 send "test 1 -eq 1 -o 2 -eq 3; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "or failed\n"; exit 1 }
 }
 
 # precedence ! and -a before -o
 send "test 0 -eq 1 -o 1 -eq 1 -a 2 -eq 2; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "precedence failed\n"; exit 1 }
 }
 
 send "test ! 1 -eq 1 -o 1 -eq 1 -a 0 -eq 1; echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "complex precedence failed\n"; exit 1 }
 }
 

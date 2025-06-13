@@ -6,7 +6,7 @@ send "history -c\r"
 expect "vush> "
 send "history\r"
 expect {
-    -re "[\r\n]+vush> " {}
+    -re "\[\r\n\]+vush> " {}
     timeout { send_user "history not cleared\n"; exit 1 }
 }
 send "exit\r"

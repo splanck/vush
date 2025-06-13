@@ -6,7 +6,7 @@ send "echo error 2>err.tmp\r"
 expect "vush> "
 send "ls err.tmp\r"
 expect {
-    -re "[\r\n]+err.tmp[\r\n]+vush> " {}
+    -re "\[\r\n\]+err.tmp\[\r\n\]+vush> " {}
     timeout { send_user "stderr redirection failed\n"; exit 1 }
 }
 send "ls nonexistent &>both.tmp\r"

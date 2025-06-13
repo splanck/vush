@@ -16,7 +16,7 @@ spawn ../vush
 expect "vush> "
 send "command -v foo\r"
 expect {
-    -re "[\r\n]+$long/foo[\r\n]+vush> " {}
+    -re "\[\r\n\]+$long/foo\[\r\n\]+vush> " {}
     timeout { send_user "long PATH command -v failed\n"; exec rm -rf $base; exit 1 }
 }
 send "exit\r"

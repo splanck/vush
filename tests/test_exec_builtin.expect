@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "exec /bin/echo hi\r"
 expect {
-    -re "[\r\n]+hi\r?\n" {}
+    -re "\[\r\n\]+hi\r?\n" {}
     timeout { send_user "exec builtin failed\n"; exit 1 }
 }
 expect eof

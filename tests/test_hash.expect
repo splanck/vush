@@ -11,7 +11,7 @@ spawn ../vush
 expect "vush> "
 send "foo\r"
 expect {
-    -re "[\r\n]+hashed1[\r\n]+vush> " {}
+    -re "\[\r\n\]+hashed1\[\r\n\]+vush> " {}
     timeout { send_user "first run failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "hash foo\r"
@@ -19,14 +19,14 @@ expect "vush> "
 exec mv "$dir/foo" "$dir/foo2"
 send "foo\r"
 expect {
-    -re "[\r\n]+hashed1[\r\n]+vush> " {}
+    -re "\[\r\n\]+hashed1\[\r\n\]+vush> " {}
     timeout { send_user "hash not used\n"; exec rm -rf $dir; exit 1 }
 }
 send "hash -r\r"
 expect "vush> "
 send "foo\r"
 expect {
-    -re "[\r\n]+foo: command not found[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo: command not found\[\r\n\]+vush> " {}
     timeout { send_user "hash -r failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"

@@ -9,12 +9,12 @@ send "cd $dir/link\r"
 expect "vush> "
 send "pwd -L\r"
 expect {
-    -re "[\r\n]+$dir/link[\r\n]+vush> " {}
+    -re "\[\r\n\]+$dir/link\[\r\n\]+vush> " {}
     timeout { send_user "pwd -L failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "pwd -P\r"
 expect {
-    -re "[\r\n]+$dir/real[\r\n]+vush> " {}
+    -re "\[\r\n\]+$dir/real\[\r\n\]+vush> " {}
     timeout { send_user "pwd -P failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"

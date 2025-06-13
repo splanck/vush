@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "echo \$(echo hi)\r"
 expect {
-    -re "[\r\n]+hi[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi\[\r\n\]+vush> " {}
     timeout { send_user "command substitution failed\n"; exit 1 }
 }
 send "exit\r"

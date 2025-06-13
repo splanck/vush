@@ -8,12 +8,12 @@ spawn ../vush
 expect "vush> "
 send "source $script\r"
 expect {
-    -re "[\r\n]+sourced[\r\n]+vush> " {}
+    -re "\[\r\n\]+sourced\[\r\n\]+vush> " {}
     timeout { send_user "source builtin failed\n"; exec rm $script; exit 1 }
 }
 send ". $script\r"
 expect {
-    -re "[\r\n]+sourced[\r\n]+vush> " {}
+    -re "\[\r\n\]+sourced\[\r\n\]+vush> " {}
     timeout { send_user "dot alias failed\n"; exec rm $script; exit 1 }
 }
 send "exit\r"

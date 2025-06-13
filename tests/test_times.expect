@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "times\r"
 expect {
-    -re "[0-9]+\.[0-9]+ [0-9]+\.[0-9]+\r?\n[0-9]+\.[0-9]+ [0-9]+\.[0-9]+\r?\n" {}
+    -re "\[0-9\]+\.\[0-9\]+ \[0-9\]+\.\[0-9\]+\r?\n\[0-9\]+\.\[0-9\]+ \[0-9\]+\.\[0-9\]+\r?\n" {}
     timeout { send_user "times output mismatch\n"; exit 1 }
 }
 expect "vush> "

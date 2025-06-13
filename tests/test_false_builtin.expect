@@ -6,7 +6,7 @@ send "false\r"
 expect "vush> "
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "false builtin status mismatch\n"; exit 1 }
 }
 send "exit\r"

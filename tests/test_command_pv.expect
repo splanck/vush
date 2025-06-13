@@ -6,12 +6,12 @@ send "export PATH=/tmp\r"
 expect "vush> "
 send "command -pv ls\r"
 expect {
-    -re "[\r\n]+.*/ls[\r\n]+vush> " {}
+    -re "\[\r\n\]+.*/ls\[\r\n\]+vush> " {}
     timeout { send_user "command -pv output mismatch\n"; exit 1 }
 }
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "command -pv status mismatch\n"; exit 1 }
 }
 send "exit\r"

@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "echo first; echo second\r"
 expect {
-    -re "[\r\n]+first[\r\n]+second[\r\n]+vush> " {}
+    -re "\[\r\n\]+first\[\r\n\]+second\[\r\n\]+vush> " {}
     timeout { send_user "sequence output mismatch\n"; exit 1 }
 }
 send "exit\r"

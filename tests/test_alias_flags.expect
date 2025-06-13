@@ -7,7 +7,7 @@ expect "vush> "
 # print single alias
 send "alias hi\r"
 expect {
-    -re "[\r\n]+hi='echo hello'[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi='echo hello'\[\r\n\]+vush> " {}
     timeout { send_user "alias single failed\n"; exit 1 }
 }
 # list aliases with -p
@@ -22,7 +22,7 @@ expect "vush> "
 # verify change
 send "alias hi\r"
 expect {
-    -re "[\r\n]+hi='echo bye'[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi='echo bye'\[\r\n\]+vush> " {}
     timeout { send_user "alias assignment failed\n"; exit 1 }
 }
 send "exit\r"
