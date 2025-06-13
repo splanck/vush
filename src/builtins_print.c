@@ -29,9 +29,10 @@ int builtin_echo(char **args)
         }
         break;
     }
+    int first_arg = i;
 
     for (; args[i]; i++) {
-        if (i > 1 && args[i-1])
+        if (i > first_arg)
             putchar(' ');
         const char *s = args[i];
         if (interpret) {
