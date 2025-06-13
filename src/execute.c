@@ -82,6 +82,10 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             size_t vlen = strlen(val);
             if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
                 char *body = strndup(val+1, vlen-2);
+                if (!body) {
+                    free(name);
+                    continue;
+                }
                 char *p = body;
                 char **vals = NULL; int count=0; int failed = 0;
                 while (*p) {
@@ -96,7 +100,12 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
                         break;
                     }
                     vals = tmp;
-                    vals[count++] = strdup(start);
+                    vals[count] = strdup(start);
+                    if (!vals[count]) {
+                        failed = 1;
+                        break;
+                    }
+                    count++;
                 }
                 if (!failed) {
                     set_shell_array(name, vals, count);
@@ -148,16 +157,39 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
             continue;
         }
         backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+        if (!backs[i].name) {
+            backs[i].env = backs[i].var = NULL;
+            backs[i].had_env = backs[i].had_var = 0;
+            continue;
+        }
         const char *oe = getenv(backs[i].name);
         backs[i].had_env = oe != NULL;
         backs[i].env = oe ? strdup(oe) : NULL;
+        if (oe && !backs[i].env) {
+            free(backs[i].name);
+            backs[i].name = NULL;
+            continue;
+        }
         const char *ov = get_shell_var(backs[i].name);
         backs[i].had_var = ov != NULL;
         backs[i].var = ov ? strdup(ov) : NULL;
+        if (ov && !backs[i].var) {
+            free(backs[i].env);
+            free(backs[i].name);
+            backs[i].name = NULL;
+            continue;
+        }
         char *val = eq + 1;
         size_t vlen = strlen(val);
         if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
             char *body = strndup(val+1, vlen-2);
+            if (!body) {
+                free(backs[i].env);
+                free(backs[i].var);
+                free(backs[i].name);
+                backs[i].name = NULL;
+                continue;
+            }
             char *p = body;
             char **vals = NULL; int count=0; int failed = 0;
             size_t joinlen = 0;
@@ -173,7 +205,12 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
                     break;
                 }
                 vals = tmp;
-                vals[count++] = strdup(start);
+                vals[count] = strdup(start);
+                if (!vals[count]) {
+                    failed = 1;
+                    break;
+                }
+                count++;
                 joinlen += strlen(start) + 1;
             }
             if (!failed) {
@@ -185,16 +222,20 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
                         if (j < count-1) strcat(joined, " ");
                     }
                 }
-                setenv(backs[i].name, joined ? joined : "", 1);
-                set_shell_array(backs[i].name, vals, count);
+                if (backs[i].name) {
+                    setenv(backs[i].name, joined ? joined : "", 1);
+                    set_shell_array(backs[i].name, vals, count);
+                }
                 free(joined);
             }
             for(int j=0;j<count;j++) free(vals[j]);
             free(vals);
             free(body);
         } else {
-            setenv(backs[i].name, val, 1);
-            set_shell_var(backs[i].name, val);
+            if (backs[i].name) {
+                setenv(backs[i].name, val, 1);
+                set_shell_var(backs[i].name, val);
+            }
         }
     }
 
