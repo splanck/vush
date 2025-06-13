@@ -525,6 +525,7 @@ int main(int argc, char **argv) {
         for (int i = 1; i <= script_argc; i++)
             free(script_argv[i]);
         free(script_argv);
+        getopts_pos = NULL;
     }
     free_aliases();
     free_mail_list();

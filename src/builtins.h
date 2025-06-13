@@ -58,6 +58,9 @@ int builtin_cond(char **args);
 void list_signals(void);
 
 extern char *trap_cmds[NSIG];
+/* Maintains state across getopts calls. Must be cleared when script_argv
+ * changes so it never points into freed memory. */
+extern char *getopts_pos;
 extern char *exit_trap_cmd;
 void run_exit_trap(void);
 void free_trap_cmds(void);
