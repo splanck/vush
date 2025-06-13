@@ -116,6 +116,8 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     if (pipeline->next)
         return 0;
 
+    expand_segment(pipeline);
+
     if (!pipeline->argv[0] && pipeline->assign_count > 0) {
         for (int i = 0; i < pipeline->assign_count; i++) {
             char *eq = strchr(pipeline->assigns[i], '=');
@@ -438,12 +440,12 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         fprintf(stderr, "%s%s\n", ps4, line);
     }
 
-    expand_pipeline(pipeline);
-
     if (apply_temp_assignments(pipeline, background, line)) {
         cleanup_proc_subs();
         return last_status;
     }
+
+    expand_pipeline(pipeline);
 
     if (!pipeline->argv[0] || pipeline->argv[0][0] == '\0') {
         fprintf(stderr, "syntax error: missing command\n");
