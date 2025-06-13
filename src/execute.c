@@ -26,6 +26,7 @@
 #include "arith.h"
 #include "util.h"
 #include "hash.h"
+#include "lexer.h"
 
 extern int last_status;
 
@@ -51,6 +52,47 @@ static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
 
+static void expand_segment(PipelineSegment *seg) {
+    for (int i = 0; seg->argv[i]; i++) {
+        char *new = expand_var(seg->argv[i]);
+        if (new) {
+            free(seg->argv[i]);
+            seg->argv[i] = new;
+        }
+    }
+
+    for (int i = 0; i < seg->assign_count; i++) {
+        char *eq = strchr(seg->assigns[i], '=');
+        if (eq) {
+            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
+            char *val = expand_var(eq + 1);
+            char *tmp = NULL;
+            if (name && val)
+                asprintf(&tmp, "%s=%s", name, val);
+            if (tmp) {
+                free(seg->assigns[i]);
+                seg->assigns[i] = tmp;
+            }
+            free(name);
+            free(val);
+        } else {
+            char *new = expand_var(seg->assigns[i]);
+            if (new) {
+                free(seg->assigns[i]);
+                seg->assigns[i] = new;
+            }
+        }
+    }
+
+    if (seg->in_file) { char *n = expand_var(seg->in_file); free(seg->in_file); seg->in_file = n; }
+    if (seg->out_file) { char *n = expand_var(seg->out_file); free(seg->out_file); seg->out_file = n; }
+    if (seg->err_file) { char *n = expand_var(seg->err_file); free(seg->err_file); seg->err_file = n; }
+}
+
+static void expand_pipeline(PipelineSegment *pipeline) {
+    for (PipelineSegment *seg = pipeline; seg; seg = seg->next)
+        expand_segment(seg);
+}
 /*
  * Duplicate the given descriptor onto another descriptor and close the
  * original.  Used internally when applying redirections.  Does not
@@ -380,6 +422,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         if (!ps4) ps4 = "+ ";
         fprintf(stderr, "%s%s\n", ps4, line);
     }
+
+    expand_pipeline(pipeline);
 
     if (apply_temp_assignments(pipeline)) {
         cleanup_proc_subs();

@@ -28,6 +28,7 @@ tests="
     test_unset.expect
     test_unset_function.expect
     test_local.expect
+    test_func_scope.expect
     test_script.expect
     test_script_args.expect
     test_comments.expect
