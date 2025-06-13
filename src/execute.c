@@ -35,7 +35,8 @@ int loop_continue = 0;
 int loop_depth = 0;
 
 int run_command_list(Command *cmds, const char *line);
-static int apply_temp_assignments(PipelineSegment *pipeline);
+static int apply_temp_assignments(PipelineSegment *pipeline, int background,
+                                  const char *line);
 void setup_redirections(PipelineSegment *seg);
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);
@@ -108,7 +109,8 @@ static void redirect_fd(int fd, int dest) {
  * variables are preserved and restored around the call.
  */
 
-static int apply_temp_assignments(PipelineSegment *pipeline) {
+static int apply_temp_assignments(PipelineSegment *pipeline, int background,
+                                  const char *line) {
     if (pipeline->next)
         return 0;
 
@@ -183,6 +185,17 @@ static int apply_temp_assignments(PipelineSegment *pipeline) {
 
     if (!pipeline->argv[0])
         return 0;
+
+    int has_redir =
+        pipeline->in_file || pipeline->out_file || pipeline->err_file ||
+        pipeline->dup_out != -1 || pipeline->dup_err != -1 ||
+        pipeline->close_out || pipeline->close_err ||
+        pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
+
+    if (has_redir) {
+        spawn_pipeline_segments(pipeline, background, line);
+        return 1;
+    }
 
     struct {
         char *name;
@@ -425,7 +438,7 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
 
     expand_pipeline(pipeline);
 
-    if (apply_temp_assignments(pipeline)) {
+    if (apply_temp_assignments(pipeline, background, line)) {
         cleanup_proc_subs();
         return last_status;
     }
