@@ -164,8 +164,11 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
     }
 
     free(orig);
-    for (int i = 0; i < count && *argc < MAX_TOKENS - 1; i++)
+    int i = 0;
+    for (; i < count && *argc < MAX_TOKENS - 1; i++)
         seg->argv[(*argc)++] = tokens[i];
+    for (; i < count; i++)
+        free(tokens[i]);
     return 1;
 }
 
