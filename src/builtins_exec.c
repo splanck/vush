@@ -32,6 +32,7 @@ static int prepare_source_args(char **args, int *old_argc, char ***old_argv,
 
     script_argc = *new_argc;
     script_argv = calloc(argc + 1, sizeof(char *));
+    getopts_pos = NULL; /* $@ changed for sourced file */
     if (!script_argv) {
         script_argc = *old_argc;
         script_argv = *old_argv;
@@ -59,6 +60,7 @@ static void restore_source_args(int old_argc, char **old_argv, int new_argc)
     free(script_argv);
     script_argv = old_argv;
     script_argc = old_argc;
+    getopts_pos = NULL; /* argv replaced; reset getopts pointer */
 }
 
 static void execute_source_file(FILE *input)

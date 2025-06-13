@@ -7,7 +7,10 @@
 #include <string.h>
 extern int last_status;
 
-static char *getopts_pos = NULL;
+/* Pointer into the current $@ item being parsed by getopts. When script_argv
+ * is replaced or freed this must be cleared so it does not reference stale
+ * memory. */
+char *getopts_pos = NULL;
 
 static int read_optind(void)
 {

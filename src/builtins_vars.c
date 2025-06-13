@@ -56,6 +56,7 @@ int builtin_shift(char **args) {
         script_argv[i - n] = script_argv[i];
     script_argc -= n;
     script_argv[script_argc + 1] = NULL;
+    getopts_pos = NULL; /* shifting invalidates cached $@ state for getopts */
     return 1;
 }
 
@@ -190,6 +191,7 @@ int builtin_set(char **args) {
         }
         script_argv = newv;
         script_argc = count;
+        getopts_pos = NULL; /* new $@ invalidates getopts parsing state */
     }
     return 1;
 }

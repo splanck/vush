@@ -44,6 +44,7 @@ int run_function(Command *body, char **args) {
     char **old_argv = script_argv;
     script_argc = argc - 1;
     script_argv = calloc(argc + 1, sizeof(char *));
+    getopts_pos = NULL; /* new $@ may invalidate getopts parsing state */
     if (!script_argv) {
         script_argc = old_argc;
         script_argv = old_argv;
@@ -77,5 +78,6 @@ int run_function(Command *body, char **args) {
     free(script_argv);
     script_argv = old_argv;
     script_argc = old_argc;
+    getopts_pos = NULL; /* freed argv, so clear getopts pointer */
     return last_status;
 }
