@@ -196,7 +196,12 @@ void record_local_var(const char *name) {
     const char *e = getenv(name);
     if (e) {
         lv->env_val = strdup(e);
-        lv->had_env = 1;
+        if (lv->env_val) {
+            lv->had_env = 1;
+        } else {
+            /* if strdup fails, pretend there was no env value so we unset */
+            lv->had_env = 0;
+        }
     } else {
         lv->had_env = 0;
     }
