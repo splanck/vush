@@ -6,6 +6,10 @@ if ! command -v expect >/dev/null; then
     exit 1
 fi
 
+TMP_HOME=$(mktemp -d)
+export HOME="$TMP_HOME"
+trap 'rm -rf "$TMP_HOME"' EXIT
+
 failed=0
 
 tests="
