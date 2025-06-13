@@ -117,12 +117,18 @@ int builtin_fc(char **args)
             char *eq = strchr(subst, '=');
             if (!eq)
                 return 1;
-            char old[eq - subst + 1];
+            char *old = malloc(eq - subst + 1);
+            if (!old) {
+                perror("malloc");
+                free(temp);
+                return 1;
+            }
             memcpy(old, subst, eq - subst);
             old[eq - subst] = '\0';
             const char *new = eq + 1;
             temp = replace_first(cmd, old, new);
             cmd = temp ? temp : cmd;
+            free(old);
         }
         printf("%s\n", cmd);
         char *mutable = strdup(cmd);
