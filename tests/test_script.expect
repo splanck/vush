@@ -9,6 +9,9 @@ expect {
     -re "from_script\r?\n" {}
     timeout { send_user "script output mismatch\n"; exec rm $script; exit 1 }
 }
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm $script
 

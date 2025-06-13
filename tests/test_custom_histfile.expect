@@ -4,23 +4,35 @@ set dir [exec mktemp -d]
 set env(HOME) $dir
 set env(VUSH_HISTFILE) "$dir/histfile"
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo persist\r"
 expect {
     -re "\[\r\n\]+persist\[\r\n\]+vush> " {}
     timeout { send_user "echo failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 spawn ../vush
 set env(HOME) $dir
 set env(VUSH_HISTFILE) "$dir/histfile"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "history\r"
 expect {
     -re "1 echo persist\[\r\n\]+2 history\[\r\n\]+vush> " {}
     timeout { send_user "history not loaded\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm -rf $dir

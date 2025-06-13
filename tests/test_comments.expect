@@ -1,13 +1,22 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "# foo\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo bar # comment\r"
 expect {
     -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "comment parsing failed\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

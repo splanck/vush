@@ -9,17 +9,26 @@ expect {
     -re "a:\[\r\n\]+b:foo\[\r\n\]+index:4\[\r\n\]+" {}
     timeout { send_user "getopts parsing failed\n"; exec rm $script; exit 1 }
 }
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 spawn ../vush $script -z
 expect {
     -re "getopts: illegal option -- z\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "invalid option not handled\n"; exec rm $script; exit 1 }
 }
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 spawn ../vush $script -b
 expect {
     -re "getopts: option requires an argument -- b\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "missing argument not detected\n"; exec rm $script; exit 1 }
 }
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm $script

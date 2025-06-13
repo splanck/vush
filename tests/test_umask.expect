@@ -1,7 +1,10 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "umask\r"
 expect {
     -re "\[\r\n\]+(\[0-7\]{4})\[\r\n\]+vush> " { set old $expect_out(1,string) }
@@ -13,7 +16,10 @@ expect {
     timeout { send_user "umask -S output mismatch\n"; exit 1 }
 }
 send "umask 077\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "umask -S 077\r"
 expect {
     -re "\r\nu=rwx,g=,o=\r?\nvush> " {}
@@ -25,6 +31,12 @@ expect {
     timeout { send_user "umask set failed\n"; exit 1 }
 }
 send "umask $old\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

@@ -5,7 +5,10 @@ set f [open $script "w"]
 puts $f "echo sourced"
 close $f
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "source $script\r"
 expect {
     -re "\[\r\n\]+sourced\[\r\n\]+vush> " {}
@@ -17,5 +20,8 @@ expect {
     timeout { send_user "dot alias failed\n"; exec rm $script; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 exec rm $script

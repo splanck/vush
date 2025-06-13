@@ -2,41 +2,71 @@
 set timeout 5
 # nounset option
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "set -u\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo \$FOO\r"
 expect {
     -re "UNDEF: unbound variable" { }
     -re "FOO: unbound variable" { }
     timeout { send_user "nounset message missing\n"; exit 1 }
 }
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "nounset status mismatch\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 
 # errexit option
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "set -e\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "false\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
 
 # xtrace option
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "set -x\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo hi\r"
 expect {
     -re "\+ echo hi\r\nhi\r\nvush> " {}
     timeout { send_user "xtrace output mismatch\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

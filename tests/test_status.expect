@@ -1,20 +1,32 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "false\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "false status mismatch\n"; exit 1 }
 }
 send "true\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "true status mismatch\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

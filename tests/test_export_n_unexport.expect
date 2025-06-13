@@ -1,16 +1,25 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "export FOO=bar\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "env | grep FOO\r"
 expect {
     -re "FOO=bar" {}
     timeout { send_user "export not set\n"; exit 1 }
 }
 send "export -n FOO\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "env | grep FOO\r"
 expect {
     -re "\r\nvush> " {}
@@ -22,4 +31,7 @@ expect {
     timeout { send_user "export -n removed variable\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

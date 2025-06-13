@@ -1,7 +1,10 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 # run a basic command and ensure output is printed
 send "echo hi\r"
 expect {
@@ -9,4 +12,7 @@ expect {
     timeout { send_user "basic command output mismatch\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

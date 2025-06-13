@@ -1,9 +1,15 @@
 #!/usr/bin/env expect
 set timeout 5
 spawn ../vush
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "nums=(one two three)\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "echo \${nums\[1\]}\r"
 expect {
     -re "\[\r\n\]+two\[\r\n\]+vush> " {}
@@ -15,11 +21,17 @@ expect {
     timeout { send_user "iteration failed\n"; exit 1 }
 }
 send "unset nums\[1\]\r"
-expect "vush> "
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "for n in \${nums\[@\]}; do echo \$n; done\r"
 expect {
     -re "one\[\r\n\]+three\[\r\n\]+vush> " {}
     timeout { send_user "unset index failed\n"; exit 1 }
 }
 send "exit\r"
-expect eof
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
