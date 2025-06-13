@@ -374,6 +374,10 @@ static void repl_loop(FILE *input)
         char *cmdline = strdup(line);
         if (line != linebuf)
             free(line);
+        if (!cmdline) {
+            perror("strdup");
+            break;
+        }
 
         while (1) {
             char *expanded = expand_history(cmdline);
