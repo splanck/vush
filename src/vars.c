@@ -283,7 +283,8 @@ void set_shell_array(const char *name, char **values, int count) {
     }
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
-            char **new_arr = calloc(count, sizeof(char *));
+            size_t alloc_count = count ? count : 1;
+            char **new_arr = calloc(alloc_count, sizeof(char *));
             if (!new_arr) {
                 perror("calloc");
                 return;
@@ -323,7 +324,8 @@ void set_shell_array(const char *name, char **values, int count) {
     }
     v->value = NULL;
 
-    char **new_arr = calloc(count, sizeof(char *));
+    size_t alloc_count = count ? count : 1;
+    char **new_arr = calloc(alloc_count, sizeof(char *));
     if (!new_arr) {
         perror("calloc");
         free(v->name);
