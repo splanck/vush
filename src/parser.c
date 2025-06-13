@@ -3,6 +3,7 @@
  */
 #include "parser.h"
 #include <stdlib.h>
+#include <unistd.h>
 
 FILE *parse_input = NULL;
 int parse_need_more = 0;
@@ -16,6 +17,8 @@ void free_pipeline(PipelineSegment *p) {
         for (int i = 0; i < p->assign_count; i++)
             free(p->assigns[i]);
         free(p->assigns);
+        if (p->here_doc && p->in_file)
+            unlink(p->in_file);
         free(p->in_file);
         free(p->out_file);
         if (p->err_file && p->err_file != p->out_file)

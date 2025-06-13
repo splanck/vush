@@ -649,6 +649,7 @@ Command *parse_line(char *line) {
             cmd = parse_pipeline(&p, &op);
         if (!cmd) {
             free_commands(head);
+            cleanup_proc_subs();
             if (!parse_need_more)
                 last_status = 1;
             return NULL;
