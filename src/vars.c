@@ -167,6 +167,11 @@ void record_local_var(const char *name) {
     if (!lv)
         return;
     lv->name = strdup(name);
+    if (!lv->name) {
+        perror("strdup");
+        free(lv);
+        return;
+    }
     const char *val = get_shell_var(name);
     int len = 0;
     char **arr = get_shell_array(name, &len);
