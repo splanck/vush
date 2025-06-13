@@ -294,22 +294,27 @@ static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
     if (!pids)
         return 1;
 
-    int i = 0;
+    int spawned = 0;
     int in_fd = -1;
     for (PipelineSegment *seg = pipeline; seg; seg = seg->next) {
         pid_t pid = fork_segment(seg, &in_fd);
         if (pid < 0) {
+            if (in_fd != -1)
+                close(in_fd);
+            /* Wait for already spawned children */
+            if (spawned > 0)
+                wait_for_pipeline(pids, spawned, 0, line);
             free(pids);
             last_status = 1;
             return 1;
         }
-        pids[i++] = pid;
+        pids[spawned++] = pid;
     }
 
     if (in_fd != -1)
         close(in_fd);
 
-    wait_for_pipeline(pids, i, background, line);
+    wait_for_pipeline(pids, spawned, background, line);
     free(pids);
     return last_status;
 }
