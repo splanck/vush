@@ -491,7 +491,7 @@ static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
 }
 
 static char **expand_token_braces(char *tok, int quoted, int *count) {
-    if (!quoted) {
+    if (!quoted && !(tok[0] == '$' && tok[1] == '{')) {
         char **btoks = expand_braces(tok, count);
         free(tok);
         return btoks;
