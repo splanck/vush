@@ -178,7 +178,12 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         char op = p[1];
         const char *word = p + 2;
         char *wexp = strdup(word ? word : "");
-        if (!wexp) wexp = strdup("");
+        if (!wexp)
+            wexp = strdup("");
+        if (!wexp) {
+            perror("strdup");
+            return strdup(val ? val : "");
+        }
 
         int use_word = (!val || val[0] == '\0');
         if (op == '+')
@@ -207,7 +212,12 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
     } else if ((*p == ':' && p[1] == '?') || *p == '?') {
         const char *word = (*p == ':') ? p + 2 : p + 1;
         char *wexp = strdup(word && *word ? word : "");
-        if (!wexp) wexp = strdup("");
+        if (!wexp)
+            wexp = strdup("");
+        if (!wexp) {
+            perror("strdup");
+            return strdup(val ? val : "");
+        }
         int err = (!val || val[0] == '\0');
         if (err) {
             if (*wexp)

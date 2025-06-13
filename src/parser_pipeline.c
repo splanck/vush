@@ -219,6 +219,13 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     }
     fclose(tf);
     seg->in_file = strdup(template);
+    if (!seg->in_file) {
+        perror("strdup");
+        unlink(template);
+        free(delim);
+        free(tok);
+        return -1;
+    }
     seg->here_doc = 1;
     free(delim);
     free(tok);
@@ -253,6 +260,13 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     fprintf(tf, "%s", word);
     fclose(tf);
     seg->in_file = strdup(template);
+    if (!seg->in_file) {
+        perror("strdup");
+        unlink(template);
+        free(word);
+        free(tok);
+        return -1;
+    }
     seg->here_doc = 1;
     free(word);
     free(tok);
