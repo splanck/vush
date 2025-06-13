@@ -60,6 +60,7 @@ void list_signals(void);
 extern char *trap_cmds[NSIG];
 extern char *exit_trap_cmd;
 void run_exit_trap(void);
+void free_trap_cmds(void);
 int builtin_trap(char **args);
 
 #endif /* BUILTINS_H */

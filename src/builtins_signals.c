@@ -183,3 +183,14 @@ int builtin_continue(char **args)
     return 1;
 }
 
+/* Free all registered trap command strings. */
+void free_trap_cmds(void)
+{
+    for (int i = 0; i < NSIG; i++) {
+        if (trap_cmds[i]) {
+            free(trap_cmds[i]);
+            trap_cmds[i] = NULL;
+        }
+    }
+}
+
