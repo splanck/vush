@@ -17,12 +17,12 @@ expect {
 send "pwd\r"
 expect {
     -re "\[\r\n\]+$home\[\r\n\]+vush> " {}
-    timeout { send_user "tilde expansion failed\n"; exec sed -i '/$user:x:12345/d' /etc/passwd; exec rm -rf $home; exit 1 }
+    timeout { send_user "tilde expansion failed\n"; exec sed -i "/$user:x:12345/d" /etc/passwd; exec rm -rf $home; exit 1 }
 }
 send "exit\r"
 expect {
     eof {}
     timeout { send_user "eof timeout\n"; exit 1 }
 }
-exec sed -i '/$user:x:12345/d' /etc/passwd
+exec sed -i "/$user:x:12345/d" /etc/passwd
 exec rm -rf $home
