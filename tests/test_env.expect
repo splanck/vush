@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "echo $HOME\r"
+send "echo \$HOME\r"
 expect {
     -re "[\r\n]+$env(HOME)[\r\n]+vush> " {}
     timeout { send_user "HOME output mismatch\n"; exit 1 }

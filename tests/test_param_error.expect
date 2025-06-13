@@ -4,20 +4,20 @@ spawn ../vush
 expect "vush> "
 send "unset FOO\r"
 expect "vush> "
-send "echo ${FOO:?oops}\r"
+send "echo \${FOO:?oops}\r"
 expect {
     -re "oops" {}
     timeout { send_user "error message missing\n"; exit 1 }
 }
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+1[\r\n]+vush> " {}
     timeout { send_user "status mismatch\n"; exit 1 }
 }
 send "FOO=val\r"
 expect "vush> "
-send "echo ${FOO?}\r"
+send "echo \${FOO?}\r"
 expect {
     -re "[\r\n]+val[\r\n]+vush> " {}
     timeout { send_user "no value output\n"; exit 1 }

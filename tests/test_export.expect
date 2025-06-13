@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "export FOO=bar\r"
 expect "vush> "
-send "echo $FOO\r"
+send "echo \$FOO\r"
 expect {
     -re "[\r\n]+bar[\r\n]+vush> " {}
     timeout { send_user "export output mismatch\n"; exit 1 }

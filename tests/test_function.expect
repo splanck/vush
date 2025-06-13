@@ -13,7 +13,7 @@ send "bar() { return 7; }\r"
 expect "vush> "
 send "bar\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+7[\r\n]+vush> " {}
     timeout { send_user "return status failed\n"; exit 1 }

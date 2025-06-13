@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "echo $(echo hi)\r"
+send "echo \$(echo hi)\r"
 expect {
     -re "[\r\n]+hi[\r\n]+vush> " {}
     timeout { send_user "command substitution failed\n"; exit 1 }

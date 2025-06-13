@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "export cmd='echo hi'\r"
 expect "vush> "
-send "eval $cmd there\r"
+send "eval \$cmd there\r"
 expect {
     -re "[\r\n]+hi there[\r\n]+vush> " {}
     timeout { send_user "eval failed\n"; exit 1 }

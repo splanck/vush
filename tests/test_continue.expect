@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "for x in a b c; do if test $x = b; then continue; fi; echo $x; done\r"
+send "for x in a b c; do if test \$x = b; then continue; fi; echo \$x; done\r"
 expect {
     -re "a[\r\n]+c[\r\n]+vush> " {}
     timeout { send_user "continue failed\n"; exit 1 }

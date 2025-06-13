@@ -2,7 +2,7 @@
 set timeout 5
 spawn ../vush
 expect "vush> "
-send "select x in foo bar; do echo $x; break; done\r"
+send "select x in foo bar; do echo \$x; break; done\r"
 expect {
     -re "1\\) foo[\r\n]+2\\) bar[\r\n]+\\? " {}
     timeout { send_user "select menu failed\n"; exit 1 }

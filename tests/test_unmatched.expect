@@ -14,7 +14,7 @@ expect {
     timeout { send_user "missing single quote error\n"; exit 1 }
 }
 expect "vush> "
-send "echo $(echo hi\r"
+send "echo \$(echo hi\r"
 expect {
     -re "syntax error: unmatched '\)'" {}
     timeout { send_user "missing command substitution error\n"; exit 1 }

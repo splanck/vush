@@ -13,7 +13,7 @@ send "function kv() { return 5; }\r"
 expect "vush> "
 send "kv\r"
 expect "vush> "
-send "echo $?\r"
+send "echo \$?\r"
 expect {
     -re "[\r\n]+5[\r\n]+vush> " {}
     timeout { send_user "function keyword return failed\n"; exit 1 }

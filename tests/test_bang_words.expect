@@ -7,7 +7,7 @@ expect {
     -re "[\r\n]+foo bar[\r\n]+vush> " {}
     timeout { send_user "echo foo bar failed\n"; exit 1 }
 }
-send "!$\r"
+send "!\$\r"
 expect {
     -re "[\r\n]+bar: command not found[\r\n]+vush> " {}
     timeout { send_user "bang last word failed\n"; exit 1 }
