@@ -57,7 +57,6 @@ tests="
     test_fd_dup.expect
     test_vushrc.expect
     test_envfile.expect
-    test_envfile.expect
     test_var_brace.expect
     test_param_expand.expect
     test_unmatched.expect
