@@ -14,7 +14,7 @@ expect {
     -re "one\[\r\n\]+two\[\r\n\]+three\[\r\n\]+vush> " {}
     timeout { send_user "iteration failed\n"; exit 1 }
 }
-send "unset nums[1]\r"
+send "unset nums\[1\]\r"
 expect "vush> "
 send "for n in \${nums\[@\]}; do echo \$n; done\r"
 expect {

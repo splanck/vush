@@ -13,15 +13,15 @@ expect {
     timeout { send_user "echo bar failed\n"; exit 1 }
 }
 # Recall 'echo foo' using up arrow twice
-send "\033[A"
-send "\033[A"
+send "\033\[A"
+send "\033\[A"
 send "\r"
 expect {
     -re "\[\r\n\]+foo\[\r\n\]+vush> " {}
     timeout { send_user "history recall up failed\n"; exit 1 }
 }
 # Recall 'echo bar' using down arrow
-send "\033[B"
+send "\033\[B"
 send "\r"
 expect {
     -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
@@ -35,9 +35,9 @@ expect {
     timeout { send_user "Ctrl-W failed\n"; exit 1 }
 }
 send "echo foo bar"
-send "\033[D"
-send "\033[D"
-send "\033[D"
+send "\033\[D"
+send "\033\[D"
+send "\033\[D"
 send "\013"
 send "baz\r"
 expect {
