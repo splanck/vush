@@ -286,7 +286,7 @@ make CFLAGS="-g -Wall -Wextra -std=c99"
 Run the shell under `gdb` or `valgrind` to catch crashes. Using
 
 ```sh
-valgrind ./vush
+gdb ./vush
 ```
 
 will record a backtrace on failure, making it easier to locate memory errors.
