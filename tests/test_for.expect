@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "for x in a b c; do echo \$x; done\r"
 expect {
-    -re "a[\r\n]+b[\r\n]+c[\r\n]+vush> " {}
+    -re "a\[\r\n\]+b\[\r\n\]+c\[\r\n\]+vush> " {}
     timeout { send_user "for output mismatch\n"; exit 1 }
 }
 send "exit\r"

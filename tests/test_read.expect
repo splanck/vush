@@ -7,7 +7,7 @@ send "one two three\r"
 expect "vush> "
 send "echo \$first:\$rest\r"
 expect {
-    -re "[\r\n]+one:two three[\r\n]+vush> " {}
+    -re "\[\r\n\]+one:two three\[\r\n\]+vush> " {}
     timeout { send_user "read builtin failed\n"; exit 1 }
 }
 send "exit\r"

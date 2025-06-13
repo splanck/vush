@@ -5,7 +5,7 @@ expect "vush> "
 # complete unique builtin 'pwd'
 send "pw\t\r"
 expect {
-    -re "[\r\n]+$env(PWD)[\r\n]+vush> " {}
+    -re "\[\r\n\]+$env(PWD)\[\r\n\]+vush> " {}
     timeout { send_user "pwd completion failed\n"; exit 1 }
 }
 # list multiple completions for prefix 'ex'

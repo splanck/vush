@@ -7,7 +7,7 @@ expect "vush> "
 set pid [exp_pid]
 exec kill -INT $pid
 expect {
-    -re "[\r\n]+trapped[\r\n]+vush> " {}
+    -re "\[\r\n\]+trapped\[\r\n\]+vush> " {}
     timeout { send_user "trap output mismatch\n"; exit 1 }
 }
 send "exit\r"

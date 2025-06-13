@@ -6,12 +6,12 @@ send "sleep 5 &\r"
 expect "vush> "
 send "jobs\r"
 expect {
-    -re "\[1\] [0-9]+ sleep 5 &[\r\n]+vush> " {}
+    -re "\[1\] \[0-9\]+ sleep 5 &\[\r\n\]+vush> " {}
     timeout { send_user "jobs output mismatch\n"; exit 1 }
 }
 send "kill 1\r"
 expect {
-    -re "\[vush\] job [0-9]+ \(sleep 5 \&\) finished[\r\n]+vush> " {}
+    -re "\[vush\] job \[0-9\]+ \(sleep 5 \&\) finished\[\r\n\]+vush> " {}
     timeout { send_user "kill output mismatch\n"; exit 1 }
 }
 send "exit\r"

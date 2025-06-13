@@ -7,7 +7,7 @@ spawn ../vush
 expect "vush> "
 send "echo persist\r"
 expect {
-    -re "[\r\n]+persist[\r\n]+vush> " {}
+    -re "\[\r\n\]+persist\[\r\n\]+vush> " {}
     timeout { send_user "echo failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
@@ -18,7 +18,7 @@ set env(VUSH_HISTFILE) "$dir/histfile"
 expect "vush> "
 send "history\r"
 expect {
-    -re "1 echo persist[\r\n]+2 history[\r\n]+vush> " {}
+    -re "1 echo persist\[\r\n\]+2 history\[\r\n\]+vush> " {}
     timeout { send_user "history not loaded\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"

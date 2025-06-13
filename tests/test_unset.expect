@@ -8,7 +8,7 @@ send "unset FOO\r"
 expect "vush> "
 send "echo \$FOO\r"
 expect {
-    -re "[\r\n]+vush> " {}
+    -re "\[\r\n\]+vush> " {}
     timeout { send_user "unset failed\n"; exit 1 }
 }
 send "exit\r"

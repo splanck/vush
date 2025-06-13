@@ -12,7 +12,7 @@ spawn ../vush
 expect "vush> "
 send "hi world\r"
 expect {
-    -re "[\r\n]+persisted world[\r\n]+vush> " {}
+    -re "\[\r\n\]+persisted world\[\r\n\]+vush> " {}
     timeout { send_user "alias not persisted\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"

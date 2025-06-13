@@ -6,19 +6,19 @@ puts $f "while getopts \"ab:\" o; do echo \"$o:$OPTARG\"; done; echo index:$OPTI
 close $f
 spawn ../vush $script -a -b foo rest
 expect {
-    -re "a:[\r\n]+b:foo[\r\n]+index:4[\r\n]+" {}
+    -re "a:\[\r\n\]+b:foo\[\r\n\]+index:4\[\r\n\]+" {}
     timeout { send_user "getopts parsing failed\n"; exec rm $script; exit 1 }
 }
 expect eof
 spawn ../vush $script -z
 expect {
-    -re "getopts: illegal option -- z[\r\n]+\?:[\r\n]+index:2[\r\n]+" {}
+    -re "getopts: illegal option -- z\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "invalid option not handled\n"; exec rm $script; exit 1 }
 }
 expect eof
 spawn ../vush $script -b
 expect {
-    -re "getopts: option requires an argument -- b[\r\n]+\?:[\r\n]+index:2[\r\n]+" {}
+    -re "getopts: option requires an argument -- b\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "missing argument not detected\n"; exec rm $script; exit 1 }
 }
 expect eof

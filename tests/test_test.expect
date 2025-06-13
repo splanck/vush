@@ -8,43 +8,43 @@ expect "vush> "
 
 send "test -e $file; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-e failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -f $file; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-f failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -d $dir; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-d failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -d $file; echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "-d on file failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -r $file; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-r failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -w $file; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-w failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -x $file; echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "-x false failed\n"; exec rm -rf $dir; exit 1 }
 }
 
@@ -53,13 +53,13 @@ expect "vush> "
 
 send "test -x $file; echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "-x true failed\n"; exec rm -rf $dir; exit 1 }
 }
 
 send "test -e $dir/nope; echo \$?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "-e nonexistent failed\n"; exec rm -rf $dir; exit 1 }
 }
 

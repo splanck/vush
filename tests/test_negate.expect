@@ -7,7 +7,7 @@ send "! false\r"
 expect "vush> "
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "negate command status mismatch\n"; exit 1 }
 }
 # pipeline negation
@@ -15,7 +15,7 @@ send "! true | false\r"
 expect "vush> "
 send "echo \$?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "negate pipeline status mismatch\n"; exit 1 }
 }
 send "exit\r"

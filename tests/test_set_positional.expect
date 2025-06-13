@@ -6,7 +6,7 @@ send "set -- foo bar\r"
 expect "vush> "
 send "echo \\\"\$1,\$2,\$#\\\"\r"
 expect {
-    -re "[\r\n]+foo,bar,2[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo,bar,2\[\r\n\]+vush> " {}
     timeout { send_user "set positional failed\n"; exit 1 }
 }
 send "exit\r"

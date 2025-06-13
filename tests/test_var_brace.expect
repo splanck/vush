@@ -4,17 +4,17 @@ spawn ../vush
 expect "vush> "
 send "echo \${HOME}\r"
 expect {
-    -re "[\r\n]+$env(HOME)[\r\n]+vush> " {}
+    -re "\[\r\n\]+$env(HOME)\[\r\n\]+vush> " {}
     timeout { send_user "brace expansion failed\n"; exit 1 }
 }
 send "echo \\\"\${HOME}\\\"\r"
 expect {
-    -re "[\r\n]+$env(HOME)[\r\n]+vush> " {}
+    -re "\[\r\n\]+$env(HOME)\[\r\n\]+vush> " {}
     timeout { send_user "quoted brace expansion failed\n"; exit 1 }
 }
 send "echo '\${HOME}'\r"
 expect {
-    -re "[\r\n]+\${HOME}[\r\n]+vush> " {}
+    -re "\[\r\n\]+\${HOME}\[\r\n\]+vush> " {}
     timeout { send_user "single quote brace mismatch\n"; exit 1 }
 }
 send "exit\r"

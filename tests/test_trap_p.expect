@@ -6,7 +6,7 @@ send "trap 'echo hi' INT\r"
 expect "vush> "
 send "trap -p\r"
 expect {
-    -re "[\r\n]+trap 'echo hi' INT[\r\n]+vush> " {}
+    -re "\[\r\n\]+trap 'echo hi' INT\[\r\n\]+vush> " {}
     timeout { send_user "trap -p output mismatch\n"; exit 1 }
 }
 send "exit\r"

@@ -11,7 +11,7 @@ spawn ../vush
 expect "vush> "
 send "fo\t\r"
 expect {
-    -re "[\r\n]+pathcomplete[\r\n]+vush> " {}
+    -re "\[\r\n\]+pathcomplete\[\r\n\]+vush> " {}
     timeout { send_user "PATH completion failed\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"

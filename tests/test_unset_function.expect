@@ -6,14 +6,14 @@ send "foo() { echo hi; }\r"
 expect "vush> "
 send "foo\r"
 expect {
-    -re "[\r\n]+hi[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi\[\r\n\]+vush> " {}
     timeout { send_user "function execution failed\n"; exit 1 }
 }
 send "unset -f foo\r"
 expect "vush> "
 send "foo\r"
 expect {
-    -re "[\r\n]+foo: command not found[\r\n]+vush> " {}
+    -re "\[\r\n\]+foo: command not found\[\r\n\]+vush> " {}
     timeout { send_user "function not removed\n"; exit 1 }
 }
 send "exit\r"

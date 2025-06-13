@@ -4,12 +4,12 @@ spawn ../vush
 expect "vush> "
 send "foo() { local x=inner; echo \$x; }; x=outer; foo; echo \$x\r"
 expect {
-    -re "inner[\r\n]+outer[\r\n]+vush> " {}
+    -re "inner\[\r\n\]+outer\[\r\n\]+vush> " {}
     timeout { send_user "local var restore failed\n"; exit 1 }
 }
 send "bar() { local y; y=work; }; bar; echo \${y:-unset}\r"
 expect {
-    -re "unset[\r\n]+vush> " {}
+    -re "unset\[\r\n\]+vush> " {}
     timeout { send_user "local unset failed\n"; exit 1 }
 }
 send "exit\r"

@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "time -p sleep 0.1\r"
 expect {
-    -re "real [0-9]+\.[0-9]+\r?\nuser [0-9]+\.[0-9]+\r?\nsys [0-9]+\.[0-9]+\r?\n" {}
+    -re "real \[0-9\]+\.\[0-9\]+\r?\nuser \[0-9\]+\.\[0-9\]+\r?\nsys \[0-9\]+\.\[0-9\]+\r?\n" {}
     timeout { send_user "time -p output mismatch\n"; exit 1 }
 }
 expect "vush> "

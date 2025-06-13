@@ -6,7 +6,7 @@ send "trap 'echo exiting' EXIT\r"
 expect "vush> "
 send "exit\r"
 expect {
-    -re "[\r\n]+exiting[\r\n]+" {}
+    -re "\[\r\n\]+exiting\[\r\n\]+" {}
     timeout { send_user "EXIT trap output mismatch\n"; exit 1 }
 }
 expect eof

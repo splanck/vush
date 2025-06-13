@@ -8,7 +8,7 @@ send "unalias -a\r"
 expect "vush> "
 send "alias\r"
 expect {
-    -re "[\r\n]+vush> " {}
+    -re "\[\r\n\]+vush> " {}
     timeout { send_user "unalias -a failed\n"; exit 1 }
 }
 send "exit\r"

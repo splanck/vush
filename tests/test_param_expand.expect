@@ -6,53 +6,53 @@ send "unset FOO\r"
 expect "vush> "
 send "echo \${FOO:-bar}\r"
 expect {
-    -re "[\r\n]+bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "dash default failed\n"; exit 1 }
 }
 send "echo \${FOO:=baz}\r"
 expect {
-    -re "[\r\n]+baz[\r\n]+vush> " {}
+    -re "\[\r\n\]+baz\[\r\n\]+vush> " {}
     timeout { send_user "assign default failed\n"; exit 1 }
 }
 send "echo \$FOO\r"
 expect {
-    -re "[\r\n]+baz[\r\n]+vush> " {}
+    -re "\[\r\n\]+baz\[\r\n\]+vush> " {}
     timeout { send_user "assign not stored\n"; exit 1 }
 }
 send "echo \${FOO:+alt}\r"
 expect {
-    -re "[\r\n]+alt[\r\n]+vush> " {}
+    -re "\[\r\n\]+alt\[\r\n\]+vush> " {}
     timeout { send_user "plus alt failed\n"; exit 1 }
 }
 send "echo \${FOO#b*}\r"
 expect {
-    -re "[\r\n]+az[\r\n]+vush> " {}
+    -re "\[\r\n\]+az\[\r\n\]+vush> " {}
     timeout { send_user "prefix removal failed\n"; exit 1 }
 }
 send "echo \${FOO%z}\r"
 expect {
-    -re "[\r\n]+ba[\r\n]+vush> " {}
+    -re "\[\r\n\]+ba\[\r\n\]+vush> " {}
     timeout { send_user "suffix removal failed\n"; exit 1 }
 }
 send "FOO=abcabc\r"
 expect "vush> "
 send "echo \${FOO#a*c}\r"
 expect {
-    -re "[\r\n]+abc[\r\n]+vush> " {}
+    -re "\[\r\n\]+abc\[\r\n\]+vush> " {}
     timeout { send_user "double prefix setup failed\n"; exit 1 }
 }
 send "echo \${FOO##a*c}\r"
 expect "vush> "
 send "echo \${FOO%a*c}\r"
 expect {
-    -re "[\r\n]+abc[\r\n]+vush> " {}
+    -re "\[\r\n\]+abc\[\r\n\]+vush> " {}
     timeout { send_user "double suffix setup failed\n"; exit 1 }
 }
 send "echo \${FOO%%a*c}\r"
 expect "vush> "
 send "echo \${#FOO}\r"
 expect {
-    -re "[\r\n]+6[\r\n]+vush> " {}
+    -re "\[\r\n\]+6\[\r\n\]+vush> " {}
     timeout { send_user "length failed\n"; exit 1 }
 }
 send "exit\r"

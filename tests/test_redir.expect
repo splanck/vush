@@ -6,7 +6,7 @@ send "echo test >redir.tmp\r"
 expect "vush> "
 send "cat redir.tmp\r"
 expect {
-    -re "[\r\n]+test[\r\n]+vush> " {}
+    -re "\[\r\n\]+test\[\r\n\]+vush> " {}
     timeout { send_user "redirection failed\n"; exit 1 }
 }
 send "rm redir.tmp\r"

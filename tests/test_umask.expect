@@ -4,12 +4,12 @@ spawn ../vush
 expect "vush> "
 send "umask\r"
 expect {
-    -re "[\r\n]+([0-7]{4})[\r\n]+vush> " { set old $expect_out(1,string) }
+    -re "\[\r\n\]+(\[0-7\]{4})\[\r\n\]+vush> " { set old $expect_out(1,string) }
     timeout { send_user "umask read failed\n"; exit 1 }
 }
 send "umask -S\r"
 expect {
-    -re "\r\nu=[rwx]*,g=[rwx]*,o=[rwx]*\r?\nvush> " {}
+    -re "\r\nu=\[rwx\]*,g=\[rwx\]*,o=\[rwx\]*\r?\nvush> " {}
     timeout { send_user "umask -S output mismatch\n"; exit 1 }
 }
 send "umask 077\r"
@@ -21,7 +21,7 @@ expect {
 }
 send "umask\r"
 expect {
-    -re "[\r\n]+0077[\r\n]+vush> " {}
+    -re "\[\r\n\]+0077\[\r\n\]+vush> " {}
     timeout { send_user "umask set failed\n"; exit 1 }
 }
 send "umask $old\r"

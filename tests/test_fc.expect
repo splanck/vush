@@ -4,12 +4,12 @@ spawn ../vush
 expect "vush> "
 send "echo hi\r"
 expect {
-    -re "[\r\n]+hi[\r\n]+vush> " {}
+    -re "\[\r\n\]+hi\[\r\n\]+vush> " {}
     timeout { send_user "echo output mismatch\n"; exit 1 }
 }
 send "fc -l -1\r"
 expect {
-    -re "1 echo hi[\r\n]+vush> " {}
+    -re "1 echo hi\[\r\n\]+vush> " {}
     timeout { send_user "fc output mismatch\n"; exit 1 }
 }
 send "exit\r"

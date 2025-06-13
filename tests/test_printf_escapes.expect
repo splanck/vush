@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "printf \"hi\\nthere\\041\\n\"\r"
 expect {
-    -re "[\r\n]+hi\r\nthere![\r\n]+vush> " {}
+    -re "\[\r\n\]+hi\r\nthere!\[\r\n\]+vush> " {}
     timeout { send_user "printf escapes mismatch\n"; exit 1 }
 }
 send "exit\r"

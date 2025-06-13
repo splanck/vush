@@ -6,7 +6,7 @@ expect "vush> "
 set pid [exp_pid]
 send "echo \$\$\r"
 expect {
-    -re "[\r\n]+$pid[\r\n]+vush> " {}
+    -re "\[\r\n\]+$pid\[\r\n\]+vush> " {}
     timeout { send_user "\$\$ expansion failed\n"; exit 1 }
 }
 # Test $! expansion
@@ -14,19 +14,19 @@ send "sleep 1 &\r"
 expect "vush> "
 send "echo \$!\r"
 expect {
-    -re "[\r\n]+([0-9]+)[\r\n]+vush> " { set bg $expect_out(1,string) }
+    -re "\[\r\n\]+(\[0-9\]+)\[\r\n\]+vush> " { set bg $expect_out(1,string) }
     timeout { send_user "\$! expansion failed\n"; exit 1 }
 }
 send "jobs\r"
 expect {
-    -re "\[1\] $bg sleep 1 &[\r\n]+vush> " {}
+    -re "\[1\] $bg sleep 1 &\[\r\n\]+vush> " {}
     timeout { send_user "jobs pid mismatch\n"; exit 1 }
 }
 send "set -e -u\r"
 expect "vush> "
 send "echo \$-\r"
 expect {
-    -re "[\r\n]+eu[\r\n]+vush> " {}
+    -re "\[\r\n\]+eu\[\r\n\]+vush> " {}
     timeout { send_user "\$- expansion failed\n"; exit 1 }
 }
 send "exit\r"

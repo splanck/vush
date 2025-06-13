@@ -6,12 +6,12 @@ send "VAR=abcdef\r"
 expect "vush> "
 send "echo \${VAR:3}\r"
 expect {
-    -re "[\r\n]+def[\r\n]+vush> " {}
+    -re "\[\r\n\]+def\[\r\n\]+vush> " {}
     timeout { send_user "offset failed\n"; exit 1 }
 }
 send "echo \${VAR:3:2}\r"
 expect {
-    -re "[\r\n]+de[\r\n]+vush> " {}
+    -re "\[\r\n\]+de\[\r\n\]+vush> " {}
     timeout { send_user "offset length failed\n"; exit 1 }
 }
 send "exit\r"

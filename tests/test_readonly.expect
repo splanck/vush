@@ -12,7 +12,7 @@ expect {
 expect "vush> "
 send "echo \$FOO\r"
 expect {
-    -re "[\r\n]+bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "readonly value modified\n"; exit 1 }
 }
 send "unset FOO\r"
@@ -23,7 +23,7 @@ expect {
 expect "vush> "
 send "echo \$FOO\r"
 expect {
-    -re "[\r\n]+bar[\r\n]+vush> " {}
+    -re "\[\r\n\]+bar\[\r\n\]+vush> " {}
     timeout { send_user "readonly unset changed value\n"; exit 1 }
 }
 send "exit\r"

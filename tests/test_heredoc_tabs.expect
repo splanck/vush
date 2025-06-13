@@ -6,7 +6,7 @@ send "cat <<EOF\r"
 send "\tfoo\r"
 send "EOF\r"
 expect {
-    -re "[\r\n]+\tfoo[\r\n]+vush> " {}
+    -re "\[\r\n\]+\tfoo\[\r\n\]+vush> " {}
     timeout { send_user "heredoc tab preservation failed\n"; exit 1 }
 }
 send "exit\r"

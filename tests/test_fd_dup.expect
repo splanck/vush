@@ -4,7 +4,7 @@ spawn ../vush
 expect "vush> "
 send "echo test 2>&1\r"
 expect {
-    -re "[\r\n]+test[\r\n]+vush> " {}
+    -re "\[\r\n\]+test\[\r\n\]+vush> " {}
     timeout { send_user "2>&1 failed\n"; exit 1 }
 }
 send "ls nonexistent >&dup.tmp\r"

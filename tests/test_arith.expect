@@ -4,35 +4,35 @@ spawn ../vush
 expect "vush> "
 send "echo $((1+2))\r"
 expect {
-    -re "[\r\n]+3[\r\n]+vush> " {}
+    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
     timeout { send_user "basic arithmetic failed\n"; exit 1 }
 }
 send "X=4\r"
 expect "vush> "
 send "echo $((X*2))\r"
 expect {
-    -re "[\r\n]+8[\r\n]+vush> " {}
+    -re "\[\r\n\]+8\[\r\n\]+vush> " {}
     timeout { send_user "variable expansion failed\n"; exit 1 }
 }
 send "X=$((X+3))\r"
 expect "vush> "
 send "echo $X\r"
 expect {
-    -re "[\r\n]+11[\r\n]+vush> " {}
+    -re "\[\r\n\]+11\[\r\n\]+vush> " {}
     timeout { send_user "assignment arithmetic failed\n"; exit 1 }
 }
 send "let 5\r"
 expect "vush> "
 send "echo $?\r"
 expect {
-    -re "[\r\n]+0[\r\n]+vush> " {}
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "let success failed\n"; exit 1 }
 }
 send "let 0\r"
 expect "vush> "
 send "echo $?\r"
 expect {
-    -re "[\r\n]+1[\r\n]+vush> " {}
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "let failure failed\n"; exit 1 }
 }
 send "exit\r"
