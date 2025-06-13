@@ -186,6 +186,10 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     char *delim;
     if (*rest) {
         delim = strdup(rest);
+        if (!delim) {
+            free(tok);
+            return -1;
+        }
     } else {
         while (**p == ' ' || **p == '\t') (*p)++;
         int q = 0;
@@ -219,6 +223,12 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     }
     fclose(tf);
     seg->in_file = strdup(template);
+    if (!seg->in_file) {
+        unlink(template);
+        free(delim);
+        free(tok);
+        return -1;
+    }
     seg->here_doc = 1;
     free(delim);
     free(tok);
@@ -238,12 +248,14 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     char *word = NULL;
     if (strncmp(tok, "<<<", 3) == 0 && tok[3]) {
         word = strdup(tok + 3);
+        if (!word) { free(tok); return -1; }
     } else if (**p) {
         int q = 0;
         word = read_token(p, &q);
         if (!word) { free(tok); return -1; }
     } else {
         word = strdup("");
+        if (!word) { free(tok); return -1; }
     }
     char template[] = "/tmp/vushXXXXXX";
     int fd = mkstemp(template);
@@ -253,6 +265,12 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     fprintf(tf, "%s", word);
     fclose(tf);
     seg->in_file = strdup(template);
+    if (!seg->in_file) {
+        unlink(template);
+        free(word);
+        free(tok);
+        return -1;
+    }
     seg->here_doc = 1;
     free(word);
     free(tok);
