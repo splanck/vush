@@ -64,6 +64,7 @@ tests="
     test_envfile.expect
     test_var_brace.expect
     test_param_expand.expect
+    test_param_inline.expect
     test_unmatched.expect
     test_jobs.expect
     test_type.expect

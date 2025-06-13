@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "lexer.h"
 #include "parser.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -253,6 +254,23 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             }
             /* unmatched, reset pointer for error */
             *p = (char *)start;
+        }
+        if (**p == '$' && (isalnum((unsigned char)*(*p + 1)))) {
+            char var[MAX_LINE];
+            int vlen = 0;
+            var[vlen++] = *(*p)++; /* '$' */
+            while (**p && isalnum((unsigned char)**p) && vlen < MAX_LINE - 1) {
+                var[vlen++] = **p;
+                (*p)++;
+            }
+            var[vlen] = '\0';
+            char *exp = *do_expand ? expand_var(var) : strdup(var);
+            if (!exp) return -1;
+            for (int ci = 0; exp[ci] && *len < MAX_LINE - 1; ci++)
+                buf[(*len)++] = exp[ci];
+            free(exp);
+            first = 0;
+            continue;
         }
         if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
         (*p)++;
