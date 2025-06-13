@@ -138,18 +138,6 @@ static void handle_backslash_escape(char **p, char buf[], int *len,
     *first = 0;
 }
 
-/* Perform command substitution at *p and append the resulting text to BUF.
- * LEN tracks the number of bytes currently in BUF.  Returns 0 on success or
- * -1 on syntax errors. */
-static int expand_substitution(char **p, char buf[], int *len) {
-    char *res = parse_substitution(p);
-    if (!res)
-        return -1;
-    for (int ci = 0; res[ci] && *len < MAX_LINE - 1; ci++)
-        buf[(*len)++] = res[ci];
-    free(res);
-    return 0;
-}
 
 /* Return non-zero when character C terminates an unquoted token. */
 static int is_end_unquoted(int c) {
@@ -163,9 +151,10 @@ static int is_end_dquote(int c) {
 }
 
 /* Read characters for a simple token using IS_END as the terminator predicate.
- * Expansion and substitution are performed as characters are copied into BUF
- * and LEN updated. DO_EXPAND is set to zero when quoting prevents expansion.
- * Returns 0 on success or -1 on errors. */
+ * Characters are copied into BUF while tracking quoting state.  No variable
+ * or command substitution is performed here so that expansion can be delayed
+ * until execution time.  DO_EXPAND is set to zero when quoting prevents
+ * expansion.  Returns 0 on success or -1 on errors. */
 static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                              int *len, int *do_expand) {
     int first = 1;
@@ -207,8 +196,41 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             continue;
         }
         if (**p == '`' || (**p == '$' && *(*p + 1) == '(')) {
-            if (expand_substitution(p, buf, len) < 0)
+            int depth = 0;
+            char startc = **p;
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
+            if (startc == '$') {
+                if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '(' */
+                depth = 1;
+            }
+            while (**p && ((startc == '`' && **p != '`') ||
+                          (startc == '$' && (depth > 0)))) {
+                if (startc == '$') {
+                    if (**p == '(') depth++;
+                    else if (**p == ')') {
+                        depth--;
+                        if (depth == 0) {
+                            if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
+                            (*p)++;
+                            break;
+                        }
+                    }
+                }
+                if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
+                (*p)++;
+            }
+            if (!**p) {
+                parse_need_more = 1;
                 return -1;
+            }
+            if (startc == '`') {
+                if (**p == '`') {
+                    if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
+                } else {
+                    parse_need_more = 1;
+                    return -1;
+                }
+            }
             first = 0;
             continue;
         }
@@ -218,29 +240,18 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
         }
         if (**p == '$' && *(*p + 1) == '{') {
             const char *start = *p;
-            (*p) += 2;
-            char name[MAX_LINE];
-            int n = 0;
-            while (**p && **p != '}' && n < MAX_LINE - 1) {
-                name[n++] = **p;
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* $ */
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* { */
+            while (**p && **p != '}' && *len < MAX_LINE - 1) {
+                buf[(*len)++] = **p;
                 (*p)++;
             }
             if (**p == '}') {
-                (*p)++;
-                name[n] = '\0';
-                char varbuf[MAX_LINE + 4];
-                int needed = snprintf(varbuf, sizeof(varbuf), "${%s}", name);
-                if (needed < 0 || needed >= (int)sizeof(varbuf)) {
-                    fprintf(stderr, "variable expansion too long\n");
-                    return -1;
-                }
-                char *res = expand_var(varbuf);
-                for (int ci = 0; res[ci] && *len < MAX_LINE - 1; ci++)
-                    buf[(*len)++] = res[ci];
-                free(res);
+                if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
                 first = 0;
                 continue;
             }
+            /* unmatched, reset pointer for error */
             *p = (char *)start;
         }
         if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
@@ -289,7 +300,7 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
     }
     buf[len] = '\0';
     if (do_expand_out) *do_expand_out = do_expand;
-    return do_expand ? expand_var(buf) : strdup(buf);
+    return strdup(buf);
 }
 
 /* Read the next shell token from *p performing necessary expansions.
@@ -311,7 +322,7 @@ char *read_token(char **p, int *quoted) {
     if (read_simple_token(p, is_end_unquoted, buf, &len, &do_expand) < 0)
         return NULL;
     buf[len] = '\0';
-    char *res = do_expand ? expand_var(buf) : strdup(buf);
+    char *res = strdup(buf);
     if (getenv("VUSH_DEBUG"))
         fprintf(stderr, "read_token: '%s'\n", res);
     return res;
