@@ -517,6 +517,7 @@ int main(int argc, char **argv) {
     if (input != stdin)
         fclose(input);
     run_exit_trap();
+    clear_history();
     free(script_argv);
     free_aliases();
     free_mail_list();
