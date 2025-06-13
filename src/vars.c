@@ -256,6 +256,11 @@ void set_shell_var(const char *name, const char *value) {
     struct var_entry *v = malloc(sizeof(struct var_entry));
     if (!v) { perror("malloc"); return; }
     v->name = strdup(name);
+    if (!v->name) {
+        perror("strdup");
+        free(v);
+        return;
+    }
     v->value = strdup(value);
     if (!v->value) {
         perror("strdup");
