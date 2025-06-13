@@ -2,8 +2,8 @@
 set timeout 5
 set script [exec mktemp]
 set f [open $script "w"]
-puts $f "echo one \\\"
-puts $f "two"
+puts $f {echo one \}
+puts $f {two}
 close $f
 spawn ../vush $script
 expect {
