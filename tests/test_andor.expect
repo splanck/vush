@@ -7,7 +7,7 @@ expect {
 }
 send "false && echo nope\r"
 expect {
-    -re "nope" { send_user "AND execution failed\n"; exit 1 }
+    -re "\r\nnope\r\n" { send_user "AND execution failed\n"; exit 1 }
     -re "vush> " {}
     timeout { send_user "command timeout\n"; exit 1 }
 }
