@@ -40,6 +40,9 @@ pid_t last_bg_pid = 0;
 /* ID of the most recently started background job */
 static int last_bg_id = 0;
 
+/* Forward declaration for signal handler */
+void jobs_sigchld_handler(int sig);
+
 /*
  * Record a child process that was started in the background.
  * Called by the executor whenever a command is launched with '&'.
@@ -82,20 +85,51 @@ void remove_job(pid_t pid) {
  * exit.  This function is typically invoked before displaying a new
  * prompt so that completed jobs are noticed.
  */
-void check_jobs(void) {
+/* prefix: 0=no prefix, 1=prepend newline, 2=carriage return */
+static int check_jobs_internal(int prefix) {
+    int printed = 0;
     int status;
     pid_t pid;
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        if (opt_monitor && opt_notify) {
-            Job *curr = jobs;
-            while (curr && curr->pid != pid)
-                curr = curr->next;
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED)) > 0) {
+        Job *curr = jobs;
+        while (curr && curr->pid != pid)
+            curr = curr->next;
+
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            if (opt_monitor && opt_notify) {
+                if (prefix && !printed) {
+                    if (prefix == 1)
+                        printf("\n");
+                    else if (prefix == 2)
+                        printf("\r");
+                }
+                printf("[vush] job %d finished\n", curr ? curr->id : pid);
+                printed = 1;
+            }
+            remove_job(pid);
+        } else if (WIFSTOPPED(status)) {
             if (curr)
-                printf("[vush] job %d (%s) finished\n", curr->id, curr->cmd);
-            else
-                printf("[vush] job %d finished\n", pid);
+                curr->state = JOB_STOPPED;
+        } else if (WIFCONTINUED(status)) {
+            if (curr)
+                curr->state = JOB_RUNNING;
         }
-        remove_job(pid);
+    }
+    return printed;
+}
+
+int check_jobs(void) {
+    return check_jobs_internal(0);
+}
+
+/* SIGCHLD handler to reap finished background jobs even when
+ * waiting for input. Simply delegate to check_jobs(). */
+void jobs_sigchld_handler(int sig) {
+    (void)sig;
+    if (check_jobs_internal(1)) {
+        const char *ps = getenv("PS1");
+        printf("%s", ps ? ps : "vush> ");
+        fflush(stdout);
     }
 }
 
