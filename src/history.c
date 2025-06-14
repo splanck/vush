@@ -38,6 +38,15 @@ static int skip_next = 0;
 static int history_size = 0;
 static int max_history = MAX_HISTORY;
 
+/* Renumber history entries sequentially starting at 1. */
+static void renumber_history(void)
+{
+    int id = 1;
+    for (HistEntry *e = head; e; e = e->next)
+        e->id = id++;
+    next_id = id;
+}
+
 /*
  * Determine the path to the history file.  ``$VUSH_HISTFILE`` takes
  * precedence over ``$HOME/.vush_history``.  Returns NULL if no path can
@@ -293,6 +302,8 @@ void delete_history_entry(int id) {
 
     free(e);
     history_size--;
+
+    renumber_history();
 
     const char *path = histfile_path();
     if (!path)
