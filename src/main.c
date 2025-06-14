@@ -521,6 +521,8 @@ int main(int argc, char **argv) {
 
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
+    /* Reap background jobs asynchronously */
+    signal(SIGCHLD, jobs_sigchld_handler);
 
     load_history();
     load_aliases();
