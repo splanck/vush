@@ -21,8 +21,11 @@ extern int last_status;
 /* Execute CMD via popen and return its stdout output as a newly
  * allocated string with any trailing newline removed. */
 static char *command_output(const char *cmd) {
+    int saved_notify = opt_notify;
+    opt_notify = 0;
     FILE *fp = popen(cmd, "r");
     if (!fp) {
+        opt_notify = saved_notify;
         char *tmp = strdup("");
         return tmp ? tmp : NULL;
     }
@@ -33,6 +36,7 @@ static char *command_output(const char *cmd) {
         if (total >= sizeof(out) - 1) break;
     }
     pclose(fp);
+    opt_notify = saved_notify;
     if (total > 0 && out[total - 1] == '\n')
         out[total - 1] = '\0';
     char *ret = strdup(out);
@@ -880,46 +884,23 @@ char *expand_prompt(const char *prompt) {
     int quoted = 0;
     int do_expand = 1;
     char *res = read_token(&p, &quoted, &do_expand);
+    if (getenv("VUSH_DEBUG"))
+        fprintf(stderr, "expand_prompt token='%s' de=%d\n", res ? res : "", do_expand);
     free(tmp);
     if (!res)
         return strdup("");
 
-    /* When expansion is requested, perform command substitution within the
-     * resulting token.  Variable substitution is intentionally left
-     * unchanged as $PS1 is typically expanded by the environment. */
+    /* When expansion is requested, apply normal variable/command expansion so
+     * that constructs like $(cmd) are executed.  PS1 typically does not use
+     * parameter expansion so leaving it enabled is harmless. */
     if (do_expand) {
-        char *out = calloc(1, 1);
-        if (!out) { free(res); return strdup(""); }
-        size_t outlen = 0;
-        const char *rp = res;
-        while (*rp) {
-            if (*rp == '`' || (*rp == '$' && rp[1] == '(')) {
-                char *dup = strdup(rp);
-                if (!dup) { free(out); free(res); return strdup(""); }
-                char *dp = dup;
-                char *sub = parse_substitution(&dp);
-                if (sub && dp > dup) {
-                    size_t consumed = (size_t)(dp - dup);
-                    rp += consumed;
-                    char *tmp2 = realloc(out, outlen + strlen(sub) + 1);
-                    if (!tmp2) { free(dup); free(sub); free(out); free(res); return strdup(""); }
-                    out = tmp2;
-                    memcpy(out + outlen, sub, strlen(sub));
-                    outlen += strlen(sub);
-                    out[outlen] = '\0';
-                    free(sub);
-                    free(dup);
-                    continue;
-                }
-                free(dup);
-            }
-
-            char *tmp2 = realloc(out, outlen + 2);
-            if (!tmp2) { free(out); free(res); return strdup(""); }
-            out = tmp2;
-            out[outlen++] = *rp++;
-            out[outlen] = '\0';
+        char *out = expand_var(res);
+        if (!out) {
+            free(res);
+            return strdup("");
         }
+        if (getenv("VUSH_DEBUG"))
+            fprintf(stderr, "expand_prompt result='%s'\n", out);
         free(res);
         res = out;
     }
