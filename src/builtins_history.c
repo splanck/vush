@@ -24,8 +24,13 @@ int builtin_history(char **args)
             clear_history();
             return 1;
         } else if (strcmp(args[1], "-d") == 0 && args[2] && !args[3]) {
-            int id = atoi(args[2]);
-            delete_history_entry(id);
+            char *end;
+            long id = strtol(args[2], &end, 10);
+            if (*end || id <= 0) {
+                fprintf(stderr, "history: invalid entry\n");
+                return 1;
+            }
+            delete_history_entry((int)id);
             return 1;
         } else {
             fprintf(stderr, "usage: history [-c|-d NUMBER]\n");
