@@ -507,7 +507,8 @@ static char *expand_plain_var(const char *name) {
 /* Expand a TOKEN that may contain variable, arithmetic, tilde or
  * parameter expansion syntax. Returns a newly allocated string with the
  * result of the expansion. */
-char *expand_var(const char *token) {
+/* Existing variable expansion logic that handles a single expansion token. */
+static char *expand_simple(const char *token) {
     char *s = expand_special(token);
     if (s)
         return s;
@@ -541,6 +542,122 @@ char *expand_var(const char *token) {
     }
 
     return expand_plain_var(token + 1);
+}
+
+/* Append STR to OUT reallocating as needed. Returns 0 on allocation failure. */
+static int append_str(char **out, size_t *len, const char *str) {
+    size_t slen = strlen(str);
+    char *tmp = realloc(*out, *len + slen + 1);
+    if (!tmp)
+        return 0;
+    *out = tmp;
+    memcpy(*out + *len, str, slen);
+    *len += slen;
+    (*out)[*len] = '\0';
+    return 1;
+}
+
+/* Expand TOKEN which may contain multiple variable or command substitutions. */
+char *expand_var(const char *token) {
+    if (!token)
+        return strdup("");
+
+    /* Fast path for simple tokens without any expansions. */
+    if (!strchr(token, '$') && !strchr(token, '`') && token[0] != '~')
+        return strdup(token);
+
+    char *out = calloc(1, 1);
+    if (!out)
+        return NULL;
+    size_t outlen = 0;
+
+    const char *p = token;
+    while (*p) {
+        if (*p == '`' || (*p == '$' && p[1] == '(')) {
+            char *dup = strdup(p);
+            if (!dup) { free(out); return NULL; }
+            char *dp = dup;
+            char *sub = parse_substitution(&dp);
+            if (sub && dp > dup) {
+                size_t consumed = (size_t)(dp - dup);
+                p += consumed;
+                if (!append_str(&out, &outlen, sub)) { free(sub); free(dup); free(out); return NULL; }
+                free(sub);
+                free(dup);
+                continue;
+            }
+            free(dup);
+        }
+
+        if (*p == '$') {
+            const char *start = p;
+            if (p[1] == '{') {
+                const char *end = strchr(p + 2, '}');
+                if (end) {
+                    size_t len = (size_t)(end - start + 1);
+                    char buf[MAX_LINE];
+                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
+                    memcpy(buf, start, len);
+                    buf[len] = '\0';
+                    char *exp = expand_simple(buf);
+                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
+                    free(exp);
+                    p = end + 1;
+                    continue;
+                }
+            } else if (p[1] == '(' && p[2] == '(') {
+                const char *q = p + 3;
+                int depth = 1;
+                while (*q && depth > 0) {
+                    if (*q == '(') depth++; else if (*q == ')') depth--;
+                    q++;
+                }
+                if (*q == ')' && *(q + 1) == ')') {
+                    q += 2;
+                    size_t len = (size_t)(q - start);
+                    char buf[MAX_LINE];
+                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
+                    memcpy(buf, start, len);
+                    buf[len] = '\0';
+                    char *exp = expand_simple(buf);
+                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
+                    free(exp);
+                    p = q;
+                    continue;
+                }
+            } else {
+                const char *q = p + 1;
+                if (*q == '#' || *q == '?' || *q == '*' || *q == '@' || *q == '$' || *q == '!') {
+                    q++; /* special single char parameter */
+                } else {
+                    while (*q && (isalnum((unsigned char)*q) || *q == '_'))
+                        q++;
+                }
+                if (q > p + 1) {
+                    size_t len = (size_t)(q - start);
+                    char buf[MAX_LINE];
+                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
+                    memcpy(buf, start, len);
+                    buf[len] = '\0';
+                    char *exp = expand_simple(buf);
+                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
+                    free(exp);
+                    p = q;
+                    continue;
+                }
+            }
+            /* literal '$' on failure */
+            if (!append_str(&out, &outlen, "$")) { free(out); return NULL; }
+            p++;
+            continue;
+        }
+
+        char ch[2] = {*p, '\0'};
+        if (!append_str(&out, &outlen, ch)) { free(out); return NULL; }
+        p++;
+    }
+
+    return out;
 }
 
 /* Perform history expansion on LINE when it begins with '!'. Returns a new
