@@ -747,6 +747,9 @@ char **expand_braces(const char *word, int *count_out) {
 char *expand_prompt(const char *prompt) {
     if (!prompt)
         return strdup("");
+
+    /* Wrap the prompt in double quotes so the normal token reader can
+     * interpret backslash escapes and quoting rules. */
     size_t len = strlen(prompt);
     char *tmp = malloc(len + 3);
     if (!tmp)
@@ -755,12 +758,55 @@ char *expand_prompt(const char *prompt) {
     memcpy(tmp + 1, prompt, len);
     tmp[len + 1] = '"';
     tmp[len + 2] = '\0';
+
     char *p = tmp;
-    int quoted = 0; int de = 1;
-    char *res = read_token(&p, &quoted, &de);
+    int quoted = 0;
+    int do_expand = 1;
+    char *res = read_token(&p, &quoted, &do_expand);
     free(tmp);
     if (!res)
         return strdup("");
+
+    /* When expansion is requested, perform command substitution within the
+     * resulting token.  Variable substitution is intentionally left
+     * unchanged as $PS1 is typically expanded by the environment. */
+    if (do_expand) {
+        char *out = calloc(1, 1);
+        if (!out) { free(res); return strdup(""); }
+        size_t outlen = 0;
+        const char *rp = res;
+        while (*rp) {
+            if (*rp == '`' || (*rp == '$' && rp[1] == '(')) {
+                char *dup = strdup(rp);
+                if (!dup) { free(out); free(res); return strdup(""); }
+                char *dp = dup;
+                char *sub = parse_substitution(&dp);
+                if (sub && dp > dup) {
+                    size_t consumed = (size_t)(dp - dup);
+                    rp += consumed;
+                    char *tmp2 = realloc(out, outlen + strlen(sub) + 1);
+                    if (!tmp2) { free(dup); free(sub); free(out); free(res); return strdup(""); }
+                    out = tmp2;
+                    memcpy(out + outlen, sub, strlen(sub));
+                    outlen += strlen(sub);
+                    out[outlen] = '\0';
+                    free(sub);
+                    free(dup);
+                    continue;
+                }
+                free(dup);
+            }
+
+            char *tmp2 = realloc(out, outlen + 2);
+            if (!tmp2) { free(out); free(res); return strdup(""); }
+            out = tmp2;
+            out[outlen++] = *rp++;
+            out[outlen] = '\0';
+        }
+        free(res);
+        res = out;
+    }
+
     return res;
 }
 
