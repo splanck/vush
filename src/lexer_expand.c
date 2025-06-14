@@ -633,6 +633,10 @@ char *expand_var(const char *token) {
                 const char *q = p + 1;
                 if (*q == '#' || *q == '?' || *q == '*' || *q == '@' || *q == '$' || *q == '!') {
                     q++; /* special single char parameter */
+                } else if (isdigit((unsigned char)*q)) {
+                    q++;
+                    while (isdigit((unsigned char)*q))
+                        q++;
                 } else {
                     while (*q && (isalnum((unsigned char)*q) || *q == '_'))
                         q++;
