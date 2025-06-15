@@ -609,7 +609,8 @@ char *expand_var(const char *token) {
                     char *exp = expand_simple(buf);
                     if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
                     free(exp);
-                    p = end + 1;
+                    size_t consumed = (size_t)(end - start + 1);
+                    p += consumed;
                     continue;
                 }
             } else if (p[1] == '(' && p[2] == '(') {
@@ -629,7 +630,8 @@ char *expand_var(const char *token) {
                     char *exp = expand_simple(buf);
                     if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
                     free(exp);
-                    p = q;
+                    size_t consumed = (size_t)(q - start);
+                    p += consumed;
                     continue;
                 }
             } else {
@@ -653,7 +655,8 @@ char *expand_var(const char *token) {
                     char *exp = expand_simple(buf);
                     if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
                     free(exp);
-                    p = q;
+                    size_t consumed = (size_t)(q - start);
+                    p += consumed;
                     continue;
                 }
             }
