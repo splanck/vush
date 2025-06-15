@@ -62,12 +62,13 @@ char *dirstack_pop(void) {
  * Each entry is separated by a space and a trailing newline is added.
  */
 void dirstack_print(void) {
-    const char *pwd = getenv("PWD");
+    const char *pwd;
     char cwd[PATH_MAX];
-    if (!pwd) {
-        if (getcwd(cwd, sizeof(cwd)))
-            pwd = cwd;
-        else
+    if (getcwd(cwd, sizeof(cwd))) {
+        pwd = cwd;
+    } else {
+        pwd = getenv("PWD");
+        if (!pwd)
             pwd = "";
     }
 
