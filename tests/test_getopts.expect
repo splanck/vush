@@ -2,7 +2,7 @@
 set timeout 5
 set script [exec mktemp]
 set f [open $script "w"]
-puts $f "while getopts \"ab:\" o; do echo \"$o:$OPTARG\"; done; echo index:$OPTIND"
+puts $f {while getopts "ab:" o; do echo "$o:$OPTARG"; done; echo index:$OPTIND}
 close $f
 spawn [file dirname [info script]]/../vush $script -a -b foo rest
 expect {
