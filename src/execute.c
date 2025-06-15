@@ -645,12 +645,22 @@ static int exec_while(Command *cmd, const char *line) {
     while (1) {
         run_command_list(cmd->cond, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
         if (last_status != 0)
             break;
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
     }
     loop_depth--;
     return last_status;
@@ -666,12 +676,22 @@ static int exec_until(Command *cmd, const char *line) {
     while (1) {
         run_command_list(cmd->cond, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
         if (last_status == 0)
             break;
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
     }
     loop_depth--;
     return last_status;
@@ -691,7 +711,12 @@ static int exec_for(Command *cmd, const char *line) {
         }
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
     }
     loop_depth--;
     return last_status;
@@ -721,7 +746,12 @@ static int exec_select(Command *cmd, const char *line) {
             setenv(cmd->var, cmd->words[choice - 1], 1);
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
     }
     loop_depth--;
     return last_status;
@@ -743,7 +773,12 @@ static int exec_for_arith(Command *cmd, const char *line) {
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
         eval_arith(cmd->arith_update ? cmd->arith_update : "0");
-        if (loop_continue) { loop_continue--; continue; }
+        if (loop_continue) {
+            loop_continue--;
+            if (loop_continue)
+                break;
+            continue;
+        }
     }
     loop_depth--;
     return last_status;

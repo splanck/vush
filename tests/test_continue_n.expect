@@ -1,0 +1,17 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "for i in a b; do echo \$i start; for j in 1 2; do if test \$j = 1; then continue 2; fi; echo \$i \$j; done; echo \$i end; done\r"
+expect {
+    -re "a start\r\nb start\r\nvush> " {}
+    timeout { send_user "continue 2 failed\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

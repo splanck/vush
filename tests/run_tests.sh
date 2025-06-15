@@ -102,6 +102,7 @@ tests="
     test_brace_group.expect
     test_break.expect
     test_continue.expect
+    test_continue_n.expect
     test_test.expect
     test_cond.expect
     test_ls_l.expect
