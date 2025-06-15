@@ -218,13 +218,14 @@ int builtin_kill(char **args) {
     }
     /*
      * Repeatedly poll for completed jobs so the "job finished" notice is
-     * printed before returning.  This mirrors the behaviour of other
-     * job-control builtins and ensures the next prompt follows the message
-     * directly. Wait up to ~1s for the targeted job to exit.
+     * printed before returning.  Call check_jobs_internal(1) so the
+     * notification appears on a new line immediately, matching the
+     * behaviour of other job-control builtins. Wait up to ~1s for the
+     * targeted job to exit.
      */
     struct timespec ts = {0, 10000000}; /* 10 ms */
     for (int i = 0; i < 100; i++) {
-        int printed = check_jobs();
+        int printed = check_jobs_internal(1);
         int remaining = 0;
         for (int j = 0; j < wait_count; j++) {
             if (get_job_pid(wait_ids[j]) > 0) {
