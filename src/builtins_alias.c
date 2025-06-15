@@ -224,6 +224,20 @@ int builtin_alias(char **args)
             else
                 fprintf(stderr, "alias: %s: not found\n", args[1]);
             return 1;
+        } else {
+            /* Some line editors expand aliases before execution which can
+             * transform `alias name` into `alias name=value`.  If the value
+             * matches the current alias definition treat this as a query
+             * rather than a new assignment so scripts still work. */
+            *eq = '\0';
+            const char *name = args[1];
+            const char *val = get_alias(name);
+            int same = val && strcmp(val, eq + 1) == 0;
+            *eq = '=';
+            if (same) {
+                printf("%s='%s'\n", name, val);
+                return 1;
+            }
         }
     }
 
