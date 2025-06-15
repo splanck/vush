@@ -27,20 +27,23 @@ static int has_match(char **matches, int count, const char *name) {
     return 0;
 }
 
-/* Collect builtin and filesystem matches for the given prefix. */
-static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
+/* Collect builtin command names matching the prefix.  The returned array
+ * is NULL terminated and must be freed by the caller.  On allocation
+ * failure NULL is returned and countp is set to 0. */
+static char **collect_builtin_matches(const char *prefix, int prefix_len,
+                                      int *countp) {
     int count = 0;
     int cap = 16;
     char **matches = malloc(cap * sizeof(char *));
-    if (!matches)
-        matches = NULL;
+    if (!matches) {
+        if (countp)
+            *countp = 0;
+        return NULL;
+    }
 
     const char **bn = get_builtin_names();
-    if (matches)
     for (int i = 0; bn[i]; i++) {
         if (strncmp(bn[i], prefix, prefix_len) == 0) {
-            if (has_match(matches, count, bn[i]))
-                continue;
             if (count == cap) {
                 cap *= 2;
                 char **tmp = realloc(matches, cap * sizeof(char *));
@@ -48,6 +51,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                     for (int j = 0; j < count; j++)
                         free(matches[j]);
                     free(matches);
+                    if (countp)
+                        *countp = 0;
                     return NULL;
                 }
                 matches = tmp;
@@ -57,11 +62,39 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                 for (int j = 0; j < count; j++)
                     free(matches[j]);
                 free(matches);
+                if (countp)
+                    *countp = 0;
                 return NULL;
             }
             matches[count++] = dup;
         }
     }
+
+    if (countp)
+        *countp = count;
+    if (count == cap) {
+        char **tmp = realloc(matches, (cap + 1) * sizeof(char *));
+        if (!tmp) {
+            for (int j = 0; j < count; j++)
+                free(matches[j]);
+            free(matches);
+            if (countp)
+                *countp = 0;
+            return NULL;
+        }
+        matches = tmp;
+    }
+    matches[count] = NULL;
+    return matches;
+}
+
+/* Collect filesystem and PATH matches for the given prefix. */
+static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
+    int count = 0;
+    int cap = 16;
+    char **matches = malloc(cap * sizeof(char *));
+    if (!matches)
+        matches = NULL;
 
     DIR *d = opendir(".");
     if (!matches) {
@@ -203,7 +236,36 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     prefix[*posp - start] = '\0';
 
     int mcount = 0;
-    char **matches = collect_matches(prefix, *posp - start, &mcount);
+    char **matches = collect_builtin_matches(prefix, *posp - start, &mcount);
+    if (!matches)
+        return;
+
+    if (mcount > 0) {
+        if (mcount == 1) {
+            apply_completion(matches[0], buf, lenp, posp, start, prompt,
+                             disp_lenp);
+        } else {
+            qsort(matches, mcount, sizeof(char *), cmpstr);
+            printf("\r\n");
+            for (int i = 0; i < mcount; i++)
+                printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
+            printf("\r\n");
+            printf("\r%s%s", prompt, buf);
+            if (*lenp > *disp_lenp)
+                *disp_lenp = *lenp;
+        }
+        for (int i = 0; i < mcount; i++)
+            free(matches[i]);
+        free(matches);
+        return;
+    }
+    /* No builtin matches found; fall back to files and PATH executables. */
+    for (int i = 0; i < mcount; i++)
+        free(matches[i]);
+    free(matches);
+
+    mcount = 0;
+    matches = collect_matches(prefix, *posp - start, &mcount);
     if (!matches)
         return;
 
