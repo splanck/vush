@@ -27,6 +27,7 @@ struct alias_entry {
 static struct alias_entry *aliases = NULL;
 
 static int set_alias(const char *name, const char *value);
+static void remove_all_aliases(const char *name);
 
 /* Return the path of the alias file or NULL if $HOME is not set. */
 static const char *aliasfile_path(void)
@@ -95,16 +96,7 @@ const char *get_alias(const char *name)
 /* Create or update an alias.  Returns 0 on success, -1 on allocation failure. */
 static int set_alias(const char *name, const char *value)
 {
-    for (struct alias_entry *a = aliases; a; a = a->next) {
-        if (strcmp(a->name, name) == 0) {
-            char *dup = strdup(value);
-            if (!dup)
-                return -1;
-            free(a->value);
-            a->value = dup;
-            return 0;
-        }
-    }
+    remove_all_aliases(name);
     struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
     if (!new_alias) {
         perror("malloc");
@@ -144,17 +136,34 @@ static void remove_alias(const char *name)
     }
 }
 
+/* Remove all entries matching NAME from the alias list. */
+static void remove_all_aliases(const char *name)
+{
+    while (get_alias(name))
+        remove_alias(name);
+}
+
 /* Print all defined aliases to stdout. */
+static int printed_before(const char *name, struct alias_entry *limit)
+{
+    for (struct alias_entry *b = aliases; b && b != limit; b = b->next)
+        if (strcmp(b->name, name) == 0)
+            return 1;
+    return 0;
+}
+
 static void list_aliases(void)
 {
     for (struct alias_entry *a = aliases; a; a = a->next)
-        printf("%s='%s'\n", a->name, a->value);
+        if (!printed_before(a->name, a))
+            printf("%s='%s'\n", a->name, a->value);
 }
 
 static void list_aliases_p(void)
 {
     for (struct alias_entry *a = aliases; a; a = a->next)
-        printf("alias %s='%s'\n", a->name, a->value);
+        if (!printed_before(a->name, a))
+            printf("alias %s='%s'\n", a->name, a->value);
 }
 
 /* Save aliases and free all alias list entries. */
