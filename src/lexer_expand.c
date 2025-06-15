@@ -580,6 +580,21 @@ char *expand_var(const char *token) {
         return strdup(token);
     }
 
+    /* If the token is wrapped in double quotes, remove them before
+     * processing so that expansions inside quoted strings don't
+     * preserve the quote characters. */
+    size_t tlen = strlen(token);
+    if (tlen >= 2 && token[0] == '"' && token[tlen - 1] == '"') {
+        size_t innerlen = tlen - 2;
+        if (innerlen >= MAX_LINE)
+            innerlen = MAX_LINE - 1;
+        char inner[MAX_LINE];
+        memcpy(inner, token + 1, innerlen);
+        inner[innerlen] = '\0';
+        char *res = expand_var(inner);
+        return res;
+    }
+
     char *out = calloc(1, 1);
     if (!out)
         return NULL;
