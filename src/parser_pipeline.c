@@ -380,6 +380,9 @@ static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
         seg->out_file = file;
         seg->err_file = file;
     }
+    /* Ensure err_file always mirrors out_file for combined redirection */
+    if (!seg->err_file)
+        seg->err_file = seg->out_file;
     free(tok);
     return 1;
 }
