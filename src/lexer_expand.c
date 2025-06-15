@@ -729,7 +729,7 @@ char *expand_history(const char *line) {
         pref[n] = '\0';
         rest = p;
         int id = atoi(pref);
-        const char *tmp = neg ? history_get_relative(id + 1) : history_get_by_id(id);
+        const char *tmp = neg ? history_get_relative(id) : history_get_by_id(id);
         if (tmp)
             expansion = strdup(tmp);
         if (!expansion) {
