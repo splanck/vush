@@ -133,6 +133,8 @@ void jobs_sigchld_handler(int sig) {
         const char *ps = getenv("PS1");
         printf("%s", ps ? ps : "vush> ");
         fflush(stdout);
+        /* Prevent the prompt from being printed twice */
+        jobs_at_prompt = 0;
     }
 }
 
