@@ -22,6 +22,7 @@ void free_pipeline(PipelineSegment *p) {
             unlink(p->in_file);
         free(p->in_file);
         free(p->out_file);
+        /* err_file may share the same allocation as out_file */
         if (p->err_file && p->err_file != p->out_file)
             free(p->err_file);
         free(p);
