@@ -17,7 +17,7 @@ expect {
 }
 send "kill -s TERM $pid\r"
 expect {
-    -re "\[vush\] job \[0-9\]+ finished\r\nvush> " {}
+    -re "\[vush\] job \[0-9\]+ \(sleep 5 \&\) finished\r\nvush> " {}
     timeout { send_user "kill -s output mismatch\n"; exit 1 }
 }
 send "jobs\r"
