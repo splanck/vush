@@ -96,7 +96,6 @@ const char *get_alias(const char *name)
 /* Create or update an alias.  Returns 0 on success, -1 on allocation failure. */
 static int set_alias(const char *name, const char *value)
 {
-    remove_all_aliases(name);
     struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
     if (!new_alias) {
         perror("malloc");
@@ -213,6 +212,7 @@ int builtin_alias(char **args)
             continue;
         }
         *eq = '\0';
+        remove_all_aliases(args[i]);
         if (set_alias(args[i], eq + 1) < 0) {
             *eq = '=';
             fprintf(stderr, "alias: failed to set %s\n", args[i]);
