@@ -103,7 +103,7 @@ static int check_jobs_internal(int prefix) {
                     if (prefix == 1)
                         printf("\n");
                     else if (prefix == 2)
-                        printf("\r");
+                        printf("\r\n");
                 }
                 printf("[vush] job %d finished\n", curr ? curr->id : pid);
                 printed = 1;
