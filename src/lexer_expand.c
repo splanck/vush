@@ -631,6 +631,7 @@ char *expand_var(const char *token) {
                     if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
                     free(exp);
                     size_t consumed = (size_t)(q - start);
+                    /* continue scanning after the substituted parameter */
                     p += consumed;
                     continue;
                 }
