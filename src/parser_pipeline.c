@@ -204,9 +204,10 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     if (fd < 0) { perror("mkstemp"); free(delim); free(tok); return -1; }
     FILE *tf = fdopen(fd, "w");
     if (!tf) { perror("fdopen"); close(fd); unlink(template); free(delim); free(tok); return -1; }
+    FILE *in = parse_input ? parse_input : stdin;
     char buf[MAX_LINE];
     int found = 0;
-    while (fgets(buf, sizeof(buf), parse_input ? parse_input : stdin)) {
+    while (fgets(buf, sizeof(buf), in)) {
         size_t len = strlen(buf);
         while (len && (buf[len-1] == '\n' || buf[len-1] == '\r'))
             buf[--len] = '\0';
@@ -218,6 +219,8 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         fprintf(tf, "%s\n", line);
     }
     if (!found) {
+        if (in == stdin)
+            clearerr(stdin);
         fclose(tf);
         unlink(template);
         free(delim);

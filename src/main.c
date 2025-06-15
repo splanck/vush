@@ -489,6 +489,8 @@ static void repl_loop(FILE *input)
             }
 
             if (!cmds) {
+                if (feof(input))
+                    clearerr(input);
                 free_commands(cmds);
                 free(expanded);
                 break;
