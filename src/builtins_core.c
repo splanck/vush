@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "vars.h"
+#include "history.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,6 +28,7 @@ int builtin_exit(char **args) {
         }
         status = (int)val;
     }
+    delete_last_history_entry();
     run_exit_trap();
     free_aliases();
     free_functions();

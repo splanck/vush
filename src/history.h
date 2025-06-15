@@ -63,6 +63,9 @@ const char *history_get_by_id(int id);
 /* Return the OFFSET-th previous command where 1 is the last entry. */
 const char *history_get_relative(int offset);
 
+/* Remove the most recent command from history. */
+void delete_last_history_entry(void);
+
 /* Obtain the last argument of the most recent command. Caller must free. */
 char *history_last_word(void);
 
