@@ -356,7 +356,9 @@ static void repl_loop(FILE *input)
             const char *ps = getenv("PS1");
             char *prompt = expand_prompt(ps ? ps : "vush> ");
             history_reset_cursor();
+            jobs_at_prompt = 1;
             line = line_edit(prompt);
+            jobs_at_prompt = 0;
             free(prompt);
             if (!line)
                 break;
@@ -396,7 +398,9 @@ static void repl_loop(FILE *input)
                 char *more = NULL;
                 if (interactive) {
                     char *p2 = expand_prompt(ps2 ? ps2 : "> ");
+                    jobs_at_prompt = 1;
                     more = line_edit(p2);
+                    jobs_at_prompt = 0;
                     free(p2);
                     if (!more) { free(cmdline); cmdline = NULL; break; }
                     current_lineno++;

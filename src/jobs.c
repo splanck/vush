@@ -39,6 +39,8 @@ static int next_job_id = 1;
 pid_t last_bg_pid = 0;
 /* ID of the most recently started background job */
 static int last_bg_id = 0;
+/* Flag used by the SIGCHLD handler to know when we are at the prompt */
+volatile sig_atomic_t jobs_at_prompt = 0;
 
 /* Forward declaration for signal handler */
 void jobs_sigchld_handler(int sig);
@@ -126,7 +128,8 @@ int check_jobs(void) {
  * waiting for input. Simply delegate to check_jobs(). */
 void jobs_sigchld_handler(int sig) {
     (void)sig;
-    if (check_jobs_internal(1)) {
+    int prefix = jobs_at_prompt ? 2 : 1;
+    if (check_jobs_internal(prefix) && jobs_at_prompt) {
         const char *ps = getenv("PS1");
         printf("%s", ps ? ps : "vush> ");
         fflush(stdout);
@@ -248,6 +251,11 @@ int bg_job(int id) {
                 return -1;
             }
             curr->state = JOB_RUNNING;
+            /*
+             * If the process exits right away, check for completed jobs so
+             * the message is printed before the prompt.
+             */
+            check_jobs();
             return 0;
         }
         curr = curr->next;

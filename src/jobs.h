@@ -7,6 +7,7 @@
 #define JOBS_H
 
 #include <sys/types.h>
+#include <signal.h>
 
 void add_job(pid_t pid, const char *cmd);
 void remove_job(pid_t pid);
@@ -18,6 +19,9 @@ int kill_job(int id, int sig);
 int bg_job(int id);
 int get_last_job_id(void);
 void jobs_sigchld_handler(int sig);
+
+/* True while the shell is waiting for input at the prompt */
+extern volatile sig_atomic_t jobs_at_prompt;
 
 /* PID of the most recently started background job */
 extern pid_t last_bg_pid;
