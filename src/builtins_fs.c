@@ -87,10 +87,14 @@ int builtin_cd(char **args) {
     if (!args[idx]) {
         target = getenv("HOME");
     } else if (strcmp(args[idx], "-") == 0) {
+        char buf[PATH_MAX];
         target = getenv("OLDPWD");
         if (!target) {
-            fprintf(stderr, "cd: OLDPWD not set\n");
-            return 1;
+            if (!getcwd(buf, sizeof(buf))) {
+                perror("getcwd");
+                return 1;
+            }
+            target = buf;
         }
         printf("%s\n", target);
     } else {
