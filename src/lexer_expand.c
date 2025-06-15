@@ -908,9 +908,10 @@ char *expand_prompt(const char *prompt) {
     if (!res)
         return strdup("");
 
-    /* When the token includes $(...) or backticks, perform command
-     * substitution using the normal variable expansion logic. */
-    if (do_expand && (strstr(res, "$(") || strchr(res, '`'))) {
+    /* When expansion is requested run the normal variable expansion logic.
+     * This interprets variables and command substitutions while leaving any
+     * trailing whitespace intact. */
+    if (do_expand) {
         char *out = expand_var(res);
         if (!out) {
             free(res);
