@@ -54,6 +54,114 @@ static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
 
+/* Determine if a command name corresponds to a builtin. */
+static int is_builtin_command(const char *name) {
+    for (int i = 0; builtin_table[i].name; i++) {
+        if (strcmp(name, builtin_table[i].name) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+/* Apply redirections in the current process for builtin execution. */
+struct redir_save { int in, out, err; };
+static int apply_redirs_shell(PipelineSegment *seg, struct redir_save *sv) {
+    sv->in = sv->out = sv->err = -1;
+    if (seg->in_file) {
+        sv->in = dup(seg->in_fd);
+        int fd = open(seg->in_file, O_RDONLY);
+        if (fd < 0) {
+            perror(seg->in_file);
+            return -1;
+        }
+        if (seg->here_doc)
+            unlink(seg->in_file);
+        dup2(fd, seg->in_fd);
+        close(fd);
+    }
+
+    if (seg->out_file && seg->err_file && strcmp(seg->out_file, seg->err_file) == 0 &&
+        seg->append == seg->err_append) {
+        sv->out = dup(seg->out_fd);
+        sv->err = dup(STDERR_FILENO);
+        int fd = open_redirect(seg->out_file, seg->append, seg->force);
+        if (fd < 0) {
+            perror(seg->out_file);
+            return -1;
+        }
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+    } else {
+        if (seg->out_file) {
+            sv->out = dup(seg->out_fd);
+            int fd = open_redirect(seg->out_file, seg->append, seg->force);
+            if (fd < 0) {
+                perror(seg->out_file);
+                return -1;
+            }
+            dup2(fd, seg->out_fd);
+            close(fd);
+        }
+        if (seg->err_file) {
+            sv->err = dup(STDERR_FILENO);
+            int fd = open_redirect(seg->err_file, seg->err_append, 0);
+            if (fd < 0) {
+                perror(seg->err_file);
+                return -1;
+            }
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+        }
+    }
+
+    if (seg->close_out) {
+        if (sv->out == -1)
+            sv->out = dup(seg->out_fd);
+        close(seg->out_fd);
+    } else if (seg->dup_out != -1) {
+        if (sv->out == -1)
+            sv->out = dup(seg->out_fd);
+        dup2(seg->dup_out, seg->out_fd);
+    }
+
+    if (seg->close_err) {
+        if (sv->err == -1)
+            sv->err = dup(STDERR_FILENO);
+        close(STDERR_FILENO);
+    } else if (seg->dup_err != -1) {
+        if (sv->err == -1)
+            sv->err = dup(STDERR_FILENO);
+        dup2(seg->dup_err, STDERR_FILENO);
+    }
+
+    return 0;
+}
+
+static void restore_redirs_shell(PipelineSegment *seg, struct redir_save *sv) {
+    if (sv->in != -1) { dup2(sv->in, seg->in_fd); close(sv->in); }
+    if (sv->out != -1) { dup2(sv->out, seg->out_fd); close(sv->out); }
+    if (sv->err != -1) { dup2(sv->err, STDERR_FILENO); close(sv->err); }
+}
+
+/* Execute a builtin or function with any redirections in the current shell. */
+static int run_builtin_shell(PipelineSegment *seg) {
+    struct redir_save sv; if (apply_redirs_shell(seg, &sv) < 0) { last_status = 1; return 1; }
+    int handled = 0;
+    if (is_builtin_command(seg->argv[0])) {
+        run_builtin(seg->argv);
+        handled = 1;
+    } else {
+        FuncEntry *fn = find_function(seg->argv[0]);
+        if (fn) {
+            run_function(fn, seg->argv);
+            handled = 1;
+        }
+    }
+    restore_redirs_shell(seg, &sv);
+    return handled;
+}
+
 static void expand_segment(PipelineSegment *seg) {
     for (int i = 0; seg->argv[i]; i++) {
         if (seg->expand[i]) {
@@ -287,11 +395,6 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
         pipeline->close_out || pipeline->close_err ||
         pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
 
-    if (has_redir) {
-        spawn_pipeline_segments(pipeline, background, line);
-        return 1;
-    }
-
     struct {
         char *name;
         char *env;
@@ -400,14 +503,22 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     expand_segment(pipeline);
 
     int handled = 0;
-    if (run_builtin(pipeline->argv))
+    int is_blt = is_builtin_command(pipeline->argv[0]);
+    FuncEntry *fn = NULL;
+    if (!is_blt)
+        fn = find_function(pipeline->argv[0]);
+
+    if (has_redir && (is_blt || fn) && !background) {
+        handled = run_builtin_shell(pipeline);
+    } else if (is_blt) {
+        run_builtin(pipeline->argv);
         handled = 1;
-    else {
-        FuncEntry *fn = find_function(pipeline->argv[0]);
-        if (fn) {
-            run_function(fn, pipeline->argv);
-            handled = 1;
-        }
+    } else if (fn) {
+        run_function(fn, pipeline->argv);
+        handled = 1;
+    } else if (has_redir) {
+        spawn_pipeline_segments(pipeline, background, line);
+        handled = 1;
     }
 
     for (int i = 0; i < pipeline->assign_count; i++) {
