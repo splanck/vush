@@ -169,6 +169,9 @@ tests="
 "
 for test in $tests; do
     echo "Running $test"
+    if [ "$test" = "test_history.expect" ]; then
+        rm -f "$HOME/.vush_history"
+    fi
     if ! ./$test; then
         echo "FAILED: $test"
         failed=1
