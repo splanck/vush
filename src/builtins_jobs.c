@@ -199,6 +199,8 @@ int builtin_kill(char **args) {
         return 1;
     }
 
+    int wait_ids[64];
+    int wait_count = 0;
     for (; args[idx]; idx++) {
         char *end;
         long val = strtol(args[idx], &end, 10);
@@ -209,21 +211,30 @@ int builtin_kill(char **args) {
         pid_t pid = get_job_pid((int)val);
         if (pid > 0) {
             kill_job((int)val, sig);
+            wait_ids[wait_count++] = (int)val;
         } else if (kill((pid_t)val, sig) == -1) {
             perror("kill");
         }
     }
     /*
-     * If any targeted jobs terminated immediately, reap them now so the
-     * completion notice appears before the next prompt and the job list is
-     * updated.  This mirrors the behaviour of other job-control builtins.
-     * Use a short pause to give the kernel time to deliver SIGCHLD.
+     * Repeatedly poll for completed jobs so the "job finished" notice is
+     * printed before returning.  This mirrors the behaviour of other
+     * job-control builtins and ensures the next prompt follows the message
+     * directly. Wait up to ~1s for the targeted job to exit.
      */
-    int printed = check_jobs();
-    if (!printed) {
-        struct timespec ts = {0, 10000000}; /* 10 ms */
+    struct timespec ts = {0, 10000000}; /* 10 ms */
+    for (int i = 0; i < 100; i++) {
+        int printed = check_jobs();
+        int remaining = 0;
+        for (int j = 0; j < wait_count; j++) {
+            if (get_job_pid(wait_ids[j]) > 0) {
+                remaining = 1;
+                break;
+            }
+        }
+        if (printed || !remaining)
+            break;
         nanosleep(&ts, NULL);
-        check_jobs();
     }
     return 1;
 }
