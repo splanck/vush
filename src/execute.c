@@ -118,6 +118,76 @@ static void expand_pipeline(PipelineSegment *pipeline) {
     for (PipelineSegment *seg = pipeline; seg; seg = seg->next)
         expand_segment(seg);
 }
+
+/*
+ * Create a deep copy of a pipeline so that expansions can be performed
+ * without modifying the original command.  Returns NULL on allocation
+ * failure.
+ */
+static PipelineSegment *copy_pipeline(PipelineSegment *src) {
+    PipelineSegment *head = NULL;
+    PipelineSegment **tail = &head;
+    while (src) {
+        PipelineSegment *seg = calloc(1, sizeof(*seg));
+        if (!seg) {
+            free_pipeline(head);
+            return NULL;
+        }
+
+        int i = 0;
+        while (src->argv[i]) {
+            seg->argv[i] = strdup(src->argv[i]);
+            if (!seg->argv[i]) {
+                free_pipeline(seg);
+                free_pipeline(head);
+                return NULL;
+            }
+            seg->expand[i] = src->expand[i];
+            i++;
+        }
+        seg->argv[i] = NULL;
+
+        seg->in_file = src->in_file ? strdup(src->in_file) : NULL;
+        seg->here_doc = src->here_doc;
+        seg->out_file = src->out_file ? strdup(src->out_file) : NULL;
+        seg->append = src->append;
+        seg->force = src->force;
+        seg->dup_out = src->dup_out;
+        seg->close_out = src->close_out;
+        if (src->err_file == src->out_file)
+            seg->err_file = seg->out_file;
+        else
+            seg->err_file = src->err_file ? strdup(src->err_file) : NULL;
+        seg->err_append = src->err_append;
+        seg->dup_err = src->dup_err;
+        seg->close_err = src->close_err;
+        seg->out_fd = src->out_fd;
+        seg->in_fd = src->in_fd;
+        seg->assign_count = src->assign_count;
+        if (src->assign_count > 0) {
+            seg->assigns = calloc(src->assign_count, sizeof(char *));
+            if (!seg->assigns) {
+                free_pipeline(seg);
+                free_pipeline(head);
+                return NULL;
+            }
+            for (int j = 0; j < src->assign_count; j++) {
+                seg->assigns[j] = strdup(src->assigns[j]);
+                if (!seg->assigns[j]) {
+                    free_pipeline(seg);
+                    free_pipeline(head);
+                    return NULL;
+                }
+            }
+        }
+
+        seg->next = NULL;
+        *tail = seg;
+        tail = &seg->next;
+        src = src->next;
+    }
+    return head;
+}
 /*
  * Duplicate the given descriptor onto another descriptor and close the
  * original.  Used internally when applying redirections.  Does not
@@ -462,6 +532,12 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (!pipeline)
         return 0;
 
+    PipelineSegment *copy = copy_pipeline(pipeline);
+    if (!copy) {
+        last_status = 1;
+        return 1;
+    }
+
     param_error = 0;
     if (opt_xtrace && line) {
         const char *ps4 = getenv("PS4");
@@ -469,24 +545,27 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         fprintf(stderr, "%s%s\n", ps4, line);
     }
 
-    if (apply_temp_assignments(pipeline, background, line)) {
+    if (apply_temp_assignments(copy, background, line)) {
         if (param_error)
             last_status = 1;
+        free_pipeline(copy);
         cleanup_proc_subs();
         return last_status;
     }
 
-    expand_pipeline(pipeline);
+    expand_pipeline(copy);
 
-    if (!pipeline->argv[0] || pipeline->argv[0][0] == '\0') {
+    if (!copy->argv[0] || copy->argv[0][0] == '\0') {
         fprintf(stderr, "syntax error: missing command\n");
         last_status = 1;
+        free_pipeline(copy);
         cleanup_proc_subs();
         return last_status;
     }
-    int r = spawn_pipeline_segments(pipeline, background, line);
+    int r = spawn_pipeline_segments(copy, background, line);
     if (param_error)
         last_status = 1;
+    free_pipeline(copy);
     cleanup_proc_subs();
     return r;
 }
