@@ -235,43 +235,58 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     memcpy(prefix, &buf[start], *posp - start);
     prefix[*posp - start] = '\0';
 
-    int mcount = 0;
-    char **matches = collect_builtin_matches(prefix, *posp - start, &mcount);
-    if (!matches)
+    int bcount = 0;
+    char **bmatches = collect_builtin_matches(prefix, *posp - start, &bcount);
+    if (!bmatches)
         return;
 
-    if (mcount > 0) {
-        if (mcount == 1) {
-            apply_completion(matches[0], buf, lenp, posp, start, prompt,
-                             disp_lenp);
-        } else {
-            qsort(matches, mcount, sizeof(char *), cmpstr);
-            printf("\r\n");
-            for (int i = 0; i < mcount; i++)
-                printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
-            printf("\r\n");
-            printf("\r%s%s", prompt, buf);
-            if (*lenp > *disp_lenp)
-                *disp_lenp = *lenp;
+    int pcount = 0;
+    char **pmatches = collect_matches(prefix, *posp - start, &pcount);
+    if (!pmatches && pcount > 0) {
+        for (int i = 0; i < bcount; i++)
+            free(bmatches[i]);
+        free(bmatches);
+        return;
+    }
+
+    int cap = bcount + pcount + 1;
+    char **matches = malloc(cap * sizeof(char *));
+    if (!matches) {
+        for (int i = 0; i < bcount; i++)
+            free(bmatches[i]);
+        free(bmatches);
+        if (pmatches) {
+            for (int i = 0; i < pcount; i++)
+                free(pmatches[i]);
+            free(pmatches);
         }
-        for (int i = 0; i < mcount; i++)
-            free(matches[i]);
+        return;
+    }
+
+    int mcount = 0;
+    for (int i = 0; i < bcount; i++)
+        matches[mcount++] = bmatches[i];
+
+    if (pmatches) {
+        for (int i = 0; i < pcount; i++) {
+            if (!has_match(matches, mcount, pmatches[i]))
+                matches[mcount++] = pmatches[i];
+            else
+                free(pmatches[i]);
+        }
+        free(pmatches);
+    }
+    free(bmatches);
+
+    if (mcount == 0) {
         free(matches);
         return;
     }
-    /* No builtin matches found; fall back to files and PATH executables. */
-    for (int i = 0; i < mcount; i++)
-        free(matches[i]);
-    free(matches);
-
-    mcount = 0;
-    matches = collect_matches(prefix, *posp - start, &mcount);
-    if (!matches)
-        return;
 
     if (mcount == 1) {
-        apply_completion(matches[0], buf, lenp, posp, start, prompt, disp_lenp);
-    } else if (mcount > 1) {
+        apply_completion(matches[0], buf, lenp, posp, start, prompt,
+                         disp_lenp);
+    } else {
         qsort(matches, mcount, sizeof(char *), cmpstr);
         printf("\r\n");
         for (int i = 0; i < mcount; i++)
