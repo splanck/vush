@@ -379,6 +379,15 @@ void delete_history_entry(int id) {
 }
 
 /*
+ * Delete the most recent history entry from memory and update the history
+ * file.  Has no effect when history is empty.
+ */
+void delete_last_history_entry(void) {
+    if (tail)
+        delete_history_entry(tail->id);
+}
+
+/*
  * Return the most recently added command or NULL if history is empty.
  */
 const char *history_last(void) {
