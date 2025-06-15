@@ -192,6 +192,8 @@ static void process_startup_file(FILE *input)
         return;
     char rcpath[PATH_MAX];
     snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
+    if (access(rcpath, R_OK) == 0)
+        putchar('\n');
     process_rc_file(rcpath, input);
 }
 
@@ -545,8 +547,11 @@ int main(int argc, char **argv) {
         process_startup_file(input);
 
     const char *envfile = getenv("ENV");
-    if (envfile && *envfile)
+    if (envfile && *envfile) {
+        if (access(envfile, R_OK) == 0)
+            putchar('\n');
         process_rc_file(envfile, input);
+    }
 
     if (dash_c)
         run_command_string(dash_c);
