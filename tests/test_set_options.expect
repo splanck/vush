@@ -1,7 +1,7 @@
 #!/usr/bin/env expect
 set timeout 5
 # nounset option
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
@@ -33,7 +33,7 @@ expect {
 }
 
 # errexit option
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
@@ -50,7 +50,7 @@ expect {
 }
 
 # xtrace option
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

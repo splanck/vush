@@ -5,7 +5,7 @@ set f [open "$dir/.vushrc" "w"]
 puts $f "echo rcstart"
 close $f
 set env(HOME) $dir
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     -re "\[\r\n\]+rcstart\[\r\n\]+vush> " {}
     timeout { send_user "rc file not executed\n"; exec rm -rf $dir; exit 1 }

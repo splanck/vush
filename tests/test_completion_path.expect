@@ -7,7 +7,7 @@ puts $f "echo pathcomplete"
 close $f
 exec chmod +x "$dir/foo"
 set env(PATH) "$dir:$env(PATH)"
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

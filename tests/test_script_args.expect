@@ -6,7 +6,7 @@ puts $f "echo \"\$0,\$1,\$2,\$#,\$@\""
 puts $f "shift"
 puts $f "echo \"\$0,\$1,\$2,\$#,\$@\""
 close $f
-spawn ../vush $script foo bar
+spawn [file dirname [info script]]/../vush $script foo bar
 expect {
     -re "$script,foo,bar,2,foo bar\r?\n" {}
     timeout { send_user "arg expansion failed\n"; exec rm $script; exit 1 }
