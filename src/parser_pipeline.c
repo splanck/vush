@@ -265,7 +265,7 @@ static int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     if (fd < 0) { perror("mkstemp"); free(word); free(tok); return -1; }
     FILE *tf = fdopen(fd, "w");
     if (!tf) { perror("fdopen"); close(fd); unlink(template); free(word); free(tok); return -1; }
-    fprintf(tf, "%s", word);
+    fprintf(tf, "%s\n", word);
     fclose(tf);
     seg->in_file = strdup(template);
     if (!seg->in_file) {
