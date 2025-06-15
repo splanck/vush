@@ -49,6 +49,7 @@ tests="
     test_glob.expect
     test_alias.expect
     test_alias_flags.expect
+    test_alias_update.expect
     test_alias_persist.expect
     test_unalias_a.expect
     test_status.expect
