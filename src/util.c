@@ -18,28 +18,33 @@ char *read_logical_line(FILE *f, char *buf, size_t size) {
     size_t len = strlen(buf);
     if (len && buf[len - 1] == '\n')
         buf[--len] = '\0';
-    while (len > 0) {
-        size_t bs = 0;
-        while (bs < len && buf[len - 1 - bs] == '\\')
-            bs++;
-        if (bs % 2 == 1) {
+    if (len && buf[len - 1] == '\r')
+        buf[--len] = '\0';
+    while (len > 0 && buf[len - 1] == '\\') {
+        do {
             buf[--len] = '\0';
-            char cont[MAX_LINE];
-            if (!fgets(cont, sizeof(cont), f))
-                break;
-            size_t nlen = strlen(cont);
-            if (nlen && cont[nlen - 1] == '\n')
-                cont[--nlen] = '\0';
-            if (len + nlen < size) {
-                memcpy(buf + len, cont, nlen + 1);
-                len += nlen;
-            } else {
-                memcpy(buf + len, cont, size - len - 1);
-                buf[size - 1] = '\0';
-                len = strlen(buf);
+        } while (len > 0 && buf[len - 1] == '\\');
+        char cont[MAX_LINE];
+        if (!fgets(cont, sizeof(cont), f)) {
+            /* restore removed backslashes if continuation fails */
+            while (buf[len] == '\0' && len < size - 1) {
+                buf[len++] = '\\';
             }
-        } else {
+            buf[len] = '\0';
             break;
+        }
+        size_t nlen = strlen(cont);
+        if (nlen && cont[nlen - 1] == '\n')
+            cont[--nlen] = '\0';
+        if (nlen && cont[nlen - 1] == '\r')
+            cont[--nlen] = '\0';
+        if (len + nlen < size) {
+            memcpy(buf + len, cont, nlen + 1);
+            len += nlen;
+        } else {
+            memcpy(buf + len, cont, size - len - 1);
+            buf[size - 1] = '\0';
+            len = strlen(buf);
         }
     }
     return buf;
