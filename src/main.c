@@ -355,7 +355,6 @@ static void repl_loop(FILE *input)
             check_mail();
             const char *ps = getenv("PS1");
             char *prompt = expand_prompt(ps ? ps : "vush> ");
-            history_reset_cursor();
             jobs_at_prompt = 1;
             check_jobs();
             line = line_edit(prompt);
