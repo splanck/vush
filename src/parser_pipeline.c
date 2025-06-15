@@ -208,7 +208,8 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     int found = 0;
     while (fgets(buf, sizeof(buf), parse_input ? parse_input : stdin)) {
         size_t len = strlen(buf);
-        if (len && buf[len-1] == '\n') buf[len-1] = '\0';
+        while (len && (buf[len-1] == '\n' || buf[len-1] == '\r'))
+            buf[--len] = '\0';
         char *line = buf;
         if (strip_tabs) {
             while (*line == '\t') line++;
