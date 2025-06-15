@@ -401,10 +401,16 @@ void setup_redirections(PipelineSegment *seg) {
         }
     }
 
-    if (seg->close_out)
+    if (seg->close_out) {
         close(seg->out_fd);
-    else if (seg->dup_out != -1)
+        if (seg->out_fd == STDERR_FILENO)
+            seg->close_err = 0;
+        if (seg->dup_err == seg->out_fd)
+            seg->dup_err = -1;
+    } else if (seg->dup_out != -1) {
         dup2(seg->dup_out, seg->out_fd);
+    }
+
     if (seg->close_err)
         close(STDERR_FILENO);
     else if (seg->dup_err != -1)
