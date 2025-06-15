@@ -144,7 +144,7 @@ static void handle_backslash_escape(char **p, char buf[], int *len,
 /* Return non-zero when character C terminates an unquoted token. */
 static int is_end_unquoted(int c) {
     return c == ' ' || c == '\t' || c == '|' || c == '<' ||
-           c == '>' || c == '&' || c == ';';
+           c == '>' || c == '&' || c == ';' || c == '\r' || c == '\n';
 }
 
 /* Return non-zero when character C terminates a double quoted token. */
