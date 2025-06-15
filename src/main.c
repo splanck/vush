@@ -65,8 +65,8 @@ int opt_keyword = 0;
 int current_lineno = 0;
 pid_t parent_pid = 0;
 
-static void process_rc_file(const char *path, FILE *input);
-static void process_startup_file(FILE *input);
+static int process_rc_file(const char *path, FILE *input);
+static int process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
 static void check_mail(void);
 static void repl_loop(FILE *input);
@@ -139,11 +139,13 @@ void run_exit_trap(void)
  * parsed and executed before starting the main loop. The commands are
  * added to history and `parse_input` is temporarily set to the rc file.
  */
-static void process_rc_file(const char *path, FILE *input)
+static int process_rc_file(const char *path, FILE *input)
 {
     FILE *rc = fopen(path, "r");
     if (!rc)
-        return;
+        return 0;
+
+    int executed = 0;
 
     char rcline[MAX_LINE];
     while (read_logical_line(rc, rcline, sizeof(rcline))) {
@@ -180,19 +182,21 @@ static void process_rc_file(const char *path, FILE *input)
         free_commands(cmds);
         if (exp != rcline)
             free(exp);
+        executed = 1;
     }
     fclose(rc);
     parse_input = input;
+    return executed;
 }
 
-static void process_startup_file(FILE *input)
+static int process_startup_file(FILE *input)
 {
     const char *home = getenv("HOME");
     if (!home)
-        return;
+        return 0;
     char rcpath[PATH_MAX];
     snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
-    process_rc_file(rcpath, input);
+    return process_rc_file(rcpath, input);
 }
 
 /*
@@ -541,12 +545,17 @@ int main(int argc, char **argv) {
     load_aliases();
     load_functions();
 
+    int rc_ran = 0;
     if (!opt_privileged)
-        process_startup_file(input);
+        rc_ran = process_startup_file(input);
 
     const char *envfile = getenv("ENV");
+    int env_ran = 0;
     if (envfile && *envfile)
-        process_rc_file(envfile, input);
+        env_ran = process_rc_file(envfile, input);
+
+    if (input == stdin && (rc_ran || env_ran))
+        printf("\n");
 
     if (dash_c)
         run_command_string(dash_c);
