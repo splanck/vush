@@ -137,7 +137,6 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     if (pipeline->next)
         return 0;
 
-    expand_segment(pipeline);
 
     if (!pipeline->argv[0] && pipeline->assign_count > 0) {
         for (int i = 0; i < pipeline->assign_count; i++) {
@@ -327,6 +326,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             }
         }
     }
+    expand_segment(pipeline);
 
     int handled = 0;
     if (run_builtin(pipeline->argv))
