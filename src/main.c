@@ -474,6 +474,12 @@ int main(int argc, char **argv) {
     /* Always expose the running shell as $SHELL */
     setenv("SHELL", argv[0], 1);
 
+    if (!getenv("PWD")) {
+        char cwd[PATH_MAX];
+        if (getcwd(cwd, sizeof(cwd)))
+            setenv("PWD", cwd, 1);
+    }
+
     parent_pid = getppid();
 
     if (argc > 1) {
