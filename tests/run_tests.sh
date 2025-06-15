@@ -77,6 +77,7 @@ tests="
     test_dash_c_quotes.expect
     test_echo_options.expect
     test_set_options.expect
+    test_nounset.expect
     test_heredoc.expect
     test_herestring.expect
     test_heredoc_unterminated.expect

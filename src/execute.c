@@ -29,6 +29,7 @@
 #include "lexer.h"
 
 extern int last_status;
+extern int param_error;
 
 int loop_break = 0;
 int loop_continue = 0;
@@ -461,6 +462,7 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     if (!pipeline)
         return 0;
 
+    param_error = 0;
     if (opt_xtrace && line) {
         const char *ps4 = getenv("PS4");
         if (!ps4) ps4 = "+ ";
@@ -468,6 +470,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     }
 
     if (apply_temp_assignments(pipeline, background, line)) {
+        if (param_error)
+            last_status = 1;
         cleanup_proc_subs();
         return last_status;
     }
@@ -481,6 +485,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         return last_status;
     }
     int r = spawn_pipeline_segments(pipeline, background, line);
+    if (param_error)
+        last_status = 1;
     cleanup_proc_subs();
     return r;
 }

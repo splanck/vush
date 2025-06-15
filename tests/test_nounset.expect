@@ -1,0 +1,31 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "set -u\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "printf %s \$BAR\r"
+expect {
+    -re "BAR: unbound variable" {}
+    timeout { send_user "nounset printf message missing\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "nounset printf status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
