@@ -17,6 +17,7 @@
 #include "parser.h" /* for MAX_LINE */
 
 extern int last_status;
+extern int param_error;
 
 /* Execute CMD via popen and return its stdout output as a newly
  * allocated string with any trailing newline removed. */
@@ -206,6 +207,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             if (opt_nounset) {
                 fprintf(stderr, "%s: unbound variable\n", name);
                 last_status = 1;
+                param_error = 1;
             }
             val = "";
         }
@@ -221,6 +223,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             else
                 fprintf(stderr, "%s: parameter null or not set\n", name);
             last_status = 1;
+            param_error = 1;
             free(wexp);
             return strdup("");
         }
@@ -231,6 +234,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             if (opt_nounset) {
                 fprintf(stderr, "%s: unbound variable\n", name);
                 last_status = 1;
+                param_error = 1;
             }
             val = "";
         }
@@ -331,6 +335,7 @@ static char *expand_length(const char *name) {
         if (opt_nounset) {
             fprintf(stderr, "%s: unbound variable\n", name);
             last_status = 1;
+            param_error = 1;
         }
         val = "";
     }
@@ -485,6 +490,7 @@ static char *expand_special(const char *token) {
                 if (opt_nounset) {
                     fprintf(stderr, "%ld: unbound variable\n", idx);
                     last_status = 1;
+                    param_error = 1;
                 }
                 val = "";
             }
@@ -502,6 +508,7 @@ static char *expand_plain_var(const char *name) {
         if (opt_nounset) {
             fprintf(stderr, "%s: unbound variable\n", name);
             last_status = 1;
+            param_error = 1;
         }
         val = "";
     }

@@ -45,6 +45,7 @@ extern char *exit_trap_cmd;
 void trap_handler(int sig);
 void run_exit_trap(void);
 int last_status = 0;
+int param_error = 0;
 int script_argc = 0;
 char **script_argv = NULL;
 int opt_errexit = 0;
