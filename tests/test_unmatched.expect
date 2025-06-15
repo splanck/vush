@@ -25,7 +25,7 @@ expect {
 }
 send "echo \$(echo hi\r"
 expect {
-    -re "syntax error: unmatched '\)'" {}
+    -re {syntax error: unmatched '\)} {}
     timeout { send_user "missing command substitution error\n"; exit 1 }
 }
 send "exit\r"
