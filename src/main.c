@@ -44,6 +44,7 @@ extern char *trap_cmds[NSIG];
 extern char *exit_trap_cmd;
 void trap_handler(int sig);
 void run_exit_trap(void);
+static volatile sig_atomic_t pending_traps[NSIG];
 int last_status = 0;
 int param_error = 0;
 int script_argc = 0;
@@ -71,39 +72,63 @@ static int process_startup_file(FILE *input);
 static void run_command_string(const char *cmd);
 static void check_mail(void);
 static void repl_loop(FILE *input);
+static int process_pending_traps(void);
+static int any_pending_traps(void);
 
 /*
- * Execute the command registered for a trapped signal. The trap string
- * is parsed and run with stdin as the input source. `parse_input` is
- * restored after execution.
+ * Record that a trapped signal was received. Execution of the
+ * associated trap command is deferred until it is safe to run
+ * normal shell code from the main loop.
  */
 void trap_handler(int sig)
 {
-    if (sig <= 0 || sig >= NSIG)
-        return;
-    char *cmd = trap_cmds[sig];
-    if (!cmd)
-        return;
-    FILE *prev = parse_input;
-    parse_input = stdin;
-    Command *cmds = parse_line(cmd);
-    if (cmds) {
-        CmdOp prevop = OP_SEMI;
-        for (Command *c = cmds; c; c = c->next) {
-            int run = 1;
-            if (c != cmds) {
-                if (prevop == OP_AND)
-                    run = (last_status == 0);
-                else if (prevop == OP_OR)
-                    run = (last_status != 0);
+    if (sig > 0 && sig < NSIG)
+        pending_traps[sig] = 1;
+}
+
+/* Execute any queued trap commands. Returns the number executed. */
+static int process_pending_traps(void)
+{
+    int ran = 0;
+    for (int s = 1; s < NSIG; s++) {
+        if (pending_traps[s]) {
+            pending_traps[s] = 0;
+            char *cmd = trap_cmds[s];
+            if (!cmd)
+                continue;
+            FILE *prev = parse_input;
+            parse_input = stdin;
+            Command *cmds = parse_line(cmd);
+            if (cmds) {
+                CmdOp prevop = OP_SEMI;
+                for (Command *c = cmds; c; c = c->next) {
+                    int run = 1;
+                    if (c != cmds) {
+                        if (prevop == OP_AND)
+                            run = (last_status == 0);
+                        else if (prevop == OP_OR)
+                            run = (last_status != 0);
+                    }
+                    if (run)
+                        run_pipeline(c, cmd);
+                    prevop = c->op;
+                }
             }
-            if (run)
-                run_pipeline(c, cmd);
-            prevop = c->op;
+            free_commands(cmds);
+            parse_input = prev;
+            ran = 1;
         }
     }
-    free_commands(cmds);
-    parse_input = prev;
+    return ran;
+}
+
+/* Check if any traps are waiting to be executed. */
+static int any_pending_traps(void)
+{
+    for (int s = 1; s < NSIG; s++)
+        if (pending_traps[s])
+            return 1;
+    return 0;
 }
 
 /* Execute the command registered for EXIT, if any. */
@@ -351,6 +376,7 @@ static void repl_loop(FILE *input)
     int interactive = (input == stdin);
 
     while (1) {
+        process_pending_traps();
         if (opt_monitor)
             check_jobs();
         else
@@ -368,12 +394,22 @@ static void repl_loop(FILE *input)
                 line = line_edit("");
             jobs_at_prompt = 0;
             free(prompt);
-            if (!line)
+            if (!line) {
+                if (any_pending_traps()) {
+                    if (interactive)
+                        printf("\n");
+                    process_pending_traps();
+                    continue;
+                }
                 break;
+            }
             current_lineno++;
         } else {
-            if (!read_logical_line(input, linebuf, sizeof(linebuf)))
+            if (!read_logical_line(input, linebuf, sizeof(linebuf))) {
+                if (process_pending_traps())
+                    continue;
                 break;
+            }
             current_lineno++;
             line = linebuf;
         }
@@ -410,12 +446,22 @@ static void repl_loop(FILE *input)
                     more = line_edit(p2);
                     jobs_at_prompt = 0;
                     free(p2);
-                    if (!more) { free(cmdline); cmdline = NULL; break; }
+                    if (!more) {
+                        free(cmdline);
+                        cmdline = NULL;
+                        if (any_pending_traps()) {
+                            printf("\n");
+                            process_pending_traps();
+                        }
+                        break;
+                    }
                     current_lineno++;
                 } else {
                     if (!read_logical_line(input, linebuf, sizeof(linebuf))) {
                         free(cmdline);
                         cmdline = NULL;
+                        if (any_pending_traps())
+                            process_pending_traps();
                         break;
                     }
                     current_lineno++;
@@ -465,6 +511,7 @@ static void repl_loop(FILE *input)
             }
             free_commands(cmds);
             free(expanded);
+            process_pending_traps();
             break;
         }
 
