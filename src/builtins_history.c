@@ -30,6 +30,7 @@ int builtin_history(char **args)
                 fprintf(stderr, "history: invalid entry\n");
                 return 1;
             }
+            /* remove the entry and renumber remaining history items */
             delete_history_entry((int)id);
             return 1;
         } else {
