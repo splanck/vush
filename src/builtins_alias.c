@@ -232,7 +232,25 @@ int builtin_alias(char **args)
             *eq = '\0';
             const char *name = args[1];
             const char *val = get_alias(name);
-            int same = val && strcmp(val, eq + 1) == 0;
+
+            const char *newval = eq + 1;
+            char *buf = NULL;
+            if (val) {
+                size_t len = strlen(newval);
+                if (len >= 2 &&
+                    ((newval[0] == '\'' && newval[len - 1] == '\'') ||
+                     (newval[0] == '"' && newval[len - 1] == '"'))) {
+                    buf = strndup(newval + 1, len - 2);
+                    if (!buf) {
+                        *eq = '=';
+                        perror("strndup");
+                        return 1;
+                    }
+                    newval = buf;
+                }
+            }
+            int same = val && strcmp(val, newval) == 0;
+            free(buf);
             *eq = '=';
             if (same) {
                 printf("%s='%s'\n", name, val);
