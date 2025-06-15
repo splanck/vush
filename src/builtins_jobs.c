@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 
 /* Map signal names to numbers for kill builtin */
 static const struct { const char *n; int v; } sig_map[] = {
@@ -211,6 +212,18 @@ int builtin_kill(char **args) {
         } else if (kill((pid_t)val, sig) == -1) {
             perror("kill");
         }
+    }
+    /*
+     * If any targeted jobs terminated immediately, reap them now so the
+     * completion notice appears before the next prompt and the job list is
+     * updated.  This mirrors the behaviour of other job-control builtins.
+     * Use a short pause to give the kernel time to deliver SIGCHLD.
+     */
+    int printed = check_jobs();
+    if (!printed) {
+        struct timespec ts = {0, 10000000}; /* 10 ms */
+        nanosleep(&ts, NULL);
+        check_jobs();
     }
     return 1;
 }
