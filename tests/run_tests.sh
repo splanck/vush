@@ -172,7 +172,12 @@ for test in $tests; do
     if [ "$test" = "test_history.expect" ]; then
         rm -f "$HOME/.vush_history"
     fi
-    if ! ./$test; then
+    if [ -x "$test" ]; then
+        cmd="./$test"
+    else
+        cmd="expect -f $test"
+    fi
+    if ! eval "$cmd"; then
         echo "FAILED: $test"
         failed=1
     else
