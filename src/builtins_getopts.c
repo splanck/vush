@@ -117,9 +117,11 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
 }
 
 int builtin_getopts(char **args) {
+    int ind = read_optind();
     if (!args[1] || !args[2]) {
         fprintf(stderr, "usage: getopts optstring var\n");
         last_status = 1;
+        write_optind(ind);
         return 1;
     }
 
@@ -130,8 +132,6 @@ int builtin_getopts(char **args) {
         silent = 1;
         optstr++;
     }
-
-    int ind = read_optind();
 
     char opt = '\0';
     int res = getopts_next_option(optstr, silent, &ind, &opt);
