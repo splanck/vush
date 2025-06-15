@@ -600,8 +600,10 @@ static int exec_until(Command *cmd, const char *line) {
 static int exec_for(Command *cmd, const char *line) {
     loop_depth++;
     for (int i = 0; i < cmd->word_count; i++) {
-        if (cmd->var)
+        if (cmd->var) {
+            set_shell_var(cmd->var, cmd->words[i]);
             setenv(cmd->var, cmd->words[i], 1);
+        }
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
         if (loop_continue) { loop_continue--; continue; }
