@@ -219,13 +219,15 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         fprintf(tf, "%s\n", line);
     }
     if (!found) {
-        if (in == stdin)
+        int eof = feof(in);
+        if (in == stdin && eof)
             clearerr(stdin);
         fclose(tf);
         unlink(template);
         free(delim);
         free(tok);
-        fprintf(stderr, "syntax error: here-document delimited by end-of-file\n");
+        if (eof)
+            fprintf(stderr, "syntax error: here-document delimited by end-of-file\n");
         return -1;
     }
     fclose(tf);
