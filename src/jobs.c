@@ -255,9 +255,11 @@ int bg_job(int id) {
             curr->state = JOB_RUNNING;
             /*
              * If the process exits right away, check for completed jobs so
-             * the message is printed before the prompt.
+             * the message is printed before the prompt. Use prefix 1 so
+             * the output appears on a new line before the shell prints the
+             * next prompt.
              */
-            check_jobs();
+            check_jobs_internal(1);
             return 0;
         }
         curr = curr->next;
