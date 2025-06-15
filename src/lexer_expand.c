@@ -567,8 +567,11 @@ char *expand_var(const char *token) {
         return strdup("");
 
     /* Fast path for simple tokens without any expansions. */
-    if (!strchr(token, '$') && !strchr(token, '`') && token[0] != '~')
+    if (!strchr(token, '$') && !strchr(token, '`')) {
+        if (token[0] == '~')
+            return expand_tilde(token);
         return strdup(token);
+    }
 
     char *out = calloc(1, 1);
     if (!out)
