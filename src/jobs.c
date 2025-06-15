@@ -103,7 +103,7 @@ static int check_jobs_internal(int prefix) {
                     if (prefix == 1)
                         printf("\n");
                     else if (prefix == 2)
-                        printf("\r\n");
+                        printf("\r");
                 }
                 printf("[vush] job %d finished\n", curr ? curr->id : pid);
                 printed = 1;
@@ -128,7 +128,7 @@ int check_jobs(void) {
  * waiting for input. Simply delegate to check_jobs(). */
 void jobs_sigchld_handler(int sig) {
     (void)sig;
-    int prefix = jobs_at_prompt ? 2 : 1;
+    int prefix = jobs_at_prompt ? 2 : 0;
     if (check_jobs_internal(prefix) && jobs_at_prompt) {
         const char *ps = getenv("PS1");
         printf("%s", ps ? ps : "vush> ");
