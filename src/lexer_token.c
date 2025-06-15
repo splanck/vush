@@ -126,12 +126,13 @@ static char *parse_redirect_token(char **p) {
  * controls whether variable expansion should occur. DO_EXPAND is updated
  * accordingly. */
 static void handle_backslash_escape(char **p, char buf[], int *len,
-                                   int *first, int *do_expand) {
+                                   int *first, int *do_expand,
+                                   int disable_first) {
     (*p)++;
     if (**p) {
         if (*len < MAX_LINE - 1)
             buf[(*len)++] = **p;
-        if (*first)
+        if (*first && disable_first && (**p == '$' || **p == '`'))
             *do_expand = 0;
         if (**p)
             (*p)++;
@@ -157,7 +158,7 @@ static int is_end_dquote(int c) {
  * until execution time.  DO_EXPAND is set to zero when quoting prevents
  * expansion.  Returns 0 on success or -1 on errors. */
 static int read_simple_token(char **p, int (*is_end)(int), char buf[],
-                             int *len, int *do_expand) {
+                             int *len, int *do_expand, int disable_first) {
     int first = 1;
     while (**p && !is_end((unsigned char)**p)) {
         if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
@@ -239,7 +240,8 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             continue;
         }
         if (**p == '\\') {
-            handle_backslash_escape(p, buf, len, &first, do_expand);
+            handle_backslash_escape(p, buf, len, &first, do_expand,
+                                   disable_first);
             continue;
         }
         if (**p == '$' && *(*p + 1) == '{') {
@@ -300,7 +302,8 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
         }
     } else {
         (*p)++;
-        if (read_simple_token(p, is_end_dquote, buf, &len, &do_expand) < 0)
+        if (read_simple_token(p, is_end_dquote, buf, &len, &do_expand,
+                              0) < 0)
             return NULL;
         if (**p == quote) {
             (*p)++;
@@ -335,7 +338,8 @@ char *read_token(char **p, int *quoted, int *do_expand_out) {
         if (do_expand_out) *do_expand_out = do_expand;
         return res;
     }
-    if (read_simple_token(p, is_end_unquoted, buf, &len, &do_expand) < 0)
+    if (read_simple_token(p, is_end_unquoted, buf, &len, &do_expand,
+                          1) < 0)
         return NULL;
     buf[len] = '\0';
     char *res = strdup(buf);
