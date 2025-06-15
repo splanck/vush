@@ -4,7 +4,7 @@ set script [exec mktemp]
 set f [open $script "w"]
 puts $f "echo sourced"
 close $f
-spawn ../vush
+spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
