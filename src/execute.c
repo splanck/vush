@@ -87,9 +87,30 @@ static void expand_segment(PipelineSegment *seg) {
         }
     }
 
-    if (seg->in_file) { char *n = expand_var(seg->in_file); free(seg->in_file); seg->in_file = n; }
-    if (seg->out_file) { char *n = expand_var(seg->out_file); free(seg->out_file); seg->out_file = n; }
-    if (seg->err_file) { char *n = expand_var(seg->err_file); free(seg->err_file); seg->err_file = n; }
+    if (seg->in_file) {
+        char *n = expand_var(seg->in_file);
+        free(seg->in_file);
+        seg->in_file = n;
+    }
+
+    if (seg->out_file && seg->err_file && seg->out_file == seg->err_file) {
+        char *n = expand_var(seg->out_file);
+        free(seg->out_file);
+        seg->out_file = n;
+        seg->err_file = seg->out_file;
+    } else {
+        if (seg->out_file) {
+            char *n = expand_var(seg->out_file);
+            free(seg->out_file);
+            seg->out_file = n;
+        }
+
+        if (seg->err_file) {
+            char *n = expand_var(seg->err_file);
+            free(seg->err_file);
+            seg->err_file = n;
+        }
+    }
 }
 
 static void expand_pipeline(PipelineSegment *pipeline) {
