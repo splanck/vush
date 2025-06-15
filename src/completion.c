@@ -43,6 +43,8 @@ static char **collect_builtin_matches(const char *prefix, int prefix_len,
 
     const char **bn = get_builtin_names();
     for (int i = 0; bn[i]; i++) {
+        if (strcmp(bn[i], "exec") == 0)
+            continue;
         if (strncmp(bn[i], prefix, prefix_len) == 0) {
             if (count == cap) {
                 cap *= 2;
@@ -148,6 +150,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
         while (dir) {
             const char *d = *dir ? dir : ".";
             DIR *pd = opendir(d);
+            int found = 0;
             if (pd) {
                 struct dirent *pe;
                 while ((pe = readdir(pd))) {
@@ -190,14 +193,17 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                     return NULL;
                                 }
                                 matches[count++] = dup;
+                                found = 1;
                             }
                             free(full);
                         }
                     }
                     closedir(pd);
-                    if (!matches)
+                    if (found || !matches)
                         break;
                 }
+            if (found)
+                break;
             dir = strtok_r(NULL, ":", &saveptr);
         }
         free(pdup);
@@ -219,7 +225,8 @@ static void apply_completion(const char *match, char *buf, int *lenp, int *posp,
         *lenp += mlen - prefix_len;
         *posp = start + mlen;
         buf[*lenp] = '\0';
-        printf("\r%s%s", prompt, buf);
+        printf("%s%s", prompt, buf);
+        fflush(stdout);
         if (*lenp > *disp_lenp)
             *disp_lenp = *lenp;
     }
@@ -240,64 +247,55 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     if (!bmatches)
         return;
 
-    int pcount = 0;
-    char **pmatches = collect_matches(prefix, *posp - start, &pcount);
-    if (!pmatches && pcount > 0) {
+    if (bcount > 0) {
+        if (bcount == 1) {
+            apply_completion(bmatches[0], buf, lenp, posp, start, prompt,
+                             disp_lenp);
+        } else {
+            qsort(bmatches, bcount, sizeof(char *), cmpstr);
+            printf("\r\n");
+            for (int i = 0; i < bcount; i++)
+                printf("%s ", bmatches[i]);
+            printf("\r\n");
+            printf("%s%s", prompt, buf);
+            fflush(stdout);
+            if (*lenp > *disp_lenp)
+                *disp_lenp = *lenp;
+        }
         for (int i = 0; i < bcount; i++)
             free(bmatches[i]);
         free(bmatches);
         return;
     }
 
-    int cap = bcount + pcount + 1;
-    char **matches = malloc(cap * sizeof(char *));
-    if (!matches) {
-        for (int i = 0; i < bcount; i++)
-            free(bmatches[i]);
-        free(bmatches);
-        if (pmatches) {
-            for (int i = 0; i < pcount; i++)
-                free(pmatches[i]);
-            free(pmatches);
-        }
-        return;
-    }
-
-    int mcount = 0;
-    for (int i = 0; i < bcount; i++)
-        matches[mcount++] = bmatches[i];
-
-    if (pmatches) {
-        for (int i = 0; i < pcount; i++) {
-            if (!has_match(matches, mcount, pmatches[i]))
-                matches[mcount++] = pmatches[i];
-            else
-                free(pmatches[i]);
-        }
-        free(pmatches);
-    }
     free(bmatches);
 
-    if (mcount == 0) {
-        free(matches);
+    int pcount = 0;
+    char **pmatches = collect_matches(prefix, *posp - start, &pcount);
+    if (!pmatches)
+        return;
+
+    if (pcount == 0) {
+        free(pmatches);
         return;
     }
 
-    if (mcount == 1) {
-        apply_completion(matches[0], buf, lenp, posp, start, prompt,
+    if (pcount == 1) {
+        apply_completion(pmatches[0], buf, lenp, posp, start, prompt,
                          disp_lenp);
     } else {
-        qsort(matches, mcount, sizeof(char *), cmpstr);
+        qsort(pmatches, pcount, sizeof(char *), cmpstr);
         printf("\r\n");
-        for (int i = 0; i < mcount; i++)
-            printf("%s%s", matches[i], i == mcount - 1 ? "" : " ");
+        for (int i = 0; i < pcount; i++)
+            printf("%s ", pmatches[i]);
         printf("\r\n");
         printf("\r%s%s", prompt, buf);
+        fflush(stdout);
         if (*lenp > *disp_lenp)
             *disp_lenp = *lenp;
     }
-    for (int i = 0; i < mcount; i++)
-        free(matches[i]);
-    free(matches);
+    for (int i = 0; i < pcount; i++)
+        free(pmatches[i]);
+    free(pmatches);
 }
 
