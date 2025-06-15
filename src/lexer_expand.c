@@ -897,10 +897,11 @@ char *expand_prompt(const char *prompt) {
     if (!res)
         return strdup("");
 
-    /* When expansion is requested, apply normal variable/command expansion so
-     * that constructs like $(cmd) are executed.  PS1 typically does not use
-     * parameter expansion so leaving it enabled is harmless. */
-    if (do_expand) {
+    /* Execute command substitutions when requested.  Only invoke the
+     * heavyweight expansion logic when the prompt actually contains
+     * command substitution syntax. */
+    if (do_expand && (strstr(res, "$(") || strchr(res, '`'))) {
+        /* command substitution via $(...) or backticks */
         char *out = expand_var(res);
         if (!out) {
             free(res);
