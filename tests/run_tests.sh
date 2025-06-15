@@ -170,9 +170,17 @@ tests="
 "
 for test in $tests; do
     echo "Running $test"
-    if [ "$test" = "test_history.expect" ]; then
-        rm -f "$HOME/.vush_history"
-    fi
+    case "$test" in
+        test_history.expect|\
+        test_history_clear.expect|\
+        test_history_limit.expect|\
+        test_history_delete.expect|\
+        test_bang_*|\
+        test_*search.expect|\
+        test_lineedit.expect)
+            rm -f "$HOME/.vush_history"
+            ;;
+    esac
     if [ -x "$test" ]; then
         cmd="./$test"
     else
