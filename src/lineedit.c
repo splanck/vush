@@ -291,7 +291,7 @@ static char *read_raw_line(const char *prompt) {
             break;
     }
 
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig);
+    tcsetattr(STDIN_FILENO, TCSANOW, &orig);
 
     if (len < 0)
         return NULL;

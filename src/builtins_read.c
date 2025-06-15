@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 extern int last_status;
 
 /* ---- helper functions for builtin_read -------------------------------- */
@@ -85,6 +86,21 @@ static void assign_read_vars(char **args, int idx, char *line, char sep) {
     }
 }
 
+static int read_terminal_line(char *buf, size_t size) {
+    size_t pos = 0;
+    while (pos < size - 1) {
+        char c;
+        ssize_t n = read(STDIN_FILENO, &c, 1);
+        if (n <= 0)
+            return -1;
+        if (c == '\n' || c == '\r')
+            break;
+        buf[pos++] = c;
+    }
+    buf[pos] = '\0';
+    return 0;
+}
+
 int builtin_read(char **args) {
     int raw = 0;
     const char *array_name = NULL;
@@ -96,14 +112,10 @@ int builtin_read(char **args) {
     }
 
     char line[MAX_LINE];
-    if (!fgets(line, sizeof(line), stdin)) {
+    if (read_terminal_line(line, sizeof(line)) < 0) {
         last_status = 1;
         return 1;
     }
-
-    size_t len = strlen(line);
-    if (len && line[len - 1] == '\n')
-        line[--len] = '\0';
 
     if (!raw) {
         char *src = line;
