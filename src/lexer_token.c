@@ -224,7 +224,8 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 (*p)++;
             }
             if (!closed && !**p) {
-                parse_need_more = 1;
+                fprintf(stderr, "syntax error: unmatched ')'\n");
+                parse_need_more = 0;
                 return -1;
             }
             if (startc == '`') {
@@ -232,7 +233,8 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                     if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
                     closed = 1;
                 } else if (!closed) {
-                    parse_need_more = 1;
+                    fprintf(stderr, "syntax error: unmatched '`'\n");
+                    parse_need_more = 0;
                     return -1;
                 }
             }
@@ -294,7 +296,8 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
         if (**p == quote) {
             (*p)++;
         } else if (**p == '\0') {
-            parse_need_more = 1;
+            fprintf(stderr, "syntax error: unmatched '%c'\n", quote);
+            parse_need_more = 0;
             return NULL;
         } else {
             fprintf(stderr, "syntax error: unmatched '%c'\n", quote);
@@ -308,7 +311,8 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
         if (**p == quote) {
             (*p)++;
         } else if (**p == '\0') {
-            parse_need_more = 1;
+            fprintf(stderr, "syntax error: unmatched '\"'\n");
+            parse_need_more = 0;
             return NULL;
         } else {
             fprintf(stderr, "syntax error: unmatched '\"'\n");
