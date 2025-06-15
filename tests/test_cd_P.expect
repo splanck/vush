@@ -2,7 +2,7 @@
 set timeout 5
 set dir [exec mktemp -d]
 file mkdir "$dir/real"
-file symlink "$dir/real" "$dir/link"
+file link -symbolic "$dir/link" "$dir/real"
 spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
