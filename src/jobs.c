@@ -105,7 +105,9 @@ int check_jobs_internal(int prefix) {
                     else if (prefix == 2)
                         printf("\r");
                 }
-                printf("[vush] job %d finished\n", curr ? curr->id : pid);
+                printf("[vush] job %d (%s) finished\n",
+                       curr ? curr->id : pid,
+                       curr ? curr->cmd : "?");
                 printed = 1;
             }
             remove_job(pid);
