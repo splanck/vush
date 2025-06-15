@@ -900,11 +900,9 @@ char *expand_prompt(const char *prompt) {
     if (!res)
         return strdup("");
 
-    /* Execute command substitutions when requested.  Only invoke the
-     * heavyweight expansion logic when the prompt actually contains
-     * command substitution syntax. */
+    /* When the token includes $(...) or backticks, perform command
+     * substitution using the normal variable expansion logic. */
     if (do_expand && (strstr(res, "$(") || strchr(res, '`'))) {
-        /* command substitution via $(...) or backticks */
         char *out = expand_var(res);
         if (!out) {
             free(res);
