@@ -5,6 +5,11 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+send "unset PWD OLDPWD\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "cd /tmp\r"
 expect {
     "vush> " {}
