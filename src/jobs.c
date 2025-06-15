@@ -88,7 +88,7 @@ void remove_job(pid_t pid) {
  * prompt so that completed jobs are noticed.
  */
 /* prefix: 0=no prefix, 1=prepend newline, 2=carriage return */
-static int check_jobs_internal(int prefix) {
+int check_jobs_internal(int prefix) {
     int printed = 0;
     int status;
     pid_t pid;

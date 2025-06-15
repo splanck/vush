@@ -12,6 +12,7 @@
 void add_job(pid_t pid, const char *cmd);
 void remove_job(pid_t pid);
 int check_jobs(void);
+int check_jobs_internal(int prefix);
 void print_jobs(int mode, int count, int *ids);
 pid_t get_job_pid(int id);
 int wait_job(int id);
