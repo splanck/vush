@@ -169,6 +169,15 @@ void load_history(void) {
         add_history_entry(line, 0);
     }
     fclose(f);
+
+    /*
+     * If the history file contained more entries than allowed by
+     * max_history older commands may have been dropped while loading.
+     * Renumber the remaining entries so identifiers start at 1 for
+     * the current session and next_id reflects the new list.
+     */
+    if (head)
+        renumber_history();
 }
 
 /*
