@@ -357,7 +357,10 @@ static void repl_loop(FILE *input)
             char *prompt = expand_prompt(ps ? ps : "vush> ");
             jobs_at_prompt = 1;
             check_jobs();
-            line = line_edit(prompt);
+            if (jobs_at_prompt)
+                line = line_edit(prompt);
+            else
+                line = line_edit("");
             jobs_at_prompt = 0;
             free(prompt);
             if (!line)
