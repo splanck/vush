@@ -105,6 +105,7 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
             } else {
                 write_optarg("");
             }
+            getopts_pos = NULL;
             return OPT_MISSING;
         }
     } else {
