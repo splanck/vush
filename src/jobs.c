@@ -22,6 +22,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+#include <time.h>
 
 typedef enum { JOB_RUNNING, JOB_STOPPED } JobState;
 
@@ -131,7 +132,7 @@ int check_jobs(void) {
  * waiting for input. Simply delegate to check_jobs(). */
 void jobs_sigchld_handler(int sig) {
     (void)sig;
-    int prefix = jobs_at_prompt ? 2 : 0;
+    int prefix = jobs_at_prompt ? 1 : 0;
     if (check_jobs_internal(prefix) && jobs_at_prompt) {
         const char *ps = getenv("PS1");
         printf("%s", ps ? ps : "vush> ");
@@ -251,18 +252,37 @@ int bg_job(int id) {
     Job *curr = jobs;
     while (curr) {
         if (curr->id == id) {
+            sigset_t mask, old;
+            sigemptyset(&mask);
+            sigaddset(&mask, SIGCHLD);
+            sigprocmask(SIG_BLOCK, &mask, &old);
+
             if (kill(curr->pid, SIGCONT) != 0) {
                 perror("bg");
+                sigprocmask(SIG_SETMASK, &old, NULL);
                 return -1;
             }
             curr->state = JOB_RUNNING;
+
             /*
-             * If the process exits right away, check for completed jobs so
-             * the message is printed before the prompt. Use prefix 1 so
-             * the output appears on a new line before the shell prints the
-             * next prompt.
+             * If the process exits immediately after being continued we
+             * want to print the completion message before the next prompt
+             * appears.  Block SIGCHLD so the handler does not print the
+             * message itself. We then poll once, wait briefly and poll
+             * again so short-lived jobs are caught here.
              */
-            check_jobs_internal(1);
+            if (!check_jobs_internal(1)) {
+                /*
+                 * Give the resumed job a brief moment to terminate so we
+                 * can print the completion message here rather than via the
+                 * SIGCHLD handler after the prompt is shown.
+                 */
+                struct timespec ts = {0, 100000000}; /* 100ms */
+                nanosleep(&ts, NULL);
+                check_jobs_internal(1);
+            }
+
+            sigprocmask(SIG_SETMASK, &old, NULL);
             return 0;
         }
         curr = curr->next;
