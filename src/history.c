@@ -64,6 +64,20 @@ static const char *histfile_path(void) {
     return path;
 }
 
+/* Rewrite the entire history file from the in-memory list. */
+static void rewrite_history_file(void)
+{
+    const char *path = histfile_path();
+    if (!path)
+        return;
+    FILE *f = fopen(path, "w");
+    if (!f)
+        return;
+    for (HistEntry *e = head; e; e = e->next)
+        fprintf(f, "%s\n", e->cmd);
+    fclose(f);
+}
+
 /*
  * Initialise history settings from environment variables.  This function is
  * idempotent and may be called multiple times.
@@ -144,6 +158,7 @@ void add_history(const char *cmd) {
  * Returns nothing.
  */
 void print_history(void) {
+    renumber_history();
     for (HistEntry *e = head; e; e = e->next) {
         printf("%d %s\n", e->id, e->cmd);
     }
@@ -313,16 +328,7 @@ void delete_history_entry(int id) {
     history_size--;
 
     renumber_history();
-
-    const char *path = histfile_path();
-    if (!path)
-        return;
-    FILE *f = fopen(path, "w");
-    if (!f)
-        return;
-    for (HistEntry *h = head; h; h = h->next)
-        fprintf(f, "%s\n", h->cmd);
-    fclose(f);
+    rewrite_history_file();
 }
 
 /*
