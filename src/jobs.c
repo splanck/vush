@@ -121,7 +121,8 @@ static int check_jobs_internal(int prefix) {
 }
 
 int check_jobs(void) {
-    return check_jobs_internal(0);
+    int prefix = jobs_at_prompt ? 2 : 1;
+    return check_jobs_internal(prefix);
 }
 
 /* SIGCHLD handler to reap finished background jobs even when
