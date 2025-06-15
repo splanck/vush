@@ -37,6 +37,7 @@ static int next_id = 1;
 static int skip_next = 0;
 static int history_size = 0;
 static int max_history = MAX_HISTORY;
+static int max_file_history = MAX_HISTORY;
 
 /* Renumber history entries sequentially starting at 1. */
 static void renumber_history(void)
@@ -53,15 +54,24 @@ static void renumber_history(void)
  * be constructed.
  */
 static const char *histfile_path(void) {
-    const char *env = getenv("VUSH_HISTFILE");
-    if (env && *env)
-        return env;
-    const char *home = getenv("HOME");
-    if (!home)
-        return NULL;
     static char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_history", home);
-    return path;
+    static int inited = 0;
+    if (!inited) {
+        const char *env = getenv("VUSH_HISTFILE");
+        if (!env || !*env)
+            env = getenv("HISTFILE");
+        if (env && *env) {
+            strncpy(path, env, sizeof(path) - 1);
+            path[sizeof(path) - 1] = '\0';
+        } else {
+            const char *home = getenv("HOME");
+            if (!home || !*home)
+                return NULL;
+            snprintf(path, sizeof(path), "%s/.vush_history", home);
+        }
+        inited = 1;
+    }
+    return path[0] ? path : NULL;
 }
 
 /* Rewrite the entire history file from the in-memory list. */
@@ -87,10 +97,22 @@ static void history_init(void) {
     if (inited)
         return;
     const char *env = getenv("VUSH_HISTSIZE");
+    if (!env)
+        env = getenv("HISTSIZE");
     if (env) {
         long val = strtol(env, NULL, 10);
         if (val > 0)
             max_history = (int)val;
+    }
+    const char *fenv = getenv("VUSH_HISTFILESIZE");
+    if (!fenv)
+        fenv = getenv("HISTFILESIZE");
+    if (fenv) {
+        long val = strtol(fenv, NULL, 10);
+        if (val > 0)
+            max_file_history = (int)val;
+    } else {
+        max_file_history = max_history;
     }
     inited = 1;
 }
@@ -137,6 +159,20 @@ static void add_history_entry(const char *cmd, int save_file) {
                 fclose(f);
             }
         }
+
+        while (history_size > max_file_history) {
+            HistEntry *old = head;
+            head = head->next;
+            if (head)
+                head->prev = NULL;
+            else
+                tail = NULL;
+            free(old);
+            history_size--;
+        }
+
+        if (history_size > max_history || history_size > max_file_history)
+            rewrite_history_file();
     }
 }
 
@@ -185,6 +221,17 @@ void load_history(void) {
     }
     fclose(f);
 
+    while (history_size > max_file_history) {
+        HistEntry *old = head;
+        head = head->next;
+        if (head)
+            head->prev = NULL;
+        else
+            tail = NULL;
+        free(old);
+        history_size--;
+    }
+
     /*
      * If the history file contained more entries than allowed by
      * max_history older commands may have been dropped while loading.
@@ -192,6 +239,7 @@ void load_history(void) {
      * the current session and next_id reflects the new list.
      */
     renumber_history();
+    rewrite_history_file();
 }
 
 /*

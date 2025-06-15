@@ -30,7 +30,7 @@ expect {
 }
 send "history\r"
 expect {
-    -re "3 echo three\[\r\n\]+4 echo four\[\r\n\]+5 history\[\r\n\]+vush> " {}
+    -re "1 echo three\[\r\n\]+2 echo four\[\r\n\]+3 history\[\r\n\]+vush> " {}
     timeout { send_user "history limit mismatch\n"; exec rm -rf $dir; exit 1 }
 }
 send "exit\r"
