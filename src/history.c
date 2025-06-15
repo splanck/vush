@@ -191,8 +191,7 @@ void load_history(void) {
      * Renumber the remaining entries so identifiers start at 1 for
      * the current session and next_id reflects the new list.
      */
-    if (head)
-        renumber_history();
+    renumber_history();
 }
 
 /*
