@@ -112,6 +112,26 @@ static Command *parse_for_clause(char **p) {
         char *w = read_token(p, &q, &de);
         if (!w) { free(var); free(words); return NULL; }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
+        if (!q && strcmp(w, ";") == 0) {
+            free(w);
+            while (**p == ' ' || **p == '\t') (*p)++;
+            q = 0; de = 1;
+            char *next = read_token(p, &q, &de);
+            if (!next) { free(var); free(words); return NULL; }
+            if (!q && strcmp(next, "do") == 0) { free(next); break; }
+            char **tmp = realloc(words, sizeof(char *) * (count + 1));
+            if (!tmp) {
+                free(next);
+                free(var);
+                for (int i = 0; i < count; i++)
+                    free(words[i]);
+                free(words);
+                return NULL;
+            }
+            words = tmp;
+            words[count++] = next;
+            continue;
+        }
         char **tmp = realloc(words, sizeof(char *) * (count + 1));
         if (!tmp) {
             free(w);
