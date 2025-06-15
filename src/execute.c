@@ -428,6 +428,9 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
 
     free(backs);
 
+    if (handled && opt_errexit && last_status != 0)
+        exit(last_status);
+
     return handled;
 }
 
@@ -550,6 +553,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
             last_status = 1;
         free_pipeline(copy);
         cleanup_proc_subs();
+        if (opt_errexit && last_status != 0)
+            exit(last_status);
         return last_status;
     }
 
