@@ -5,7 +5,7 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo $((1+2))\r"
+send "echo \$((1+2))\r"
 expect {
     -re "\[\r\n\]+3\[\r\n\]+vush> " {}
     timeout { send_user "basic arithmetic failed\n"; exit 1 }
@@ -15,12 +15,12 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo $((X*2))\r"
+send "echo \$((X*2))\r"
 expect {
     -re "\[\r\n\]+8\[\r\n\]+vush> " {}
     timeout { send_user "variable expansion failed\n"; exit 1 }
 }
-send "X=$((X+3))\r"
+send "X=\$((X+3))\r"
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
