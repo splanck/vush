@@ -146,22 +146,19 @@ static void remove_alias(const char *name)
 /* Remove all entries matching NAME from the alias list. */
 static void remove_all_aliases(const char *name)
 {
+    struct alias_entry **pprev = &aliases;
     struct alias_entry *a = aliases;
-    struct alias_entry *prev = NULL;
     while (a) {
         if (strcmp(a->name, name) == 0) {
-            struct alias_entry *next = a->next;
-            if (prev)
-                prev->next = next;
-            else
-                aliases = next;
+            *pprev = a->next;
             free(a->name);
             free(a->value);
+            struct alias_entry *next = a->next;
             free(a);
             a = next;
             continue;
         }
-        prev = a;
+        pprev = &a->next;
         a = a->next;
     }
 }

@@ -56,6 +56,7 @@ tests="
     test_alias.expect
     test_alias_flags.expect
     test_alias_update.expect
+    test_alias_remove_dup.expect
     test_alias_persist.expect
     test_unalias_a.expect
     test_status.expect
