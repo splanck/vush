@@ -148,7 +148,7 @@ int builtin_cd(char **args) {
     const char *oldpwd = getenv("PWD");
     if (!oldpwd)
         oldpwd = prev;
-    setenv("OLDPWD", oldpwd, 1);
+    update_pwd_env(oldpwd);
 
     char newpwd[PATH_MAX];
     if (physical) {
@@ -200,13 +200,9 @@ int builtin_pushd(char **args) {
         return 1;
     }
     dirstack_push(prev);
-    char newcwd[PATH_MAX];
-    if (getcwd(newcwd, sizeof(newcwd))) {
-        const char *pwd = getenv("PWD");
-        if (!pwd) pwd = prev;
-        setenv("OLDPWD", pwd, 1);
-        setenv("PWD", newcwd, 1);
-    }
+    const char *pwd = getenv("PWD");
+    if (!pwd) pwd = prev;
+    update_pwd_env(pwd);
     dirstack_print();
     return 1;
 }
@@ -233,11 +229,7 @@ int builtin_popd(char **args) {
         free(dir);
         return 1;
     }
-    char newcwd[PATH_MAX];
-    if (getcwd(newcwd, sizeof(newcwd))) {
-        setenv("OLDPWD", prev, 1);
-        setenv("PWD", newcwd, 1);
-    }
+    update_pwd_env(prev);
     free(dir);
     dirstack_print();
     return 1;

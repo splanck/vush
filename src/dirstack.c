@@ -93,3 +93,19 @@ void dirstack_clear(void) {
     }
     top = NULL;
 }
+
+/*
+ * Update the PWD and OLDPWD environment variables after a directory
+ * change. The old working directory should be passed in so it can be
+ * stored in OLDPWD. The current directory is retrieved via getcwd and
+ * assigned to PWD.  If getcwd fails the environment is left unchanged.
+ */
+void update_pwd_env(const char *oldpwd) {
+    char cwd[PATH_MAX];
+    if (!getcwd(cwd, sizeof(cwd)))
+        return;
+    if (!oldpwd)
+        oldpwd = "";
+    setenv("OLDPWD", oldpwd, 1);
+    setenv("PWD", cwd, 1);
+}
