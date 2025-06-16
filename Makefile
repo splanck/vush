@@ -34,7 +34,7 @@ clean:
 
 
 test: $(BUILDDIR)/vush
-	cd tests && ./run_tests.sh
+	cd tests && ./run_tests.sh $(CATEGORY)
 
 install: $(BUILDDIR)/vush
 	install -d $(PREFIX)/bin
