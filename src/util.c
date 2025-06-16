@@ -1,8 +1,10 @@
 /*
  * Utility helpers for reading lines and printing messages.
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "options.h"
@@ -55,4 +57,21 @@ int open_redirect(const char *path, int append, int force) {
     if (opt_noclobber && !append && !force)
         flags |= O_EXCL;
     return open(path, flags, 0644);
+}
+
+char *make_user_path(const char *env_var, const char *default_name) {
+    if (env_var) {
+        const char *val = getenv(env_var);
+        if (val && *val)
+            return strdup(val);
+    }
+    const char *home = getenv("HOME");
+    if (!home || !*home)
+        return NULL;
+    size_t len = strlen(home) + 1 + strlen(default_name) + 1;
+    char *res = malloc(len);
+    if (!res)
+        return NULL;
+    snprintf(res, len, "%s/%s", home, default_name);
+    return res;
 }
