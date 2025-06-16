@@ -15,6 +15,7 @@
 #include "mail.h"
 #include "util.h"
 #include "options.h"
+#include "vars.h"
 
 extern int last_status;
 
@@ -33,7 +34,9 @@ void repl_loop(FILE *input)
                 ;
         if (interactive) {
             check_mail();
-            const char *ps = getenv("PS1");
+            const char *ps = get_shell_var("PS1");
+            if (!ps)
+                ps = getenv("PS1");
             char *prompt = expand_prompt(ps ? ps : "vush> ");
             jobs_at_prompt = 1;
             check_jobs();
