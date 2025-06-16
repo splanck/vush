@@ -35,8 +35,8 @@ int func_return = 0;
  * finishes, the original script_argv and script_argc values are restored.
  *
  * Returns the exit status of the function body or 1 if memory allocation
- * fails during setup.
- */
+ * fails during setup or while parsing the body.
+*/
 int run_function(FuncEntry *fn, char **args) {
     int argc = 0;
     while (args[argc]) argc++;
@@ -71,10 +71,22 @@ int run_function(FuncEntry *fn, char **args) {
         return 1;
     }
     func_return = 0;
-    Command *body = parse_line(strdup(fn->text));
+    char *copy = strdup(fn->text);
+    if (!copy) {
+        pop_local_scope();
+        for (int i = 0; i < argc; i++)
+            free(script_argv[i]);
+        free(script_argv);
+        script_argv = old_argv;
+        script_argc = old_argc;
+        getopts_pos = NULL;
+        return 1;
+    }
+    Command *body = parse_line(copy);
     if (body)
         run_command_list(body, fn->text);
     free_commands(body);
+    free(copy);
     pop_local_scope();
     for (int i = 0; i < argc; i++)
         free(script_argv[i]);
