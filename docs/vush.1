@@ -187,38 +187,40 @@ Return the status of the first failing command in a pipeline. Disable with \fBse
 .TP
 .B "-o noclobber"
 Same as \fB-C\fP. Disable with \fBset +o noclobber\fP.
-Ifile2P and Ifile1P -ef Ifile2P.
-The \fBtrap\fP builtin lists available signal names when invoked with \-l.
-The \fBkill\fP builtin prints a signal name when \-l is followed by a number.
-The \fBunset\fP builtin removes variables and functions; \-v targets variables and \-f functions.
-The \fBfg\fP and \fBbg\fP builtins operate on the most recently started
-background job when no ID is given.
-History can be manipulated using \fBfc\fP.  The \-n flag omits numbers when
-listing, \-r reverses the order and \-s re-executes the selected command with
-optional text substitution.
-The \fBulimit\fP builtin displays or sets resource limits; use \-H for hard
-limits and \-S for soft limits.
-.SH SHELL FEATURES
-Parameter, command and arithmetic expansion, wildcard matching,
-functions, history and background jobs are available. Expanded
-examples reside in docs/vushdoc.md.
-The redirection operator \fB>|\fP forces truncation even when the \fBnoclobber\fP option is set.
-File descriptor numbers may prefix \fB<\fP or \fB>\fP to select an alternate descriptor, e.g. \fB3>file\fP.
-.SH ENVIRONMENT
+.B PS1
+Prompt displayed before each command (default \fBvush> \fP).
 .TP
-.B VUSH_HISTFILE
-Location of the history file.
+.B PS2
+Shown when more input is required (default \fB> \fP).
 .TP
-.B VUSH_HISTSIZE
-Maximum number of history entries.
+.B PS3
+Prompt used by the \fBselect\fP builtin.
 .TP
-.B VUSH_ALIASFILE
-File used to store persistent aliases.
+.B PS4
+Prefix for tracing output produced by \fBset -x\fP.
 .TP
-.B VUSH_FUNCFILE
-File used to store persistent functions.
+.B MAIL
+Mailbox file checked before each prompt; a notice prints when modified.
 .TP
+.B MAILPATH
+Colon separated list of additional mailboxes also checked.
+.TP
+History file path (default \fB~/.vush_history\fP).
+Maximum number of history entries (default \fB1000\fP).
+File used to store persistent aliases (default \fB~/.vush_aliases\fP).
+File used to store persistent functions (default \fB~/.vush_funcs\fP).
+.B CDPATH
+Directories searched by \fBcd\fP for relative paths.
+.B SHELL
+Path used to invoke \fBvush\fP.
 .B ENV
+Extra startup file read after \fB~/.vushrc\fP when set.
+Example configuration:
+export VUSH_ALIASFILE=~/.config/vush/aliases
+export PS1='\w> '
+export CDPATH=~/projects:/tmp
+export VUSH_HISTSIZE=200
+export VUSH_FUNCFILE=~/.config/vush/functions
 Extra startup file executed after \fB~/.vushrc\fP when set.
 .TP
 .B PS1
