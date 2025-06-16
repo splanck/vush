@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
+#include "util.h"
 
 extern int last_status;
 
@@ -35,14 +36,12 @@ extern int last_status;
 int builtin_shift(char **args) {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val < 0) {
+        int val;
+        if (parse_positive_int(args[1], &val) < 0 || val < 0) {
             fprintf(stderr, "usage: shift [n]\n");
             return 1;
         }
-        n = (int)val;
+        n = val;
     }
 
     if (n > script_argc) {

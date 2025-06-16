@@ -19,4 +19,7 @@ int open_redirect(const char *path, int append, int force);
  * set. The returned string must be freed by the caller. */
 char *make_user_path(const char *env_var, const char *secondary,
                      const char *default_name);
+/* Parse S as a non-negative integer.  Return 0 on success, -1 on error or
+ * overflow.  The result is stored in OUT when successful. */
+int parse_positive_int(const char *s, int *out);
 #endif /* VUSH_UTIL_H */
