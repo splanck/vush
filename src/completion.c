@@ -228,10 +228,17 @@ static void apply_completion(const char *match, char *buf, int *lenp, int *posp,
         *lenp += mlen - prefix_len;
         *posp = start + mlen;
         buf[*lenp] = '\0';
-        printf("%s%s", prompt, buf);
+        int len = *lenp;
+        printf("\r%s%s", prompt, buf);
+        if (*disp_lenp > len) {
+            for (int i = len; i < *disp_lenp; i++)
+                putchar(' ');
+            printf("\r%s%s", prompt, buf);
+        }
+        for (int i = len; i > *posp; i--)
+            printf("\b");
         fflush(stdout);
-        if (*lenp > *disp_lenp)
-            *disp_lenp = *lenp;
+        *disp_lenp = len;
     }
 }
 
