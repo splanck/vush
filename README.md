@@ -272,6 +272,13 @@ Ensure `expect` is installed and run:
 make test
 ```
 
+Run a subset of tests with the `CATEGORY` variable. For example, to run only
+the alias tests:
+
+```sh
+make test CATEGORY=alias
+```
+
 The test scripts under `tests/` will launch `build/vush` with predefined commands and verify the output.
 
 ## Debugging
