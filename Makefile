@@ -15,7 +15,7 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/parser_utils.c src/parser_clauses.c \
        src/parser_pipeline.c \
        src/dirstack.c src/util.c src/pipeline.c src/func_exec.c \
-       src/hash.c \
+       src/hash.c src/trap.c src/startup.c src/mail.c src/repl.c \
        src/main.c
 
 OBJS := $(patsubst src/%.c,%.o,$(SRCS))
