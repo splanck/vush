@@ -702,7 +702,9 @@ static int handle_cmd_sub(const char **p, char **out, size_t *outlen) {
     return 0;
 }
 
-/* Try to expand an arithmetic expression starting at *P. */
+/* Try to expand an arithmetic expression starting at *P.  The expression
+ * is captured using gather_dbl_parens() so nested parentheses are handled
+ * correctly. */
 static int handle_arith(const char **p, char **out, size_t *outlen) {
     const char *s = *p;
     if (*s == '$' && s[1] == '(' && s[2] == '(') {
