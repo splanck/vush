@@ -96,6 +96,7 @@ tests="
     test_arith_expr.expect
     test_read.expect
     test_read_eof.expect
+    test_read_signal.expect
     test_case.expect
     test_trap.expect
     test_exit_trap.expect

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 extern int last_status;
 
 /* ---- helper functions for builtin_read -------------------------------- */
@@ -90,7 +91,10 @@ static int read_terminal_line(char *buf, size_t size) {
     size_t pos = 0;
     while (pos < size - 1) {
         char c;
-        ssize_t n = read(STDIN_FILENO, &c, 1);
+        ssize_t n;
+        do {
+            n = read(STDIN_FILENO, &c, 1);
+        } while (n == -1 && errno == EINTR);
         if (n <= 0)
             return -1;
         if (c == '\n' || c == '\r')
