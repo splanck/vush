@@ -1,9 +1,9 @@
 # vush
 
 `vush` is a simple UNIX shell written in C. It supports basic command execution
-and a few built-in commands. The newly revamped
-[manual page](docs/vush.1) provides a concise reference to all options and
-usage.
+and a few built-in commands. The [vush.1](docs/vush.1) page now contains the
+complete manual, while the extended tutorial remains in
+[docs/vushdoc.md](docs/vushdoc.md).
 
 Current version: 0.1.0
 
