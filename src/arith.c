@@ -188,7 +188,15 @@ static long parse_expr(const char **s) {
 long eval_arith(const char *expr) {
     const char *p = expr;
     long v = parse_expr(&p);
+    /* Skip any whitespace the parser left behind. */
     skip_ws(&p);
+    /* Historically some callers might include carriage returns
+     * or stray newlines at the end of the expression.  These
+     * should be ignored rather than treated as trailing garbage. */
+    while (*p == '\r' || *p == '\n') {
+        p++;
+        skip_ws(&p);
+    }
     if (*p != '\0') {
         /* trailing garbage indicates a syntax error; mimic zero result */
         return 0;
