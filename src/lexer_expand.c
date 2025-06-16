@@ -321,11 +321,10 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
                 pos = vlen;
             }
         }
-        if (pos < vlen)
+        if (pos < vlen) {
             memcpy(res + out, val + pos, vlen - pos);
-        else if (!replaced)
-            ;
-        out += (pos < vlen) ? vlen - pos : 0;
+            out += vlen - pos;
+        }
         res[out] = '\0';
         free(pattern);
         char *ret = strdup(res);
