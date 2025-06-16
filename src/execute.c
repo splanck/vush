@@ -966,7 +966,16 @@ static int exec_for_arith(Command *cmd, const char *line) {
  * is executed and last_status from that body is returned.
  */
 static int exec_case(Command *cmd, const char *line) {
+    int fall = 0;
     for (CaseItem *ci = cmd->cases; ci; ci = ci->next) {
+        if (fall) {
+            run_command_list(ci->body, line);
+            if (!ci->fall_through)
+                break;
+            fall = ci->fall_through;
+            continue;
+        }
+
         int matched = 0;
         for (int i = 0; i < ci->pattern_count; i++) {
             if (fnmatch(ci->patterns[i], cmd->var, 0) == 0) {
@@ -978,6 +987,7 @@ static int exec_case(Command *cmd, const char *line) {
             run_command_list(ci->body, line);
             if (!ci->fall_through)
                 break;
+            fall = ci->fall_through;
         }
     }
     return last_status;
