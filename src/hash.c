@@ -62,6 +62,11 @@ int hash_add(const char *name) {
     char *path = search_path(name);
     if (!path)
         return -1;
+    char *resolved = realpath(path, NULL);
+    if (resolved) {
+        free(path);
+        path = resolved;
+    }
     struct hash_entry *e = malloc(sizeof(struct hash_entry));
     if (!e) {
         free(path);
