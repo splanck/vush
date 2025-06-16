@@ -64,12 +64,12 @@ int process_rc_file(const char *path, FILE *input)
 /* Load ~/.vushrc if it exists. */
 int process_startup_file(FILE *input)
 {
-    const char *home = getenv("HOME");
-    if (!home)
+    char *rcpath = make_user_path(NULL, ".vushrc");
+    if (!rcpath)
         return 0;
-    char rcpath[PATH_MAX];
-    snprintf(rcpath, sizeof(rcpath), "%s/.vushrc", home);
-    return process_rc_file(rcpath, input);
+    int r = process_rc_file(rcpath, input);
+    free(rcpath);
+    return r;
 }
 
 /* Execute a command provided via -c. */

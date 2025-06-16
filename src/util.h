@@ -14,4 +14,7 @@ char *read_logical_line(FILE *f, char *buf, size_t size);
  * FORCE overrides the noclobber option when set.
  * Returns a file descriptor or -1 on failure. */
 int open_redirect(const char *path, int append, int force);
+/* Construct a path using ENV_VAR if set, otherwise "$HOME/DEFAULT_NAME".
+ * The returned string must be freed by the caller. */
+char *make_user_path(const char *env_var, const char *default_name);
 #endif /* VUSH_UTIL_H */

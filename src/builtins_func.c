@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "util.h"
 
 extern int last_status;
 
@@ -39,17 +40,9 @@ FuncEntry *find_function(const char *name)
  * VUSH_FUNCFILE environment variable is set its value is returned,
  * otherwise ~/.vush_funcs is used.
  */
-static const char *funcfile_path(void)
+static char *funcfile_path(void)
 {
-    const char *env = getenv("VUSH_FUNCFILE");
-    if (env && *env)
-        return env;
-    const char *home = getenv("HOME");
-    if (!home)
-        return NULL;
-    static char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_funcs", home);
-    return path;
+    return make_user_path("VUSH_FUNCFILE", ".vush_funcs");
 }
 
 /*
@@ -59,10 +52,11 @@ static const char *funcfile_path(void)
  */
 static void save_functions(void)
 {
-    const char *path = funcfile_path();
+    char *path = funcfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
+    free(path);
     if (!f)
         return;
     for (FuncEntry *fn = functions; fn; fn = fn->next)
@@ -76,10 +70,11 @@ static void save_functions(void)
  */
 void load_functions(void)
 {
-    const char *path = funcfile_path();
+    char *path = funcfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "r");
+    free(path);
     if (!f)
         return;
     char line[MAX_LINE];

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "util.h"
 
 struct alias_entry {
     char *name;
@@ -30,26 +31,19 @@ static int set_alias(const char *name, const char *value);
 static void remove_all_aliases(const char *name);
 
 /* Return the path of the alias file or NULL if $HOME is not set. */
-static const char *aliasfile_path(void)
+static char *aliasfile_path(void)
 {
-    const char *env = getenv("VUSH_ALIASFILE");
-    if (env && *env)
-        return env;
-    const char *home = getenv("HOME");
-    if (!home)
-        return NULL;
-    static char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s/.vush_aliases", home);
-    return path;
+    return make_user_path("VUSH_ALIASFILE", ".vush_aliases");
 }
 
 /* Write the current alias list to the file returned by aliasfile_path(). */
 static void save_aliases(void)
 {
-    const char *path = aliasfile_path();
+    char *path = aliasfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
+    free(path);
     if (!f)
         return;
     for (struct alias_entry *a = aliases; a; a = a->next)
@@ -60,10 +54,11 @@ static void save_aliases(void)
 /* Populate the alias list from the alias file if it exists. */
 void load_aliases(void)
 {
-    const char *path = aliasfile_path();
+    char *path = aliasfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "r");
+    free(path);
     if (!f)
         return;
     char line[MAX_LINE];

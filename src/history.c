@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
+#include "util.h"
 
 typedef struct HistEntry {
     int id;
@@ -53,34 +54,23 @@ static void renumber_history(void)
  * precedence over ``$HOME/.vush_history``.  Returns NULL if no path can
  * be constructed.
  */
-static const char *histfile_path(void) {
-    static char path[PATH_MAX];
-    static int inited = 0;
-    if (!inited) {
-        const char *env = getenv("VUSH_HISTFILE");
-        if (!env || !*env)
-            env = getenv("HISTFILE");
-        if (env && *env) {
-            strncpy(path, env, sizeof(path) - 1);
-            path[sizeof(path) - 1] = '\0';
-        } else {
-            const char *home = getenv("HOME");
-            if (!home || !*home)
-                return NULL;
-            snprintf(path, sizeof(path), "%s/.vush_history", home);
-        }
-        inited = 1;
-    }
-    return path[0] ? path : NULL;
+static char *histfile_path(void) {
+    const char *env = getenv("VUSH_HISTFILE");
+    if (!env || !*env)
+        env = getenv("HISTFILE");
+    if (env && *env)
+        return strdup(env);
+    return make_user_path(NULL, ".vush_history");
 }
 
 /* Rewrite the entire history file from the in-memory list. */
 static void rewrite_history_file(void)
 {
-    const char *path = histfile_path();
+    char *path = histfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
+    free(path);
     if (!f)
         return;
     for (HistEntry *e = head; e; e = e->next)
@@ -151,9 +141,10 @@ static void add_history_entry(const char *cmd, int save_file) {
     }
 
     if (save_file) {
-        const char *path = histfile_path();
+        char *path = histfile_path();
         if (path) {
             FILE *f = fopen(path, "a");
+            free(path);
             if (f) {
                 fprintf(f, "%s\n", cmd);
                 fclose(f);
@@ -206,10 +197,11 @@ void print_history(void) {
  */
 void load_history(void) {
     history_init();
-    const char *path = histfile_path();
+    char *path = histfile_path();
     if (!path)
         return;
     FILE *f = fopen(path, "r");
+    free(path);
     if (!f)
         return;
     char line[MAX_LINE];
@@ -336,9 +328,10 @@ void clear_history(void) {
     next_id = 1;
     history_size = 0;
 
-    const char *path = histfile_path();
+    char *path = histfile_path();
     if (path) {
         FILE *f = fopen(path, "w");
+        free(path);
         if (f)
             fclose(f);
     }
