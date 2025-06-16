@@ -92,6 +92,7 @@ tests="
     test_function.expect
     test_assign.expect
     test_arith.expect
+    test_arith_expr.expect
     test_read.expect
     test_read_eof.expect
     test_case.expect
