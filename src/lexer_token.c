@@ -298,6 +298,12 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             /* unmatched, reset pointer for error */
             *p = (char *)start;
         }
+        if (**p == '$' && strchr("#?*@-$!", *(*p + 1))) {
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '$' */
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
+            first = 0;
+            continue;
+        }
         if (**p == '$' && (isalnum((unsigned char)*(*p + 1)))) {
             if (*len < MAX_LINE - 1)
                 buf[(*len)++] = *(*p)++; /* '$' */
