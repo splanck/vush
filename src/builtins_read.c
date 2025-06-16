@@ -95,8 +95,11 @@ static int read_terminal_line(char *buf, size_t size) {
         do {
             n = read(STDIN_FILENO, &c, 1);
         } while (n == -1 && errno == EINTR);
-        if (n == 0)
+        if (n == 0 || (n > 0 && pos == 0 && c == 0x04)) {
+            errno = 0;
+            last_status = 1;
             return 1; /* EOF */
+        }
         if (n < 0)
             return -1;
         if (c == '\n' || c == '\r')
