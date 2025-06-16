@@ -263,8 +263,10 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         unlink(template);
         free(delim);
         free(tok);
-        if (eof)
+        if (eof) {
             fprintf(stderr, "syntax error: here-document delimited by end-of-file\n");
+            fflush(stderr);
+        }
         else
             parse_need_more = 1;
         return -1;
