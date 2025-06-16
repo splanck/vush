@@ -175,6 +175,33 @@ static int run_builtin_shell(PipelineSegment *seg) {
     return handled;
 }
 
+/* Expand only the temporary assignment words of SEG using the current
+ * environment. */
+static void expand_assignments(PipelineSegment *seg) {
+    for (int i = 0; i < seg->assign_count; i++) {
+        char *eq = strchr(seg->assigns[i], '=');
+        if (eq) {
+            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
+            char *val = expand_var(eq + 1);
+            char *tmp = NULL;
+            if (name && val)
+                asprintf(&tmp, "%s=%s", name, val);
+            if (tmp) {
+                free(seg->assigns[i]);
+                seg->assigns[i] = tmp;
+            }
+            free(name);
+            free(val);
+        } else {
+            char *new = expand_var(seg->assigns[i]);
+            if (new) {
+                free(seg->assigns[i]);
+                seg->assigns[i] = new;
+            }
+        }
+    }
+}
+
 static void expand_segment(PipelineSegment *seg) {
     for (int i = 0; seg->argv[i]; i++) {
         if (seg->expand[i]) {
@@ -238,6 +265,14 @@ static void expand_segment(PipelineSegment *seg) {
 static void expand_pipeline(PipelineSegment *pipeline) {
     for (PipelineSegment *seg = pipeline; seg; seg = seg->next)
         expand_segment(seg);
+}
+
+/* Expand all parts of SEG except for temporary assignments. */
+static void expand_segment_no_assign(PipelineSegment *seg) {
+    int save = seg->assign_count;
+    seg->assign_count = 0;
+    expand_segment(seg);
+    seg->assign_count = save;
 }
 
 /*
@@ -469,13 +504,9 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     if (pipeline->next)
         return 0;
 
-    /*
-     * Expand words in the pipeline before applying temporary assignments so
-     * that command substitutions and parameter expansions occur using the
-     * current environment.  This mirrors normal shell behavior where
-     * assignment values are expanded prior to being set.
-     */
-    expand_segment(pipeline);
+    /* Expand assignment values using the current environment before setting
+     * them so that subsequent word expansions see the temporary bindings. */
+    expand_assignments(pipeline);
 
     if (!pipeline->argv[0] && pipeline->assign_count > 0) {
         for (int i = 0; i < pipeline->assign_count; i++) {
@@ -503,12 +534,6 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     if (!pipeline->argv[0])
         return 0;
 
-    int has_redir =
-        pipeline->in_file || pipeline->out_file || pipeline->err_file ||
-        pipeline->dup_out != -1 || pipeline->dup_err != -1 ||
-        pipeline->close_out || pipeline->close_err ||
-        pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
-
     struct assign_backup *backs = backup_assignments(pipeline);
     if (pipeline->assign_count > 0 && !backs)
         return 1;
@@ -526,6 +551,15 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             set_shell_var(backs[i].name, val);
         }
     }
+
+    expand_segment_no_assign(pipeline);
+
+    int has_redir =
+        pipeline->in_file || pipeline->out_file || pipeline->err_file ||
+        pipeline->dup_out != -1 || pipeline->dup_err != -1 ||
+        pipeline->close_out || pipeline->close_err ||
+        pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
+
     int handled = 0;
     int is_blt = is_builtin_command(pipeline->argv[0]);
     FuncEntry *fn = NULL;
