@@ -455,24 +455,28 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
     if (!quoted && (*argc == 0 || opt_keyword) && is_assignment(tok)) {
         char *eq = strchr(tok, '=');
         if (eq && eq[1] == '(' && tok[strlen(tok) - 1] != ')') {
-            char *assign = strdup(tok);
+            size_t alloc = strlen(tok) + 1;
+            char *assign = malloc(alloc);
+            if (!assign) { free(tok); return -1; }
+            strcpy(assign, tok);
+            int parens = 1;
             char *tmp;
             do {
                 int q2 = 0; int de2 = 1;
                 tmp = read_token(p, &q2, &de2);
                 if (!tmp) { free(assign); free(tok); return -1; }
-                char *new_assign = NULL;
-                int ret = asprintf(&new_assign, "%s %s", assign, tmp);
-                if (ret < 0 || !new_assign) {
-                    free(assign);
-                    free(tmp);
-                    free(tok);
-                    return -1;
-                }
-                free(assign);
+                alloc += strlen(tmp) + 1;
+                char *new_assign = realloc(assign, alloc);
+                if (!new_assign) { free(assign); free(tmp); free(tok); return -1; }
                 assign = new_assign;
+                strcat(assign, " ");
+                strcat(assign, tmp);
+                for (char *c = tmp; *c; c++) {
+                    if (*c == '(') parens++;
+                    else if (*c == ')') parens--;
+                }
                 free(tmp);
-            } while (assign[strlen(assign) - 1] != ')');
+            } while (parens > 0);
             free(tok);
             tok = assign;
             eq = strchr(tok, '=');
