@@ -1,0 +1,32 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "trap '' USR1\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "read foo\r"
+set pid [exp_pid]
+after 100
+exec kill -USR1 $pid
+after 100
+send "hello\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$foo\r"
+expect {
+    -re "\[\r\n\]+hello\[\r\n\]+vush> " {}
+    timeout { send_user "signal read failed\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
