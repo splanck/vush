@@ -240,10 +240,15 @@ int builtin_ulimit(char **args)
         last_status = 1;
         return 1;
     }
-    if (hard)
+    if (hard) {
         rl.rlim_max = val;
-    else
+        if (rl.rlim_cur > rl.rlim_max)
+            rl.rlim_cur = rl.rlim_max;
+    } else {
         rl.rlim_cur = val;
+        if (rl.rlim_max < rl.rlim_cur)
+            rl.rlim_max = rl.rlim_cur;
+    }
     if (setrlimit(resource, &rl) != 0) {
         perror("ulimit");
         last_status = 1;

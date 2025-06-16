@@ -20,6 +20,16 @@ expect {
     -re "\r\n1234\r?\nvush> " {}
     timeout { send_user "ulimit set failed\n"; exit 1 }
 }
+send "ulimit -H -f 1234\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "ulimit -H -f\r"
+expect {
+    -re "\r\n1234\r?\nvush> " {}
+    timeout { send_user "ulimit hard set failed\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
