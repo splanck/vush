@@ -278,6 +278,36 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             continue;
         }
         if (**p == '\\') {
+            if (disable_first && *(*p + 1) == '"') {
+                /* Treat \"...\" in unquoted context as a quoted segment */
+                char *start = *p + 2; /* skip opening \" */
+                char *end = strstr(start, "\\\"");
+                if (!end) {
+                    fprintf(stderr, "syntax error: unmatched '\"'\n");
+                    parse_need_more = 0;
+                    return -1;
+                }
+                char tmp[MAX_LINE];
+                size_t seglen = (size_t)(end - start);
+                if (seglen > MAX_LINE - 3)
+                    seglen = MAX_LINE - 3;
+                tmp[0] = '"';
+                memcpy(tmp + 1, start, seglen);
+                tmp[1 + seglen] = '"';
+                tmp[2 + seglen] = '\0';
+                char *tp = tmp;
+                int q = 0; int de = 1;
+                char *part = parse_quoted_word(&tp, &q, &de);
+                if (!part)
+                    return -1;
+                for (int ci = 0; part[ci] && *len < MAX_LINE - 1; ci++)
+                    buf[(*len)++] = part[ci];
+                free(part);
+                *p = end + 2; /* skip closing \" */
+                *do_expand = de;
+                first = 0;
+                continue;
+            }
             handle_backslash_escape(p, buf, len, &first, do_expand,
                                    disable_first);
             continue;
