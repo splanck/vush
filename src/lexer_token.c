@@ -163,6 +163,29 @@ static int is_end_dquote(int c) {
 static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                              int *len, int *do_expand, int disable_first) {
     int first = 1;
+
+    /* Fast path for arithmetic expansion starting a token so that the
+     * expression is returned as a single unit. */
+    if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
+        char *dp = *p + 1; /* skip '$' for gather_dbl_parens */
+        char *body = gather_dbl_parens(&dp);
+        if (!body) {
+            parse_need_more = 1;
+            return -1;
+        }
+        if (*len < MAX_LINE - 1)
+            buf[(*len)++] = '$';
+        size_t l = (size_t)(dp - (*p + 1)); /* length of "((expr))" */
+        size_t avail = (size_t)(MAX_LINE - 1 - *len);
+        if (l > avail)
+            l = avail;
+        memcpy(buf + *len, *p + 1, l);
+        *len += l;
+        *p = dp;
+        free(body);
+        return 0;
+    }
+
     while (**p && !is_end((unsigned char)**p)) {
         if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
             if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '$' */
