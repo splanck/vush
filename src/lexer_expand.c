@@ -159,6 +159,8 @@ static char *expand_tilde(const char *token) {
 /* Evaluate an arithmetic expansion token $((expr)) and return its value. */
 static char *expand_arith(const char *token) {
     size_t tlen = strlen(token);
+    while (tlen > 0 && (token[tlen-1] == '\n' || token[tlen-1] == '\r'))
+        tlen--;
     if (!(tlen > 4 && strncmp(token, "$((", 3) == 0 &&
           token[tlen-2] == ')' && token[tlen-1] == ')'))
         return NULL;
