@@ -16,20 +16,47 @@
  * Read a line continuing backslash escapes across multiple physical lines.
  */
 
+static int read_physical_line(FILE *f, char *buf, size_t size) {
+    int c;
+    size_t len = 0;
+    while ((c = fgetc(f)) != EOF) {
+        if (c == '\n' || c == '\r') {
+            if (c == '\r') {
+                int next = fgetc(f);
+                if (next != '\n' && next != EOF)
+                    ungetc(next, f);
+            }
+            break;
+        }
+        if (len < size - 1)
+            buf[len++] = (char)c;
+    }
+    if (c == EOF && len == 0)
+        return 0;
+    if (len >= size - 1) {
+        buf[len] = '\0';
+        while (c != EOF && c != '\n' && c != '\r')
+            c = fgetc(f);
+        if (c == '\r') {
+            int next = fgetc(f);
+            if (next != '\n' && next != EOF)
+                ungetc(next, f);
+        }
+    }
+    buf[len] = '\0';
+    return 1;
+}
+
 char *read_logical_line(FILE *f, char *buf, size_t size) {
-    if (!fgets(buf, size, f))
+    if (!read_physical_line(f, buf, size))
         return NULL;
     size_t len = strlen(buf);
-    if (len && buf[len - 1] == '\n')
-        buf[--len] = '\0';
-    if (len && buf[len - 1] == '\r')
-        buf[--len] = '\0';
     while (len > 0 && buf[len - 1] == '\\') {
         do {
             buf[--len] = '\0';
         } while (len > 0 && buf[len - 1] == '\\');
         char cont[MAX_LINE];
-        if (!fgets(cont, sizeof(cont), f)) {
+        if (!read_physical_line(f, cont, sizeof(cont))) {
             /* restore removed backslashes if continuation fails */
             while (buf[len] == '\0' && len < size - 1) {
                 buf[len++] = '\\';

@@ -177,6 +177,7 @@ tests="
     test_command_v_path_long.expect
     test_dquote_escape.expect
     test_calloc_fail.expect
+    test_pipe_cr.expect
 "
 for test in $tests; do
     echo "Running $test"
