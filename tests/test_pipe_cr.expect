@@ -1,0 +1,13 @@
+#!/usr/bin/env expect
+set timeout 5
+set vush [file dirname [info script]]/../vush
+set cmd [format {printf 'echo hi\r' | %s /dev/stdin} $vush]
+spawn sh -c $cmd
+expect {
+    -re "hi\r?\n" {}
+    timeout { send_user "CR pipe failed\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
