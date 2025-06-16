@@ -215,7 +215,13 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     size_t pos = 0;
     int found = 0;
     int c;
+    int got_eof = 0;
     while ((c = fgetc(in)) != EOF) {
+        if (c == 4 && isatty(fileno(in))) {
+            got_eof = 1;
+            c = EOF;
+            break;
+        }
         if (c == '\r') {
             if (!isatty(fileno(in))) {
                 int n = fgetc(in);
@@ -256,8 +262,8 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         }
     }
     if (!found) {
-        int eof = feof(in);
-        if (in == stdin && eof)
+        int eof = feof(in) || got_eof;
+        if (in == stdin && feof(in))
             clearerr(stdin);
         fclose(tf);
         unlink(template);
