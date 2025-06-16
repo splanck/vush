@@ -150,6 +150,7 @@ tests="
     test_version.expect
     test_ulimit.expect
     test_cd_P.expect
+    test_cd_P_dangle.expect
     test_pwd_options.expect
     test_fc.expect
     test_trap_p.expect

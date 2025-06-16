@@ -131,21 +131,29 @@ int builtin_cd(char **args) {
 
     if (!searched) {
         const char *path = dir;
+        int unresolved = 0;
         if (physical) {
-            if (!realpath(dir, used)) {
-                perror("cd");
-                return 1;
+            if (realpath(dir, used)) {
+                path = used;
+            } else {
+                unresolved = 1;
             }
-            path = used;
         }
         if (chdir(path) != 0) {
             perror("cd");
             return 1;
         }
-        if (physical)
-            dir = path;
+        if (physical) {
+            if (!unresolved) {
+                dir = path;
+            } else if (getcwd(used, sizeof(used))) {
+                dir = used;
+            }
+        }
     } else if (physical) {
         if (realpath(".", used))
+            dir = used;
+        else if (getcwd(used, sizeof(used)))
             dir = used;
     }
 
