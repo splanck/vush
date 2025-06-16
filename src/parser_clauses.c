@@ -275,7 +275,11 @@ static Command *parse_for_arith_clause(char **p) {
     char *init, *cond, *incr;
     if (!parse_for_arith_exprs(p, &init, &cond, &incr))
         return NULL;
-    while (**p == ' ' || **p == '\t') (*p)++;
+    while (**p == ' ' || **p == '\t' || **p == '\n') (*p)++;
+    if (**p == ';') {
+        (*p)++;
+        while (**p == ' ' || **p == '\t' || **p == '\n') (*p)++;
+    }
     int q = 0; int de = 1; char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "do") != 0) { free(init); free(cond); free(incr); free(tok); return NULL; }
     free(tok);
