@@ -59,9 +59,15 @@ int open_redirect(const char *path, int append, int force) {
     return open(path, flags, 0644);
 }
 
-char *make_user_path(const char *env_var, const char *default_name) {
+char *make_user_path(const char *env_var, const char *secondary,
+                     const char *default_name) {
     if (env_var) {
         const char *val = getenv(env_var);
+        if (val && *val)
+            return strdup(val);
+    }
+    if (secondary) {
+        const char *val = getenv(secondary);
         if (val && *val)
             return strdup(val);
     }

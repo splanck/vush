@@ -42,7 +42,7 @@ FuncEntry *find_function(const char *name)
  */
 static char *funcfile_path(void)
 {
-    return make_user_path("VUSH_FUNCFILE", ".vush_funcs");
+    return make_user_path("VUSH_FUNCFILE", NULL, ".vush_funcs");
 }
 
 /*
