@@ -54,6 +54,19 @@ static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
 
+struct assign_backup {
+    char *name;
+    char *env;
+    char *var;
+    int had_env;
+    int had_var;
+};
+
+static struct assign_backup *backup_assignments(PipelineSegment *pipeline);
+static void restore_assignments(PipelineSegment *pipeline, struct assign_backup *backs);
+static void apply_array_assignment(const char *name, const char *val, int export_env);
+static char **parse_array_values(const char *val, int *count);
+
 /* Determine if a command name corresponds to a builtin. */
 static int is_builtin_command(const char *name) {
     for (int i = 0; builtin_table[i].name; i++) {
@@ -305,118 +318,90 @@ static void redirect_fd(int fd, int dest) {
     dup2(fd, dest);
     close(fd);
 }
-/*
- * Apply temporary variable assignments before running a pipeline.
- * Builtins and functions are executed directly while environment
- * variables are preserved and restored around the call.
- */
 
-static int apply_temp_assignments(PipelineSegment *pipeline, int background,
-                                  const char *line) {
-    if (pipeline->next)
-        return 0;
+static char **parse_array_values(const char *val, int *count) {
+    *count = 0;
+    char *body = strndup(val + 1, strlen(val) - 2);
+    if (!body)
+        return NULL;
 
-    /*
-     * Expand words in the pipeline before applying temporary assignments so
-     * that command substitutions and parameter expansions occur using the
-     * current environment.  This mirrors normal shell behavior where
-     * assignment values are expanded prior to being set.
-     */
-    expand_segment(pipeline);
+    char **vals = NULL;
+    char *p = body;
+    while (*p) {
+        while (*p == ' ' || *p == '\t')
+            p++;
+        if (*p == '\0')
+            break;
+        char *start = p;
+        while (*p && *p != ' ' && *p != '\t')
+            p++;
+        if (*p)
+            *p++ = '\0';
 
-    if (!pipeline->argv[0] && pipeline->assign_count > 0) {
-        for (int i = 0; i < pipeline->assign_count; i++) {
-            char *eq = strchr(pipeline->assigns[i], '=');
-            if (!eq)
-                continue;
-            char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-            if (!name)
-                continue;
-            char *val = eq + 1;
-            size_t vlen = strlen(val);
-            if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
-                char *body = strndup(val+1, vlen-2);
-                if (!body) {
-                    free(name);
-                    continue;
-                }
-                char *p = body;
-                char **vals = NULL; int count=0; int failed = 0;
-                while (*p) {
-                    while (*p==' '||*p=='\t') p++;
-                    if (*p=='\0') break;
-                    char *start=p;
-                    while (*p && *p!=' ' && *p!='\t') p++;
-                    if (*p) *p++='\0';
-                    char **tmp = realloc(vals, sizeof(char*)*(count+1));
-                    if (!tmp) {
-                        failed = 1;
-                        break;
-                    }
-                    vals = tmp;
-                    vals[count] = strdup(start);
-                    if (!vals[count]) {
-                        failed = 1;
-                        break;
-                    }
-                    count++;
-                }
-                if (!failed) {
-                    set_shell_array(name, vals, count);
-                    if (opt_allexport) {
-                        size_t joinlen = 0;
-                        for (int j=0;j<count;j++)
-                            joinlen += strlen(vals[j]) + 1;
-                        char *joined = malloc(joinlen+1);
-                        if (joined) {
-                            joined[0] = '\0';
-                            for (int j=0;j<count;j++) {
-                                strcat(joined, vals[j]);
-                                if (j < count-1) strcat(joined, " ");
-                            }
-                            setenv(name, joined, 1);
-                            free(joined);
-                        }
-                    }
-                }
-                for(int j=0;j<count;j++) free(vals[j]);
-                free(vals);
-                free(body);
-            } else {
-                set_shell_var(name, val);
-                if (opt_allexport)
-                    setenv(name, val, 1);
-            }
-            free(name);
+        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
+        if (!tmp) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            free(body);
+            *count = 0;
+            return NULL;
         }
-        last_status = 0;
-        return 1;
+        vals = tmp;
+        vals[*count] = strdup(start);
+        if (!vals[*count]) {
+            for (int i = 0; i < *count; i++)
+                free(vals[i]);
+            free(vals);
+            free(body);
+            *count = 0;
+            return NULL;
+        }
+        (*count)++;
+    }
+    free(body);
+    return vals;
+}
+
+static void apply_array_assignment(const char *name, const char *val, int export_env) {
+    int count = 0;
+    char **vals = parse_array_values(val, &count);
+    if (!vals)
+        return;
+
+    set_shell_array(name, vals, count);
+
+    if (export_env) {
+        size_t joinlen = 0;
+        for (int j = 0; j < count; j++)
+            joinlen += strlen(vals[j]) + 1;
+        char *joined = malloc(joinlen + 1);
+        if (joined) {
+            joined[0] = '\0';
+            for (int j = 0; j < count; j++) {
+                strcat(joined, vals[j]);
+                if (j < count - 1)
+                    strcat(joined, " ");
+            }
+            setenv(name, joined, 1);
+            free(joined);
+        }
     }
 
-    if (!pipeline->argv[0])
-        return 0;
+    for (int j = 0; j < count; j++)
+        free(vals[j]);
+    free(vals);
+}
 
-    int has_redir =
-        pipeline->in_file || pipeline->out_file || pipeline->err_file ||
-        pipeline->dup_out != -1 || pipeline->dup_err != -1 ||
-        pipeline->close_out || pipeline->close_err ||
-        pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
+static struct assign_backup *backup_assignments(PipelineSegment *pipeline) {
+    if (pipeline->assign_count == 0)
+        return NULL;
 
-    struct {
-        char *name;
-        char *env;
-        char *var;
-        int had_env;
-        int had_var;
-    } *backs = NULL;
-
-    if (pipeline->assign_count > 0) {
-        backs = calloc(pipeline->assign_count, sizeof(*backs));
-        if (!backs) {
-            perror("calloc");
-            last_status = 1;
-            return 1;
-        }
+    struct assign_backup *backs = calloc(pipeline->assign_count, sizeof(*backs));
+    if (!backs) {
+        perror("calloc");
+        last_status = 1;
+        return NULL;
     }
 
     for (int i = 0; i < pipeline->assign_count; i++) {
@@ -448,63 +433,97 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             backs[i].name = NULL;
             continue;
         }
+    }
+
+    return backs;
+}
+
+static void restore_assignments(PipelineSegment *pipeline, struct assign_backup *backs) {
+    if (!backs)
+        return;
+    for (int i = 0; i < pipeline->assign_count; i++) {
+        if (!backs[i].name)
+            continue;
+        if (backs[i].had_env)
+            setenv(backs[i].name, backs[i].env, 1);
+        else
+            unsetenv(backs[i].name);
+        if (backs[i].had_var)
+            set_shell_var(backs[i].name, backs[i].var);
+        else
+            unset_shell_var(backs[i].name);
+        free(backs[i].name);
+        free(backs[i].env);
+        free(backs[i].var);
+    }
+    free(backs);
+}
+/*
+ * Apply temporary variable assignments before running a pipeline.
+ * Builtins and functions are executed directly while environment
+ * variables are preserved and restored around the call.
+ */
+
+static int apply_temp_assignments(PipelineSegment *pipeline, int background,
+                                  const char *line) {
+    if (pipeline->next)
+        return 0;
+
+    /*
+     * Expand words in the pipeline before applying temporary assignments so
+     * that command substitutions and parameter expansions occur using the
+     * current environment.  This mirrors normal shell behavior where
+     * assignment values are expanded prior to being set.
+     */
+    expand_segment(pipeline);
+
+    if (!pipeline->argv[0] && pipeline->assign_count > 0) {
+        for (int i = 0; i < pipeline->assign_count; i++) {
+            char *eq = strchr(pipeline->assigns[i], '=');
+            if (!eq)
+                continue;
+            char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
+            if (!name)
+                continue;
+            char *val = eq + 1;
+            size_t vlen = strlen(val);
+            if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
+                apply_array_assignment(name, val, opt_allexport);
+            } else {
+                set_shell_var(name, val);
+                if (opt_allexport)
+                    setenv(name, val, 1);
+            }
+            free(name);
+        }
+        last_status = 0;
+        return 1;
+    }
+
+    if (!pipeline->argv[0])
+        return 0;
+
+    int has_redir =
+        pipeline->in_file || pipeline->out_file || pipeline->err_file ||
+        pipeline->dup_out != -1 || pipeline->dup_err != -1 ||
+        pipeline->close_out || pipeline->close_err ||
+        pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
+
+    struct assign_backup *backs = backup_assignments(pipeline);
+    if (pipeline->assign_count > 0 && !backs)
+        return 1;
+
+    for (int i = 0; i < pipeline->assign_count; i++) {
+        char *eq = strchr(pipeline->assigns[i], '=');
+        if (!eq || !backs[i].name)
+            continue;
         char *val = eq + 1;
         size_t vlen = strlen(val);
         if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
-            char *body = strndup(val+1, vlen-2);
-            if (!body) {
-                free(backs[i].env);
-                free(backs[i].var);
-                free(backs[i].name);
-                backs[i].name = NULL;
-                continue;
-            }
-            char *p = body;
-            char **vals = NULL; int count=0; int failed = 0;
-            size_t joinlen = 0;
-            while (*p) {
-                while (*p==' '||*p=='\t') p++;
-                if (*p=='\0') break;
-                char *start=p;
-                while (*p && *p!=' ' && *p!='\t') p++;
-                if (*p) *p++='\0';
-                char **tmp = realloc(vals, sizeof(char*)*(count+1));
-                if (!tmp) {
-                    failed = 1;
-                    break;
-                }
-                vals = tmp;
-                vals[count] = strdup(start);
-                if (!vals[count]) {
-                    failed = 1;
-                    break;
-                }
-                count++;
-                joinlen += strlen(start) + 1;
-            }
-            if (!failed) {
-                char *joined = malloc(joinlen+1);
-                if (joined) {
-                    joined[0] = '\0';
-                    for (int j=0;j<count;j++) {
-                        strcat(joined, vals[j]);
-                        if (j < count-1) strcat(joined, " ");
-                    }
-                }
-                if (backs[i].name) {
-                    setenv(backs[i].name, joined ? joined : "", 1);
-                    set_shell_array(backs[i].name, vals, count);
-                }
-                free(joined);
-            }
-            for(int j=0;j<count;j++) free(vals[j]);
-            free(vals);
-            free(body);
+            apply_array_assignment(backs[i].name, val, 1);
         } else {
-            if (backs[i].name) {
-                setenv(backs[i].name, val, 1);
-                set_shell_var(backs[i].name, val);
-            }
+            setenv(backs[i].name, val, 1);
+            set_shell_var(backs[i].name, val);
         }
     }
     int handled = 0;
@@ -526,23 +545,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
         handled = 1;
     }
 
-    for (int i = 0; i < pipeline->assign_count; i++) {
-        if (!backs[i].name)
-            continue;
-        if (backs[i].had_env)
-            setenv(backs[i].name, backs[i].env, 1);
-        else
-            unsetenv(backs[i].name);
-        if (backs[i].had_var)
-            set_shell_var(backs[i].name, backs[i].var);
-        else
-            unset_shell_var(backs[i].name);
-        free(backs[i].name);
-        free(backs[i].env);
-        free(backs[i].var);
-    }
-
-    free(backs);
+    restore_assignments(pipeline, backs);
 
     if (handled && opt_errexit && last_status != 0)
         exit(last_status);
