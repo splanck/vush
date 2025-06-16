@@ -9,8 +9,8 @@ vush \- simple POSIX-style shell
 .SH DESCRIPTION
 vush is a lightweight POSIX-style shell focused on providing the
 essentials for interactive and scripted use. It supports job control,
-pipelines, redirection and standard shell expansions. See README.md or
-docs/vushdoc.md for a full feature overview.
+pipelines, redirection and standard shell expansions. See README.md for a
+full feature overview. See also the SEE ALSO section.
 .SH OPTIONS
 .TP
 .B -c command
@@ -276,7 +276,7 @@ Stored functions.
 .B vush
 starts an interactive shell. To run a script file use
 .B "vush script.vsh".
-More examples can be found in docs/vushdoc.md.
+More examples are available; see also the SEE ALSO section.
 .PP
 Resource limits can be queried or adjusted, e.g.:
 .PP
@@ -334,8 +334,8 @@ $ printf "foo\n" | vush -c 'read; echo $REPLY'
 foo
 .fi
 .SH SEE ALSO
-README.md \- overview and quick start, docs/vushdoc.md \- examples and
-detailed explanations, the POSIX Shell specification
+README.md \- overview and quick start, docs/vushdoc.md \- additional
+tutorial with examples, the POSIX Shell specification
 <https://pubs.opengroup.org/onlinepubs/9699919799/>, sh(1)
 .SH AUTHOR
 The vush developers.
