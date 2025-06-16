@@ -1,0 +1,41 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [file dirname [info script]]
+set src "$dir/fork_fail.c"
+set lib "$dir/fork_fail.so"
+# compile failing fork library
+exec cc -shared -fPIC $src -o $lib
+set env(LD_PRELOAD) $lib
+set env(FORK_FAIL_AT) 1
+set tmpdir [exec mktemp -d]
+set env(TMPDIR) $tmpdir
+spawn $dir/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo hi\r"
+expect {
+    -re "\r\nhi\r\nvush> " {}
+    timeout { send_user "echo output mismatch\n"; exit 1 }
+}
+send "fc\r"
+expect {
+    -re "fork:.*\r\n" {}
+    timeout { send_user "missing fork error\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+set files [glob -nocomplain "$tmpdir/vush_fc*"]
+if {[llength $files] != 0} {
+    send_user "temporary file not removed\n"
+    exit 1
+}
+exec rm -rf $tmpdir $lib
