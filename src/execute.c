@@ -533,7 +533,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             free(name);
         }
         last_status = 0;
-        return 1;
+        return 0;
     }
 
     if (!pipeline->argv[0])
@@ -709,7 +709,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         fprintf(stderr, "%s%s\n", ps4, line);
     }
 
-    if (apply_temp_assignments(copy, background, line)) {
+    int handled = apply_temp_assignments(copy, background, line);
+    if (handled || (!copy->argv[0] && copy->assign_count > 0)) {
         if (param_error)
             last_status = 1;
         free_pipeline(copy);
