@@ -525,7 +525,7 @@ static char *expand_simple(const char *token) {
         return s;
     if (token[0] == '~')
         return expand_tilde(token);
-    if (token[0] == '`' || (token[0] == '$' && token[1] == '(')) {
+    if (token[0] == '`' || (token[0] == '$' && token[1] == '(' && token[2] != '(')) {
         char *p = (char *)token;
         char *out = parse_substitution(&p);
         if (out && *p == '\0')
@@ -602,7 +602,7 @@ char *expand_var(const char *token) {
 
     const char *p = token;
     while (*p) {
-        if (*p == '`' || (*p == '$' && p[1] == '(')) {
+        if (*p == '`' || (*p == '$' && p[1] == '(' && p[2] != '(')) {
             char *dup = strdup(p);
             if (!dup) { free(out); return NULL; }
             char *dp = dup;
@@ -636,26 +636,25 @@ char *expand_var(const char *token) {
                     continue;
                 }
             } else if (p[1] == '(' && p[2] == '(') {
-                const char *q = p + 3;
-                int depth = 1;
-                while (*q && depth > 0) {
-                    if (*q == '(') depth++; else if (*q == ')') depth--;
-                    q++;
-                }
-                if (*q == ')' && *(q + 1) == ')') {
-                    q += 2;
-                    size_t len = (size_t)(q - start);
-                    char buf[MAX_LINE];
-                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
-                    memcpy(buf, start, len);
-                    buf[len] = '\0';
-                    char *exp = expand_simple(buf);
-                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
-                    free(exp);
-                    size_t consumed = (size_t)(q - start);
-                    /* continue scanning after the substituted parameter */
-                    p += consumed;
-                    continue;
+                char *dup = strdup(p + 1); /* start after '$' */
+                if (dup) {
+                    char *dp = dup;
+                    char *body = gather_dbl_parens(&dp);
+                    if (body) {
+                        size_t consumed = (size_t)(dp - dup) + 1; /* include '$' */
+                        char buf[MAX_LINE];
+                        if (consumed >= sizeof(buf)) consumed = sizeof(buf) - 1;
+                        memcpy(buf, start, consumed);
+                        buf[consumed] = '\0';
+                        char *exp = expand_simple(buf);
+                        if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(body); free(dup); free(out); return NULL; }
+                        free(exp);
+                        free(body);
+                        p += consumed;
+                        free(dup);
+                        continue;
+                    }
+                    free(dup);
                 }
             } else {
                 const char *q = p + 1;

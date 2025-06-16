@@ -188,5 +188,10 @@ static long parse_expr(const char **s) {
 long eval_arith(const char *expr) {
     const char *p = expr;
     long v = parse_expr(&p);
+    skip_ws(&p);
+    if (*p != '\0') {
+        /* trailing garbage indicates a syntax error; mimic zero result */
+        return 0;
+    }
     return v;
 }
