@@ -162,26 +162,21 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
     int first = 1;
     while (**p && !is_end((unsigned char)**p)) {
         if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
-            int depth = 1;
-            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-            while (**p && !(**p == ')' && depth == 0 && *(*p + 1) == ')')) {
-                if (**p == '(') depth++;
-                else if (**p == ')') depth--;
-                if (*len < MAX_LINE - 1) buf[(*len)++] = **p;
-                (*p)++;
-            }
-            if (!**p) {
+            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '$' */
+            char *dp = *p; /* points at "((" */
+            char *body = gather_dbl_parens(&dp);
+            if (!body) {
                 parse_need_more = 1;
                 return -1;
-            } else if (**p == ')' && *(*p + 1) == ')' && depth == 0) {
-                if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-                if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-            } else {
-                fprintf(stderr, "syntax error: unmatched ')'\n");
-                return -1;
             }
+            size_t l = (size_t)(dp - *p); /* length of "((expr))" */
+            size_t avail = (size_t)(MAX_LINE - 1 - *len);
+            if (l > avail)
+                l = avail;
+            memcpy(buf + *len, *p, l);
+            *len += l;
+            *p = dp;
+            free(body);
             first = 0;
             continue;
         }
