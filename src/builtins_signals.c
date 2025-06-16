@@ -110,6 +110,7 @@ int builtin_break(char **args)
     if (n > loop_depth)
         n = loop_depth;
     loop_break = n;
+    last_status = 0;
     return 1;
 }
 
@@ -127,6 +128,7 @@ int builtin_continue(char **args)
         n = loop_depth;
     /* store remaining loop levels to unwind */
     loop_continue = n;
+    last_status = 0;
     return 1;
 }
 
