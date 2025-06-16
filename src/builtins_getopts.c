@@ -91,11 +91,9 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
         } else {
             write_optarg("");
         }
-        if (!getopts_pos || *getopts_pos == '\0') {
-            getopts_pos = NULL;
-            *ind = current_ind + 1;
-            current_ind = 0;
-        }
+        getopts_pos = NULL;
+        *ind = current_ind + 1;
+        current_ind = 0;
         return OPT_ILLEGAL;
     }
 
