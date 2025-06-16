@@ -683,6 +683,8 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         last_status = 1;
     free_pipeline(copy);
     cleanup_proc_subs();
+    if (opt_errexit && !background && last_status != 0)
+        exit(last_status);
     return r;
 }
 

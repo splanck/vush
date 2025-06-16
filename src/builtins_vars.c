@@ -110,6 +110,8 @@ int builtin_set(char **args) {
                 opt_pipefail = 1;
             else if (strcmp(args[i+1], "noclobber") == 0)
                 opt_noclobber = 1;
+            else if (strcmp(args[i+1], "errexit") == 0)
+                opt_errexit = 1;
             else {
                 fprintf(stderr, "set: unknown option %s\n", args[i+1]);
                 return 1;
@@ -149,6 +151,8 @@ int builtin_set(char **args) {
                 opt_pipefail = 0;
             else if (strcmp(args[i+1], "noclobber") == 0)
                 opt_noclobber = 0;
+            else if (strcmp(args[i+1], "errexit") == 0)
+                opt_errexit = 0;
             else {
                 fprintf(stderr, "set: unknown option %s\n", args[i+1]);
                 return 1;
