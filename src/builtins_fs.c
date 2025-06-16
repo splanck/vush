@@ -113,7 +113,11 @@ int builtin_cd(char **args) {
             if (paths) {
                 for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
                     const char *base = *p ? p : ".";
-                    snprintf(used, sizeof(used), "%s/%s", base, dir);
+                    int n = snprintf(used, sizeof(used), "%s/%s", base, dir);
+                    if (n < 0 || n >= PATH_MAX) {
+                        fprintf(stderr, "cd: path too long\n");
+                        continue;
+                    }
                     if (chdir(used) == 0) {
                         dir = used;
                         searched = 1;
