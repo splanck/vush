@@ -677,6 +677,123 @@ static int append_str(char **out, size_t *len, const char *str) {
     return 1;
 }
 
+/* Try to expand a command substitution at *P and append the result to OUT. */
+static int handle_cmd_sub(const char **p, char **out, size_t *outlen) {
+    const char *s = *p;
+    if (*s == '`' || (*s == '$' && s[1] == '(' && s[2] != '(')) {
+        char *dup = strdup(s);
+        if (!dup)
+            return -1;
+        char *dp = dup;
+        char *sub = parse_substitution(&dp);
+        if (sub && dp > dup) {
+            size_t consumed = (size_t)(dp - dup);
+            *p += consumed;
+            if (!append_str(out, outlen, sub)) {
+                free(sub);
+                free(dup);
+                return -1;
+            }
+            free(sub);
+            free(dup);
+            return 1;
+        }
+        free(dup);
+    }
+    return 0;
+}
+
+/* Try to expand an arithmetic expression starting at *P. */
+static int handle_arith(const char **p, char **out, size_t *outlen) {
+    const char *s = *p;
+    if (*s == '$' && s[1] == '(' && s[2] == '(') {
+        char *dup = strdup(s + 1); /* after '$' */
+        if (dup) {
+            char *dp = dup;
+            char *body = gather_dbl_parens(&dp);
+            if (body) {
+                size_t consumed = (size_t)(dp - dup) + 1; /* include '$' */
+                char buf[MAX_LINE];
+                if (consumed >= sizeof(buf))
+                    consumed = sizeof(buf) - 1;
+                memcpy(buf, s, consumed);
+                buf[consumed] = '\0';
+                char *exp = expand_simple(buf);
+                if (!exp || !append_str(out, outlen, exp)) {
+                    free(exp);
+                    free(body);
+                    free(dup);
+                    return -1;
+                }
+                free(exp);
+                free(body);
+                *p += consumed;
+                free(dup);
+                return 1;
+            }
+            free(dup);
+        }
+    }
+    return 0;
+}
+
+/* Try to expand a parameter reference at *P. */
+static int handle_param(const char **p, char **out, size_t *outlen) {
+    const char *s = *p;
+    if (*s != '$')
+        return 0;
+
+    const char *start = s;
+    if (s[1] == '{') {
+        const char *end = strchr(s + 2, '}');
+        if (end) {
+            size_t len = (size_t)(end - start + 1);
+            char buf[MAX_LINE];
+            if (len >= sizeof(buf))
+                len = sizeof(buf) - 1;
+            memcpy(buf, start, len);
+            buf[len] = '\0';
+            char *exp = expand_simple(buf);
+            if (!exp || !append_str(out, outlen, exp)) {
+                free(exp);
+                return -1;
+            }
+            free(exp);
+            *p += len;
+            return 1;
+        }
+    } else {
+        const char *q = s + 1;
+        if (*q == '#' || *q == '?' || *q == '*' || *q == '@' || *q == '$' || *q == '!') {
+            q++;
+        } else if (isdigit((unsigned char)*q)) {
+            q++;
+            while (isdigit((unsigned char)*q))
+                q++;
+        } else {
+            while (*q && (isalnum((unsigned char)*q) || *q == '_'))
+                q++;
+        }
+        if (q > s + 1) {
+            size_t len = (size_t)(q - start);
+            char buf[MAX_LINE];
+            if (len >= sizeof(buf))
+                len = sizeof(buf) - 1;
+            memcpy(buf, start, len);
+            buf[len] = '\0';
+            char *exp = expand_simple(buf);
+            if (!exp || !append_str(out, outlen, exp)) {
+                free(exp);
+                return -1;
+            }
+            free(exp);
+            *p += len;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Expand TOKEN which may contain multiple variable or command substitutions. */
 char *expand_var(const char *token) {
     if (!token)
@@ -711,87 +828,19 @@ char *expand_var(const char *token) {
 
     const char *p = token;
     while (*p) {
-        if (*p == '`' || (*p == '$' && p[1] == '(' && p[2] != '(')) {
-            char *dup = strdup(p);
-            if (!dup) { free(out); return NULL; }
-            char *dp = dup;
-            char *sub = parse_substitution(&dp);
-            if (sub && dp > dup) {
-                size_t consumed = (size_t)(dp - dup);
-                p += consumed;
-                if (!append_str(&out, &outlen, sub)) { free(sub); free(dup); free(out); return NULL; }
-                free(sub);
-                free(dup);
-                continue;
-            }
-            free(dup);
-        }
+        int r = handle_cmd_sub(&p, &out, &outlen);
+        if (r < 0) { free(out); return NULL; }
+        if (r > 0) continue;
+
+        r = handle_arith(&p, &out, &outlen);
+        if (r < 0) { free(out); return NULL; }
+        if (r > 0) continue;
+
+        r = handle_param(&p, &out, &outlen);
+        if (r < 0) { free(out); return NULL; }
+        if (r > 0) continue;
 
         if (*p == '$') {
-            const char *start = p;
-            if (p[1] == '{') {
-                const char *end = strchr(p + 2, '}');
-                if (end) {
-                    size_t len = (size_t)(end - start + 1);
-                    char buf[MAX_LINE];
-                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
-                    memcpy(buf, start, len);
-                    buf[len] = '\0';
-                    char *exp = expand_simple(buf);
-                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
-                    free(exp);
-                    size_t consumed = (size_t)(end - start + 1);
-                    p += consumed;
-                    continue;
-                }
-            } else if (p[1] == '(' && p[2] == '(') {
-                char *dup = strdup(p + 1); /* start after '$' */
-                if (dup) {
-                    char *dp = dup;
-                    char *body = gather_dbl_parens(&dp);
-                    if (body) {
-                        size_t consumed = (size_t)(dp - dup) + 1; /* include '$' */
-                        char buf[MAX_LINE];
-                        if (consumed >= sizeof(buf)) consumed = sizeof(buf) - 1;
-                        memcpy(buf, start, consumed);
-                        buf[consumed] = '\0';
-                        char *exp = expand_simple(buf);
-                        if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(body); free(dup); free(out); return NULL; }
-                        free(exp);
-                        free(body);
-                        p += consumed;
-                        free(dup);
-                        continue;
-                    }
-                    free(dup);
-                }
-            } else {
-                const char *q = p + 1;
-                if (*q == '#' || *q == '?' || *q == '*' || *q == '@' || *q == '$' || *q == '!') {
-                    q++; /* special single char parameter */
-                } else if (isdigit((unsigned char)*q)) {
-                    q++;
-                    while (isdigit((unsigned char)*q))
-                        q++;
-                } else {
-                    while (*q && (isalnum((unsigned char)*q) || *q == '_'))
-                        q++;
-                }
-                if (q > p + 1) {
-                    size_t len = (size_t)(q - start);
-                    char buf[MAX_LINE];
-                    if (len >= sizeof(buf)) len = sizeof(buf) - 1;
-                    memcpy(buf, start, len);
-                    buf[len] = '\0';
-                    char *exp = expand_simple(buf);
-                    if (!exp || !append_str(&out, &outlen, exp)) { free(exp); free(out); return NULL; }
-                    free(exp);
-                    size_t consumed = (size_t)(q - start);
-                    p += consumed;
-                    continue;
-                }
-            }
-            /* literal '$' on failure */
             if (!append_str(&out, &outlen, "$")) { free(out); return NULL; }
             p++;
             continue;
