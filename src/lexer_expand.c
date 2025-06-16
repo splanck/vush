@@ -426,7 +426,7 @@ static char *expand_braced(const char *inner) {
     char name[MAX_LINE];
     int n = 0;
     const char *p = inner;
-    while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && n < MAX_LINE - 1)
+    while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && n < MAX_LINE - 1)
         name[n++] = *p++;
     name[n] = '\0';
 
