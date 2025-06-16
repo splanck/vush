@@ -17,6 +17,12 @@ expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "equality failed\n"; exit 1 }
 }
+send "\[\[ foo == foo \]\]; echo \$?\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "literal equality failed\n"; exit 1 }
+}
+
 
 send "\[\[ \$x == f* \]\]; echo \$?\r"
 expect {

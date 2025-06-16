@@ -190,8 +190,7 @@ int builtin_test(char **args) {
 int builtin_cond(char **args) {
     int count = 0;
     while (args[count]) count++;
-    char **av = args + 1;
-    count--;
+    char **av = args;
     int res = 1;
     if (count == 1) {
         res = av[0][0] ? 0 : 1;
@@ -209,5 +208,5 @@ int builtin_cond(char **args) {
         }
     }
     last_status = res;
-    return 1;
+    return res;
 }
