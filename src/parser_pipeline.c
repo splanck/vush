@@ -155,6 +155,7 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
     char *tokens[MAX_TOKENS];
     int count = 0;
     char visited[MAX_ALIAS_DEPTH][MAX_LINE];
+    memset(visited, 0, sizeof(visited));
 
     if (collect_alias_tokens(orig, tokens, &count, visited, 0) == -1) {
         free(orig);
