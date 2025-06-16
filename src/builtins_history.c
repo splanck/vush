@@ -255,8 +255,8 @@ static int fc_edit_commands(int start, int end, int step, const FcOptions *opts)
         waitpid(pid, &status, 0);
     } else {
         perror("fork");
-        fclose(f);
         unlink(template);
+        fclose(f);
         return 1;
     }
 
