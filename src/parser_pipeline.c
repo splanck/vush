@@ -206,17 +206,46 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     if (!tf) { perror("fdopen"); close(fd); unlink(template); free(delim); free(tok); return -1; }
     FILE *in = parse_input ? parse_input : stdin;
     char buf[MAX_LINE];
+    size_t pos = 0;
     int found = 0;
-    while (fgets(buf, sizeof(buf), in)) {
-        size_t len = strlen(buf);
-        while (len && (buf[len-1] == '\n' || buf[len-1] == '\r'))
-            buf[--len] = '\0';
+    int c;
+    while ((c = fgetc(in)) != EOF) {
+        if (c == '\r') {
+            int n = fgetc(in);
+            if (n != '\n' && n != EOF)
+                ungetc(n, in);
+            c = '\n';
+        }
+        if (c == '\n') {
+            buf[pos] = '\0';
+            char *line = buf;
+            if (strip_tabs) {
+                while (*line == '\t') line++;
+            }
+            if (strcmp(line, delim) == 0) { found = 1; break; }
+            fprintf(tf, "%s\n", line);
+            pos = 0;
+        } else if (pos < sizeof(buf) - 1) {
+            buf[pos++] = c;
+        }
+    }
+    if (c == EOF && pos > 0 && !found) {
+        buf[pos] = '\0';
         char *line = buf;
         if (strip_tabs) {
             while (*line == '\t') line++;
         }
-        if (strcmp(line, delim) == 0) { found = 1; break; }
-        fprintf(tf, "%s\n", line);
+        if (strcmp(line, delim) == 0) {
+            found = 1;
+        } else {
+            if (fprintf(tf, "%s\n", line) < 0) {
+                fclose(tf);
+                unlink(template);
+                free(delim);
+                free(tok);
+                return -1;
+            }
+        }
     }
     if (!found) {
         int eof = feof(in);
