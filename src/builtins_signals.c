@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "execute.h"
+#include "trap.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,6 @@
 #include <signal.h>
 
 extern int last_status;
-extern void trap_handler(int);
-extern void run_exit_trap(void);
 void list_signals(void);
 
 /* Map signal names to numbers for trap builtin. */
