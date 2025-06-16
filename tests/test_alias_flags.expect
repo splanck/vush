@@ -21,7 +21,7 @@ expect {
 # list aliases with -p
 send "alias -p\r"
 expect {
-    -re "alias hi='echo hello'" {}
+    -re "alias hi='echo hello'\r\nvush> " {}
     timeout { send_user "alias -p failed\n"; exit 1 }
 }
 # change alias normally
