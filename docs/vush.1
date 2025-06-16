@@ -285,6 +285,48 @@ $ ulimit -H -n 4096
 $ ulimit -S -s
 .fi
 .PP
+Redirect output or supply inline text with a here-document:
+.PP
+.nf
+$ echo hello >out.txt
+$ cat < out.txt
+hello
+$ cat <<EOF
+hi there
+EOF
+hi there
+.fi
+.PP
+Run a command in the background and list jobs:
+.PP
+.nf
+$ sleep 3 &
+$ jobs
+[1] 1234 sleep 3
+.fi
+.PP
+Loops and conditionals follow standard shell syntax:
+.PP
+.nf
+$ for x in a b c; do echo $x; done
+a
+b
+c
+$ i=0; while test $i -lt 2; do echo $i; i=$(expr $i + 1); done
+0
+1
+.fi
+.PP
+Use traps to handle signals or shell exit:
+.PP
+.nf
+$ trap 'echo INT received' INT
+$ trap 'echo exiting' EXIT
+$ trap
+trap 'echo INT received' INT
+trap 'echo exiting' EXIT
+.fi
+.PP
 Reading without naming a variable stores the line in \fBREPLY\fP:
 .PP
 .nf
