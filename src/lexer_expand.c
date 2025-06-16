@@ -596,8 +596,18 @@ static char *expand_simple(const char *token) {
     char *s = expand_special(token);
     if (s)
         return s;
+
     if (token[0] == '~')
         return expand_tilde(token);
+
+    /* Handle arithmetic expansion before command substitution so that
+     * tokens like $((1+2)) are not treated as $( command ). */
+    if (token[0] == '$') {
+        s = expand_arith(token);
+        if (s)
+            return s;
+    }
+
     if (token[0] == '`' || (token[0] == '$' && token[1] == '(' && token[2] != '(')) {
         char *p = (char *)token;
         char *out = parse_substitution(&p);
@@ -606,12 +616,9 @@ static char *expand_simple(const char *token) {
         free(out);
         /* fall through to regular expansion on failure */
     }
+
     if (token[0] != '$')
         return strdup(token);
-
-    s = expand_arith(token);
-    if (s)
-        return s;
 
     if (token[1] == '{') {
         const char *end = strchr(token + 2, '}');
