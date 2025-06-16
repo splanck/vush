@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "util.h"
 extern int last_status;
 /* Manage or display command hash table. */
 int builtin_hash(char **args) {
@@ -90,8 +91,7 @@ int builtin_help(char **args) {
 /* Show how each argument would be resolved: alias, function, builtin or file. */
 int builtin_type(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: type name...\n");
-        return 1;
+        return usage_error("type name...");
     }
     for (int i = 1; args[i]; i++) {
         const char *alias = get_alias(args[i]);

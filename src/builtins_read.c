@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include "util.h"
 extern int last_status;
 
 /* ---- helper functions for builtin_read -------------------------------- */
@@ -110,9 +111,8 @@ int builtin_read(char **args) {
     const char *array_name = NULL;
     int idx;
     if (parse_read_options(args, &raw, &array_name, &idx) != 0) {
-        fprintf(stderr, "usage: read [-r] [-a NAME] [NAME...]\n");
         last_status = 1;
-        return 1;
+        return usage_error("read [-r] [-a NAME] [NAME...]");
     }
 
     char line[MAX_LINE];

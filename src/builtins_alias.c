@@ -267,7 +267,7 @@ int builtin_alias(char **args)
     for (int i = 1; args[i]; i++) {
         char *eq = strchr(args[i], '=');
         if (!eq) {
-            fprintf(stderr, "usage: alias name=value\n");
+            usage_error("alias name=value");
             continue;
         }
         *eq = '\0';
@@ -292,14 +292,12 @@ int builtin_unalias(char **args)
         if (strcmp(args[i], "-a") == 0) {
             all = 1;
         } else {
-            fprintf(stderr, "usage: unalias [-a] name\n");
-            return 1;
+            return usage_error("unalias [-a] name");
         }
     }
 
     if (all && args[i]) {
-        fprintf(stderr, "usage: unalias [-a] name\n");
-        return 1;
+        return usage_error("unalias [-a] name");
     }
 
     if (all) {
@@ -308,8 +306,7 @@ int builtin_unalias(char **args)
     }
 
     if (!args[i]) {
-        fprintf(stderr, "usage: unalias [-a] name\n");
-        return 1;
+        return usage_error("unalias [-a] name");
     }
 
     for (; args[i]; i++)

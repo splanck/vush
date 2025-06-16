@@ -10,6 +10,11 @@
 #include "options.h"
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
+
+int usage_error(const char *msg) {
+    fprintf(stderr, "usage: %s\n", msg);
+    return 1;
+}
 /*
  * Read a line continuing backslash escapes across multiple physical lines.
  */

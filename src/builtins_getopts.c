@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 extern int last_status;
 
 /* Pointer into the current $@ item being parsed by getopts. When script_argv
@@ -136,10 +137,9 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
 int builtin_getopts(char **args) {
     int ind = read_optind();
     if (!args[1] || !args[2]) {
-        fprintf(stderr, "usage: getopts optstring var\n");
         last_status = 1;
         write_optind(ind);
-        return 1;
+        return usage_error("getopts optstring var");
     }
 
     const char *optstr = args[1];

@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "util.h"
 #include <errno.h>
 
 extern int last_status;
@@ -39,8 +40,7 @@ int builtin_shift(char **args) {
         errno = 0;
         long val = strtol(args[1], &end, 10);
         if (*end != '\0' || errno != 0 || val < 0) {
-            fprintf(stderr, "usage: shift [n]\n");
-            return 1;
+            return usage_error("shift [n]");
         }
         n = (int)val;
     }
@@ -243,8 +243,7 @@ int builtin_unset(char **args) {
         remove_func = remove_vars = 1;
     }
     if (!args[i]) {
-        fprintf(stderr, "usage: unset [-f|-v] NAME...\n");
-        return 1;
+        return usage_error("unset [-f|-v] NAME...");
     }
     for (; args[i]; i++) {
         char *name = args[i];
@@ -310,8 +309,7 @@ static void list_exports(void)
  */
 int builtin_export(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: export [-p|-n NAME] NAME[=VALUE]...\n");
-        return 1;
+        return usage_error("export [-p|-n NAME] NAME[=VALUE]...");
     }
 
     if (strcmp(args[1], "-p") == 0 && !args[2]) {
@@ -358,8 +356,7 @@ int builtin_readonly(char **args) {
         if (strcmp(args[i], "-p") == 0) {
             pflag = 1;
         } else {
-            fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n");
-            return 1;
+            return usage_error("readonly [-p] NAME[=VALUE]...");
         }
     }
 
@@ -369,8 +366,7 @@ int builtin_readonly(char **args) {
     }
 
     if (!args[i]) {
-        fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n");
-        return 1;
+        return usage_error("readonly [-p] NAME[=VALUE]...");
     }
 
     for (; args[i]; i++) {
