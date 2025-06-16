@@ -1,5 +1,7 @@
 #!/usr/bin/env expect
 set timeout 5
+set tmp [exec mktemp -d]
+set env(PATH) $tmp
 spawn [file dirname [info script]]/../vush
 expect {
     "vush> " {}
@@ -13,13 +15,14 @@ expect {
 }
 # list multiple completions for prefix 'ex'
 send "ex\t"
-expect {
-    -re "\r\n(exit export|export exit) \r\nvush> ex" {}
-    timeout { send_user "list completions failed\n"; exit 1 }
-}
+    expect {
+        -re "\r\n(exit export|export exit)\r\n\r?vush> ex" {}
+        timeout { send_user "list completions failed\n"; exit 1 }
+    }
 # finish command
 send "it\r"
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+    expect {
+        eof {}
+        timeout { send_user "eof timeout\n"; exit 1 }
+    }
+exec /bin/rm -rf $tmp
