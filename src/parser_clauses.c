@@ -52,46 +52,42 @@ static Command *parse_if_clause(char **p) {
     return cmd;
 }
 
-static Command *parse_while_clause(char **p) {
+static Command *parse_loop_clause(char **p, int until) {
     const char *stop1[] = {"do"};
     char *cond = gather_until(p, stop1, 1, NULL);
-    if (!cond) return NULL;
-    Command *cond_cmd = parse_line(cond); free(cond);
+    if (!cond)
+        return NULL;
+    Command *cond_cmd = parse_line(cond);
+    free(cond);
+
     const char *stop2[] = {"done"};
     char *body = gather_until(p, stop2, 1, NULL);
-    if (!body) { free_commands(cond_cmd); return NULL; }
-    Command *body_cmd = parse_line(body); free(body);
+    if (!body) {
+        free_commands(cond_cmd);
+        return NULL;
+    }
+    Command *body_cmd = parse_line(body);
+    free(body);
+
     Command *cmd = calloc(1, sizeof(Command));
     if (!cmd) {
         free_commands(cond_cmd);
         free_commands(body_cmd);
         return NULL;
     }
-    cmd->type = CMD_WHILE;
+
+    cmd->type = until ? CMD_UNTIL : CMD_WHILE;
     cmd->cond = cond_cmd;
     cmd->body = body_cmd;
     return cmd;
 }
 
+static Command *parse_while_clause(char **p) {
+    return parse_loop_clause(p, 0);
+}
+
 static Command *parse_until_clause(char **p) {
-    const char *stop1[] = {"do"};
-    char *cond = gather_until(p, stop1, 1, NULL);
-    if (!cond) return NULL;
-    Command *cond_cmd = parse_line(cond); free(cond);
-    const char *stop2[] = {"done"};
-    char *body = gather_until(p, stop2, 1, NULL);
-    if (!body) { free_commands(cond_cmd); return NULL; }
-    Command *body_cmd = parse_line(body); free(body);
-    Command *cmd = calloc(1, sizeof(Command));
-    if (!cmd) {
-        free_commands(cond_cmd);
-        free_commands(body_cmd);
-        return NULL;
-    }
-    cmd->type = CMD_UNTIL;
-    cmd->cond = cond_cmd;
-    cmd->body = body_cmd;
-    return cmd;
+    return parse_loop_clause(p, 1);
 }
 
 static int parse_word_list(char **p, char ***out, int *count) {
