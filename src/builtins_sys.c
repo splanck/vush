@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
+#include "util.h"
 
 extern int last_status;
 
@@ -118,11 +119,9 @@ int builtin_umask(char **args)
         return 1;
     }
 
-    errno = 0;
-    char *end;
-    long val = strtol(args[idx], &end, 8);
     mode_t newmask;
-    if (*end == '\0' && errno == 0 && val >= 0 && val <= 0777) {
+    long val;
+    if (parse_int(args[idx], 8, &val) == 0 && val >= 0 && val <= 0777) {
         newmask = (mode_t)val;
     } else if (parse_symbolic_umask(args[idx], &newmask) == 0) {
         /* parsed successfully */

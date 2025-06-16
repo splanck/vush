@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include "util.h"
 
 extern int last_status;
 
@@ -19,10 +20,8 @@ extern int last_status;
 int builtin_exit(char **args) {
     int status = last_status;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0) {
+        long val;
+        if (parse_int(args[1], 10, &val) < 0) {
             fprintf(stderr, "usage: exit [STATUS]\n");
             return 1;
         }

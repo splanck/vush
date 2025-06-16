@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
+#include "util.h"
 
 extern int last_status;
 void list_signals(void);
@@ -147,10 +148,8 @@ int builtin_break(char **args)
 {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val <= 0) {
+        long val;
+        if (parse_int(args[1], 10, &val) < 0 || val <= 0) {
             fprintf(stderr, "usage: break [N]\n");
             return 1;
         }
@@ -167,10 +166,8 @@ int builtin_continue(char **args)
 {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val <= 0) {
+        long val;
+        if (parse_int(args[1], 10, &val) < 0 || val <= 0) {
             fprintf(stderr, "usage: continue [N]\n");
             return 1;
         }

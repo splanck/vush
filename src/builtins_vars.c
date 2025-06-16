@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
+#include "util.h"
 
 extern int last_status;
 
@@ -35,10 +36,8 @@ extern int last_status;
 int builtin_shift(char **args) {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val < 0) {
+        long val;
+        if (parse_int(args[1], 10, &val) < 0 || val < 0) {
             fprintf(stderr, "usage: shift [n]\n");
             return 1;
         }
@@ -257,9 +256,18 @@ int builtin_unset(char **args) {
             continue;
         char *lb = strchr(name, '[');
         if (lb && name[strlen(name)-1] == ']') {
-            char *endptr;
-            int idx = strtol(lb+1, &endptr, 10);
-            if (*endptr == ']') {
+            char *rb = strrchr(lb, ']');
+            int idx = -1;
+            if (rb && rb > lb + 1) {
+                size_t nlen = (size_t)(rb - (lb + 1));
+                char buf[nlen + 1];
+                memcpy(buf, lb + 1, nlen);
+                buf[nlen] = '\0';
+                long val;
+                if (parse_int(buf, 10, &val) == 0)
+                    idx = (int)val;
+            }
+            if (idx >= 0 && rb && *rb == ']') {
                 *lb = '\0';
                 int len = 0;
                 char **arr = get_shell_array(name, &len);

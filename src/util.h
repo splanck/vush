@@ -17,4 +17,7 @@ int open_redirect(const char *path, int append, int force);
 /* Construct a path using ENV_VAR if set, otherwise "$HOME/DEFAULT_NAME".
  * The returned string must be freed by the caller. */
 char *make_user_path(const char *env_var, const char *default_name);
+/* Parse STR as an integer using BASE and store the result in OUT.
+ * Returns 0 on success or -1 on invalid or out-of-range input. */
+int parse_int(const char *str, int base, long *out);
 #endif /* VUSH_UTIL_H */

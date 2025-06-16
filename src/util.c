@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "options.h"
@@ -74,4 +75,16 @@ char *make_user_path(const char *env_var, const char *default_name) {
         return NULL;
     snprintf(res, len, "%s/%s", home, default_name);
     return res;
+}
+
+int parse_int(const char *str, int base, long *out) {
+    if (!str || !*str || !out)
+        return -1;
+    char *end;
+    errno = 0;
+    long val = strtol(str, &end, base);
+    if (errno != 0 || end == str || *end != '\0')
+        return -1;
+    *out = val;
+    return 0;
 }

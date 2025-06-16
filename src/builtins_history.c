@@ -24,9 +24,8 @@ int builtin_history(char **args)
             clear_history();
             return 1;
         } else if (strcmp(args[1], "-d") == 0 && args[2] && !args[3]) {
-            char *end;
-            long id = strtol(args[2], &end, 10);
-            if (*end || id <= 0) {
+            long id;
+            if (parse_int(args[2], 10, &id) < 0 || id <= 0) {
                 fprintf(stderr, "history: invalid entry\n");
                 return 1;
             }

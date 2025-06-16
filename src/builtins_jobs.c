@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
+#include "util.h"
 
 /* Map signal names to numbers for kill builtin */
 static const struct { const char *n; int v; } sig_map[] = {
@@ -202,9 +203,8 @@ int builtin_kill(char **args) {
     int wait_ids[64];
     int wait_count = 0;
     for (; args[idx]; idx++) {
-        char *end;
-        long val = strtol(args[idx], &end, 10);
-        if (*end != '\0') {
+        long val;
+        if (parse_int(args[idx], 10, &val) < 0) {
             fprintf(stderr, "kill: invalid id %s\n", args[idx]);
             continue;
         }
@@ -253,9 +253,8 @@ int builtin_wait(char **args) {
         return 1;
     }
     for (; args[i]; i++) {
-        char *end;
-        long val = strtol(args[i], &end, 10);
-        if (*end != '\0') {
+        long val;
+        if (parse_int(args[i], 10, &val) < 0) {
             fprintf(stderr, "usage: wait [ID|PID]...\n");
             return 1;
         }
