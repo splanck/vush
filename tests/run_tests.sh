@@ -86,6 +86,7 @@ tests="
     test_if.expect
     test_for.expect
     test_for_shellvar.expect
+    test_for_env.expect
     test_while.expect
     test_until.expect
     test_function.expect
