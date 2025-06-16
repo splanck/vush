@@ -94,6 +94,66 @@ static Command *parse_until_clause(char **p) {
     return cmd;
 }
 
+static int parse_word_list(char **p, char ***out, int *count) {
+    char **words = NULL;
+    int c = 0;
+    while (1) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '\0') {
+            for (int i = 0; i < c; i++)
+                free(words[i]);
+            free(words);
+            return -1;
+        }
+        int q = 0; int de = 1;
+        char *w = read_token(p, &q, &de);
+        if (!w) {
+            for (int i = 0; i < c; i++)
+                free(words[i]);
+            free(words);
+            return -1;
+        }
+        if (!q && strcmp(w, "do") == 0) { free(w); break; }
+        if (!q && strcmp(w, ";") == 0) {
+            free(w);
+            while (**p == ' ' || **p == '\t') (*p)++;
+            q = 0; de = 1;
+            char *next = read_token(p, &q, &de);
+            if (!next) {
+                for (int i = 0; i < c; i++)
+                    free(words[i]);
+                free(words);
+                return -1;
+            }
+            if (!q && strcmp(next, "do") == 0) { free(next); break; }
+            char **tmp = realloc(words, sizeof(char *) * (c + 1));
+            if (!tmp) {
+                free(next);
+                for (int i = 0; i < c; i++)
+                    free(words[i]);
+                free(words);
+                return -1;
+            }
+            words = tmp;
+            words[c++] = next;
+            continue;
+        }
+        char **tmp = realloc(words, sizeof(char *) * (c + 1));
+        if (!tmp) {
+            free(w);
+            for (int i = 0; i < c; i++)
+                free(words[i]);
+            free(words);
+            return -1;
+        }
+        words = tmp;
+        words[c++] = w;
+    }
+    *out = words;
+    if (count) *count = c;
+    return 0;
+}
+
 static Command *parse_for_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int q = 0; int de = 1;
@@ -105,44 +165,9 @@ static Command *parse_for_clause(char **p) {
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
     char **words = NULL; int count = 0;
-    while (1) {
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '\0') { free(var); free(words); return NULL; }
-        q = 0; de = 1;
-        char *w = read_token(p, &q, &de);
-        if (!w) { free(var); free(words); return NULL; }
-        if (!q && strcmp(w, "do") == 0) { free(w); break; }
-        if (!q && strcmp(w, ";") == 0) {
-            free(w);
-            while (**p == ' ' || **p == '\t') (*p)++;
-            q = 0; de = 1;
-            char *next = read_token(p, &q, &de);
-            if (!next) { free(var); free(words); return NULL; }
-            if (!q && strcmp(next, "do") == 0) { free(next); break; }
-            char **tmp = realloc(words, sizeof(char *) * (count + 1));
-            if (!tmp) {
-                free(next);
-                free(var);
-                for (int i = 0; i < count; i++)
-                    free(words[i]);
-                free(words);
-                return NULL;
-            }
-            words = tmp;
-            words[count++] = next;
-            continue;
-        }
-        char **tmp = realloc(words, sizeof(char *) * (count + 1));
-        if (!tmp) {
-            free(w);
-            free(var);
-            for (int i = 0; i < count; i++)
-                free(words[i]);
-            free(words);
-            return NULL;
-        }
-        words = tmp;
-        words[count++] = w;
+    if (parse_word_list(p, &words, &count) == -1) {
+        free(var);
+        return NULL;
     }
     const char *stop2[] = {"done"};
     char *body = gather_until(p, stop2, 1, NULL);
@@ -176,24 +201,9 @@ static Command *parse_select_clause(char **p) {
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
     char **words = NULL; int count = 0;
-    while (1) {
-        while (**p == ' ' || **p == '\t') (*p)++;
-        if (**p == '\0') { free(var); free(words); return NULL; }
-        q = 0; de = 1;
-        char *w = read_token(p, &q, &de);
-        if (!w) { free(var); free(words); return NULL; }
-        if (!q && strcmp(w, "do") == 0) { free(w); break; }
-        char **tmp = realloc(words, sizeof(char *) * (count + 1));
-        if (!tmp) {
-            free(w);
-            free(var);
-            for (int i = 0; i < count; i++)
-                free(words[i]);
-            free(words);
-            return NULL;
-        }
-        words = tmp;
-        words[count++] = w;
+    if (parse_word_list(p, &words, &count) == -1) {
+        free(var);
+        return NULL;
     }
     const char *stop2[] = {"done"};
     char *body = gather_until(p, stop2, 1, NULL);
