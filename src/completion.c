@@ -108,6 +108,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
         struct dirent *de;
         while ((de = readdir(d))) {
             if (strncmp(de->d_name, prefix, prefix_len) == 0) {
+                if (access(de->d_name, X_OK) != 0)
+                    continue;
                 if (has_match(matches, count, de->d_name))
                     continue;
                 if (count == cap) {
@@ -154,21 +156,20 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
             if (pd) {
                 struct dirent *pe;
                 while ((pe = readdir(pd))) {
-                        if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
-                            if (has_match(matches, count, pe->d_name))
-                                continue;
-                            size_t len = strlen(d) + strlen(pe->d_name) + 2;
-                            char *full = malloc(len);
-                            if (!full) {
-                                for (int j = 0; j < count; j++)
-                                    free(matches[j]);
-                                free(matches);
-                                closedir(pd);
-                                free(pdup);
-                                return NULL;
-                            }
-                            snprintf(full, len, "%s/%s", d, pe->d_name);
-                            if (access(full, X_OK) == 0) {
+                    if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
+                        size_t len = strlen(d) + strlen(pe->d_name) + 2;
+                        char *full = malloc(len);
+                        if (!full) {
+                            for (int j = 0; j < count; j++)
+                                free(matches[j]);
+                            free(matches);
+                            closedir(pd);
+                            free(pdup);
+                            return NULL;
+                        }
+                        snprintf(full, len, "%s/%s", d, pe->d_name);
+                        if (access(full, X_OK) == 0) {
+                            if (!has_match(matches, count, pe->d_name)) {
                                 if (count == cap) {
                                     cap *= 2;
                                     char **tmp = realloc(matches, cap * sizeof(char *));
@@ -178,6 +179,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                         free(matches);
                                         closedir(pd);
                                         free(pdup);
+                                        free(full);
                                         return NULL;
                                     }
                                     matches = tmp;
@@ -195,12 +197,13 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                 matches[count++] = dup;
                                 found = 1;
                             }
-                            free(full);
                         }
+                        free(full);
                     }
-                    closedir(pd);
-                    if (found || !matches)
-                        break;
+                }
+                closedir(pd);
+                if (found || !matches)
+                    break;
                 }
             if (found)
                 break;
