@@ -2,6 +2,7 @@
 #include "builtins.h"
 #include "vars.h"
 #include "scriptargs.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -136,10 +137,9 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
 int builtin_getopts(char **args) {
     int ind = read_optind();
     if (!args[1] || !args[2]) {
-        fprintf(stderr, "usage: getopts optstring var\n");
         last_status = 1;
         write_optind(ind);
-        return 1;
+        return usage_error("getopts optstring var");
     }
 
     const char *optstr = args[1];

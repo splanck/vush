@@ -6,6 +6,7 @@
  */
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,8 +115,7 @@ int builtin_umask(char **args)
     }
 
     if (args[idx+1]) {
-        fprintf(stderr, "usage: umask [-S] [mode]\n");
-        return 1;
+        return usage_error("umask [-S] [mode]");
     }
 
     errno = 0;
@@ -175,19 +175,16 @@ int builtin_ulimit(char **args)
                 }
             }
             if (!found) {
-                fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
-                return 1;
+                return usage_error("ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]");
             }
         } else {
-            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
-            return 1;
+            return usage_error("ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]");
         }
     }
 
     if (show_all) {
         if (args[i]) {
-            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
-            return 1;
+            return usage_error("ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]");
         }
         struct rlimit rl;
         for (int m = 0; map[m].opt; m++) {
@@ -222,8 +219,7 @@ int builtin_ulimit(char **args)
     }
 
     if (args[i+1]) {
-        fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
-        return 1;
+        return usage_error("ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]");
     }
 
     errno = 0;

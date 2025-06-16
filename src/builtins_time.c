@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,8 +25,7 @@ int builtin_time(char **args)
     }
 
     if (!args[idx]) {
-        fprintf(stderr, "usage: time [-p] command [args...]\n");
-        return 1;
+        return usage_error("time [-p] command [args...]");
     }
 
     struct timespec start, end;
@@ -73,9 +73,8 @@ int builtin_time(char **args)
 int builtin_times(char **args)
 {
     if (args[1]) {
-        fprintf(stderr, "usage: times\n");
         last_status = 1;
-        return 1;
+        return usage_error("times");
     }
 
     struct tms t;

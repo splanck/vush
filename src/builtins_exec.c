@@ -97,8 +97,7 @@ static void execute_source_file(FILE *input)
  * environment. Additional arguments become script parameters. */
 int builtin_source(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: source file [args...]\n");
-        return 1;
+        return usage_error("source file [args...]");
     }
 
     FILE *prev_input = parse_input;
@@ -181,8 +180,7 @@ int builtin_eval(char **args) {
 /* Replace the current shell with the specified program using execvp. */
 int builtin_exec(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: exec command [args...]\n");
-        return 1;
+        return usage_error("exec command [args...]");
     }
     execvp(args[1], &args[1]);
     perror(args[1]);
@@ -206,8 +204,7 @@ int builtin_command(char **args) {
     }
 
     if (!args[i]) {
-        fprintf(stderr, "usage: command [-p|-v|-V] name [args...]\n");
-        return 1;
+        return usage_error("command [-p|-v|-V] name [args...]");
     }
 
     if (opt_v || opt_V) {

@@ -187,8 +187,7 @@ int builtin_cd(char **args) {
  */
 int builtin_pushd(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: pushd dir\n");
-        return 1;
+        return usage_error("pushd dir");
     }
     char prev[PATH_MAX];
     if (!getcwd(prev, sizeof(prev))) {
@@ -250,8 +249,7 @@ int builtin_popd(char **args) {
  */
 int builtin_dirs(char **args) {
     if (args[1]) {
-        fprintf(stderr, "usage: dirs\n");
-        return 1;
+        return usage_error("dirs");
     }
     dirstack_print();
     return 1;
@@ -271,14 +269,12 @@ int builtin_pwd(char **args) {
         } else if (args[idx][1] == 'L') {
             idx++;
         } else {
-            fprintf(stderr, "usage: pwd [-L|-P]\n");
-            return 1;
+            return usage_error("pwd [-L|-P]");
         }
     }
 
     if (args[idx]) {
-        fprintf(stderr, "usage: pwd [-L|-P]\n");
-        return 1;
+        return usage_error("pwd [-L|-P]");
     }
 
     if (physical || !getenv("PWD")) {

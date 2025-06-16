@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "jobs.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,8 +96,7 @@ int builtin_jobs(char **args) {
         } else if (strcmp(args[idx], "-p") == 0) {
             mode = 2;
         } else {
-            fprintf(stderr, "usage: jobs [-l|-p] [ID...]\n");
-            return 1;
+            return usage_error("jobs [-l|-p] [ID...]");
         }
     }
 
@@ -157,8 +157,7 @@ int builtin_kill(char **args) {
         } else if (strcmp(args[idx], "-s") == 0) {
             idx++;
             if (!args[idx]) {
-                fprintf(stderr, "usage: kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...\n");
-                return 1;
+                return usage_error("kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...");
             }
             sig = sig_from_name(args[idx]);
             if (sig <= 0 || sig >= NSIG) {
@@ -195,8 +194,7 @@ int builtin_kill(char **args) {
     }
 
     if (!args[idx]) {
-        fprintf(stderr, "usage: kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...\n");
-        return 1;
+        return usage_error("kill [-s SIGNAL|-SIGNAL] [-l] ID|PID...");
     }
 
     int wait_ids[64];
@@ -256,8 +254,7 @@ int builtin_wait(char **args) {
         char *end;
         long val = strtol(args[i], &end, 10);
         if (*end != '\0') {
-            fprintf(stderr, "usage: wait [ID|PID]...\n");
-            return 1;
+            return usage_error("wait [ID|PID]...");
         }
         pid_t pid = get_job_pid((int)val);
         int status;

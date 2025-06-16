@@ -7,6 +7,7 @@
 #include "builtins.h"
 #include "vars.h"
 #include "history.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,8 +24,7 @@ int builtin_exit(char **args) {
         errno = 0;
         long val = strtol(args[1], &end, 10);
         if (*end != '\0' || errno != 0) {
-            fprintf(stderr, "usage: exit [STATUS]\n");
-            return 1;
+            return usage_error("exit [STATUS]");
         }
         status = (int)val;
     }

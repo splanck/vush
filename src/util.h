@@ -14,4 +14,6 @@ char *read_logical_line(FILE *f, char *buf, size_t size);
  * FORCE overrides the noclobber option when set.
  * Returns a file descriptor or -1 on failure. */
 int open_redirect(const char *path, int append, int force);
+/* Print a usage message MSG to stderr and return 1. */
+int usage_error(const char *msg);
 #endif /* VUSH_UTIL_H */

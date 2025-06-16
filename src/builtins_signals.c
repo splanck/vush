@@ -2,6 +2,7 @@
 #include "builtins.h"
 #include "execute.h"
 #include "trap.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,8 +95,7 @@ int builtin_trap(char **args)
 
     if (strcmp(args[1], "-p") == 0) {
         if (args[2]) {
-            fprintf(stderr, "usage: trap -p\n");
-            return 1;
+            return usage_error("trap -p");
         }
         print_traps();
         last_status = 0;
@@ -104,8 +104,7 @@ int builtin_trap(char **args)
 
     if (strcmp(args[1], "-l") == 0) {
         if (args[2]) {
-            fprintf(stderr, "usage: trap -l\n");
-            return 1;
+            return usage_error("trap -l");
         }
         list_signals();
         last_status = 0;
@@ -151,8 +150,7 @@ int builtin_break(char **args)
         errno = 0;
         long val = strtol(args[1], &end, 10);
         if (*end != '\0' || errno != 0 || val <= 0) {
-            fprintf(stderr, "usage: break [N]\n");
-            return 1;
+            return usage_error("break [N]");
         }
         n = (int)val;
     }
@@ -171,8 +169,7 @@ int builtin_continue(char **args)
         errno = 0;
         long val = strtol(args[1], &end, 10);
         if (*end != '\0' || errno != 0 || val <= 0) {
-            fprintf(stderr, "usage: continue [N]\n");
-            return 1;
+            return usage_error("continue [N]");
         }
         n = (int)val;
     }

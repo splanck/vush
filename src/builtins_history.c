@@ -34,8 +34,7 @@ int builtin_history(char **args)
             delete_history_entry((int)id);
             return 1;
         } else {
-            fprintf(stderr, "usage: history [-c|-d NUMBER]\n");
-            return 1;
+            return usage_error("history [-c|-d NUMBER]");
         }
     }
     print_history();
@@ -83,9 +82,7 @@ int builtin_fc(char **args)
             editor = args[i+1];
             i++;
         } else {
-            fprintf(stderr,
-                    "usage: fc [-lnr] [-e editor] [first [last]] | fc -s [old=new] [command]\n");
-            return 1;
+            return usage_error("fc [-lnr] [-e editor] [first [last]] | fc -s [old=new] [command]");
         }
     }
 

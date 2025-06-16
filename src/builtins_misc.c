@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "hash.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,8 +91,7 @@ int builtin_help(char **args) {
 /* Show how each argument would be resolved: alias, function, builtin or file. */
 int builtin_type(char **args) {
     if (!args[1]) {
-        fprintf(stderr, "usage: type name...\n");
-        return 1;
+        return usage_error("type name...");
     }
     for (int i = 1; args[i]; i++) {
         const char *alias = get_alias(args[i]);

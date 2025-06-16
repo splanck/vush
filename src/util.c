@@ -56,3 +56,8 @@ int open_redirect(const char *path, int append, int force) {
         flags |= O_EXCL;
     return open(path, flags, 0644);
 }
+
+int usage_error(const char *msg) {
+    fprintf(stderr, "usage: %s\n", msg);
+    return 1;
+}

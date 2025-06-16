@@ -2,6 +2,7 @@
 #include "builtins.h"
 #include "parser.h"
 #include "vars.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,9 +111,8 @@ int builtin_read(char **args) {
     const char *array_name = NULL;
     int idx;
     if (parse_read_options(args, &raw, &array_name, &idx) != 0) {
-        fprintf(stderr, "usage: read [-r] [-a NAME] [NAME...]\n");
         last_status = 1;
-        return 1;
+        return usage_error("read [-r] [-a NAME] [NAME...]");
     }
 
     char line[MAX_LINE];
