@@ -449,12 +449,14 @@ int builtin_local(char **args) {
             if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {
                 int count = 0;
                 char **vals = parse_array_values(val, &count);
-                if (vals) {
-                    set_shell_array(name, vals, count);
-                    for (int j = 0; j < count; j++)
-                        free(vals[j]);
-                    free(vals);
+                if (!vals && count > 0) {
+                    free(name);
+                    continue;
                 }
+                set_shell_array(name, vals, count);
+                for (int j = 0; j < count; j++)
+                    free(vals[j]);
+                free(vals);
             } else {
                 set_shell_var(name, val);
             }

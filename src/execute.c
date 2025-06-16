@@ -395,13 +395,18 @@ static char **parse_array_values(const char *val, int *count) {
         (*count)++;
     }
     free(body);
+
+    if (*count == 0) {
+        vals = calloc(1, sizeof(char *));
+    }
+
     return vals;
 }
 
 static void apply_array_assignment(const char *name, const char *val, int export_env) {
     int count = 0;
     char **vals = parse_array_values(val, &count);
-    if (!vals)
+    if (!vals && count > 0)
         return;
 
     set_shell_array(name, vals, count);

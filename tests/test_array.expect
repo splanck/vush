@@ -5,6 +5,11 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+send "nums=()\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "nums=(one two three)\r"
 expect {
     "vush> " {}
