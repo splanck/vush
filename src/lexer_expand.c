@@ -176,6 +176,30 @@ static char *expand_array_element(const char *name, const char *idxstr) {
     }
 }
 
+/* Find the first substring of TEXT that matches PAT using fnmatch().
+ * On success *START and *LEN indicate the matched range and 1 is returned.
+ * Returns 0 if no match is found. */
+static int find_glob_substring(const char *text, const char *pat,
+                               size_t *start, size_t *len) {
+    size_t tlen = strlen(text);
+    char buf[MAX_LINE];
+    for (size_t i = 0; i < tlen; i++) {
+        size_t remain = tlen - i;
+        for (size_t l = remain; l > 0; l--) {
+            if (l >= sizeof(buf))
+                continue;
+            memcpy(buf, text + i, l);
+            buf[l] = '\0';
+            if (fnmatch(pat, buf, 0) == 0) {
+                if (start) *start = i;
+                if (len) *len = l;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 /* Apply parameter expansion modifiers contained in P to VAL. Handles
  * operations such as default values, assignment, removal of prefixes or
  * suffixes, and others used in ${NAMEMOD}. NAME is used for error messages
@@ -229,6 +253,55 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         }
         free(wexp);
         return strdup(val ? val : "");
+    } else if (*p == '/' ) {
+        int global = 0;
+        if (p[1] == '/') { global = 1; p++; }
+        const char *pat = p + 1;
+        const char *sep = strchr(pat, '/');
+        if (!sep) {
+            if (!val) val = "";
+            return strdup(val);
+        }
+        char *pattern = strndup(pat, sep - pat);
+        const char *repl = sep + 1;
+        if (!pattern) return strdup(val ? val : "");
+        if (!val) val = "";
+        size_t vlen = strlen(val);
+        size_t rlen = strlen(repl);
+        size_t cap = vlen * (rlen ? rlen : 1) + 1;
+        char *res = malloc(cap);
+        if (!res) { free(pattern); return NULL; }
+        size_t out = 0;
+        size_t pos = 0;
+        int replaced = 0;
+        while (pos < vlen) {
+            size_t s, l;
+            if (find_glob_substring(val + pos, pattern, &s, &l)) {
+                memcpy(res + out, val + pos, s);
+                out += s;
+                memcpy(res + out, repl, rlen);
+                out += rlen;
+                pos += s + l;
+                replaced = 1;
+                if (!global)
+                    break;
+            } else {
+                size_t rest = vlen - pos;
+                memcpy(res + out, val + pos, rest);
+                out += rest;
+                pos = vlen;
+            }
+        }
+        if (pos < vlen)
+            memcpy(res + out, val + pos, vlen - pos);
+        else if (!replaced)
+            ;
+        out += (pos < vlen) ? vlen - pos : 0;
+        res[out] = '\0';
+        free(pattern);
+        char *ret = strdup(res);
+        free(res);
+        return ret ? ret : strdup("");
     } else if (*p == ':' && isdigit((unsigned char)p[1])) {
         if (!val) {
             if (opt_nounset) {
@@ -353,7 +426,7 @@ static char *expand_braced(const char *inner) {
     char name[MAX_LINE];
     int n = 0;
     const char *p = inner;
-    while (*p && *p != ':' && *p != '#' && *p != '%' && n < MAX_LINE - 1)
+    while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && n < MAX_LINE - 1)
         name[n++] = *p++;
     name[n] = '\0';
 
