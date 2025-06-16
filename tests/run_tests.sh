@@ -180,6 +180,26 @@ tests="
 "
 for test in $tests; do
     echo "Running $test"
+    if [ "$test" = "test_glob.expect" ]; then
+        tmpdir=$(mktemp -d)
+        curdir=$(pwd)
+        cd "$tmpdir"
+        if [ -x "$curdir/$test" ]; then
+            cmd="$curdir/$test"
+        else
+            cmd="expect -f $curdir/$test"
+        fi
+        if ! eval "$cmd"; then
+            echo "FAILED: $test"
+            failed=1
+        else
+            echo "PASSED: $test"
+        fi
+        cd "$curdir"
+        rm -rf "$tmpdir"
+        echo
+        continue
+    fi
     case "$test" in
         test_history.expect|\
         test_history_clear.expect|\

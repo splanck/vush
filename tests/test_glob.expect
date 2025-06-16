@@ -1,8 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set dir [exec mktemp -d]
 set scriptdir [file normalize [file dirname [info script]]]
-cd $dir
 spawn $scriptdir/../vush
 expect {
     "vush> " {}
@@ -16,12 +14,10 @@ expect {
 send "echo *.c\r"
 expect {
     -re "\[\r\n\]+g1.c g2.c\[\r\n\]+vush> " {}
-    timeout { send_user "glob expansion failed\n"; cd $scriptdir; exec rm -rf $dir; exit 1 }
+    timeout { send_user "glob expansion failed\n"; exit 1 }
 }
 send "exit\r"
 expect {
     eof {}
     timeout { send_user "eof timeout\n"; exit 1 }
 }
-cd $scriptdir
-exec rm -rf $dir
