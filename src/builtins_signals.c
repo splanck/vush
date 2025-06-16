@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "signal_map.h"
+#include "util.h"
 
 extern int last_status;
 void list_signals(void);
@@ -99,14 +100,12 @@ int builtin_break(char **args)
 {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val <= 0) {
+        int val;
+        if (parse_positive_int(args[1], &val) < 0 || val <= 0) {
             fprintf(stderr, "usage: break [N]\n");
             return 1;
         }
-        n = (int)val;
+        n = val;
     }
     if (n > loop_depth)
         n = loop_depth;
@@ -119,14 +118,12 @@ int builtin_continue(char **args)
 {
     int n = 1;
     if (args[1]) {
-        char *end;
-        errno = 0;
-        long val = strtol(args[1], &end, 10);
-        if (*end != '\0' || errno != 0 || val <= 0) {
+        int val;
+        if (parse_positive_int(args[1], &val) < 0 || val <= 0) {
             fprintf(stderr, "usage: continue [N]\n");
             return 1;
         }
-        n = (int)val;
+        n = val;
     }
     if (n > loop_depth)
         n = loop_depth;

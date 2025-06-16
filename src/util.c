@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "options.h"
@@ -80,4 +82,23 @@ char *make_user_path(const char *env_var, const char *secondary,
         return NULL;
     snprintf(res, len, "%s/%s", home, default_name);
     return res;
+}
+
+/*
+ * Parse a non-negative integer from the given string.  Returns 0 on
+ * success and -1 on failure or overflow.  The parsed value is stored in
+ * *out when successful.
+ */
+int parse_positive_int(const char *s, int *out) {
+    if (!s || !*s)
+        return -1;
+
+    char *end;
+    errno = 0;
+    long val = strtol(s, &end, 10);
+    if (*end != '\0' || errno != 0 || val < 0 || val > INT_MAX)
+        return -1;
+    if (out)
+        *out = (int)val;
+    return 0;
 }
