@@ -530,8 +530,22 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
         words = tmp;
         words[count++] = tok;
     }
-    if (!words && count==0)
-        words = NULL; /* nothing */
+    if (!words && count==0) {
+        /* ensure an empty argument list is well-formed */
+        words = calloc(1, sizeof(char*));
+        if (!words)
+            return NULL;
+    } else {
+        char **tmp = realloc(words, sizeof(char*) * (count + 1));
+        if (!tmp) {
+            for (int i = 0; i < count; i++)
+                free(words[i]);
+            free(words);
+            return NULL;
+        }
+        words = tmp;
+    }
+    words[count] = NULL;
     while (**p == ' ' || **p == '\t') (*p)++;
     CmdOp op = OP_NONE;
     if (**p == ';') { op = OP_SEMI; (*p)++; }
