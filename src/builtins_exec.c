@@ -251,11 +251,12 @@ int builtin_command(char **args) {
             char *dir = strtok_r(paths, ":", &saveptr);
             int found = 0;
             while (dir) {
-                size_t len = strlen(dir) + strlen(args[i]) + 2;
+                const char *d = *dir ? dir : ".";
+                size_t len = strlen(d) + strlen(args[i]) + 2;
                 char *full = malloc(len);
                 if (!full)
                     break;
-                snprintf(full, len, "%s/%s", dir, args[i]);
+                snprintf(full, len, "%s/%s", d, args[i]);
                 if (access(full, X_OK) == 0) {
                     if (opt_V)
                         printf("%s is %s\n", args[i], full);
