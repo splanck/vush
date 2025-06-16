@@ -48,23 +48,29 @@ void add_readonly(const char *name)
     readonly_vars = r;
 }
 
+void print_array(const char *prefix, char **arr, int len)
+{
+    printf("%s=(", prefix);
+    for (int i = 0; i < len; i++) {
+        if (i)
+            printf(" ");
+        printf("%s", arr[i]);
+    }
+    printf(")\n");
+}
+
 void print_readonly_vars(void)
 {
     for (struct readonly_entry *r = readonly_vars; r; r = r->next) {
         const char *val = get_shell_var(r->name);
-        if (val)
+        if (val) {
             printf("readonly %s=%s\n", r->name, val);
-        else {
+        } else {
             int len = 0;
             char **arr = get_shell_array(r->name, &len);
             if (arr) {
-                printf("readonly %s=(", r->name);
-                for (int i = 0; i < len; i++) {
-                    if (i)
-                        printf(" ");
-                    printf("%s", arr[i]);
-                }
-                printf(")\n");
+                printf("readonly ");
+                print_array(r->name, arr, len);
             } else {
                 printf("readonly %s\n", r->name);
             }
@@ -76,13 +82,7 @@ void print_shell_vars(void)
 {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (v->array) {
-            printf("%s=(", v->name);
-            for (int i = 0; i < v->array_len; i++) {
-                if (i)
-                    printf(" ");
-                printf("%s", v->array[i]);
-            }
-            printf(")\n");
+            print_array(v->name, v->array, v->array_len);
         } else if (v->value) {
             printf("%s=%s\n", v->name, v->value);
         } else {
