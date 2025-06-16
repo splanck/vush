@@ -128,14 +128,17 @@ static char *parse_redirect_token(char **p) {
 static void handle_backslash_escape(char **p, char buf[], int *len,
                                    int *first, int *do_expand,
                                    int disable_first) {
-    (*p)++;
+    /* Append the backslash itself. */
+    if (*len < MAX_LINE - 1)
+        buf[(*len)++] = '\\';
+    (*p)++; /* move past the backslash */
     if (**p) {
+        /* Append the escaped character as-is */
         if (*len < MAX_LINE - 1)
             buf[(*len)++] = **p;
         if (*first && disable_first && (**p == '$' || **p == '`'))
             *do_expand = 0;
-        if (**p)
-            (*p)++;
+        (*p)++;
     }
     *first = 0;
 }
