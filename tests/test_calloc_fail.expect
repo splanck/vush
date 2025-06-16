@@ -7,7 +7,7 @@ set lib "$dir/calloc_fail.so"
 exec cc -shared -fPIC $src -o $lib
 set env(LD_PRELOAD) $lib
 set env(CALLOC_FAIL_AT) 3
-spawn $dir/../vush -c {true}
+spawn $dir/../build/vush -c {true}
 expect {
     -re "calloc: Cannot allocate memory\r?\n" {}
     timeout { send_user "missing calloc error\n"; exit 1 }

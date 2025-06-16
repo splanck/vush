@@ -1,7 +1,7 @@
 #!/usr/bin/env expect
 set timeout 5
 set scriptdir [file normalize [file dirname [info script]]]
-spawn $scriptdir/../vush
+spawn $scriptdir/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

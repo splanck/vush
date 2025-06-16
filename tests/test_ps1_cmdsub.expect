@@ -2,7 +2,7 @@
 set timeout 5
 set start $env(PWD)
 set parent [file dirname $start]
-spawn [file dirname [info script]]/../vush
+spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

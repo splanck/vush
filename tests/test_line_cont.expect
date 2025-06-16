@@ -5,7 +5,7 @@ set f [open $script "w"]
 puts $f {echo one \\}
 puts $f {two}
 close $f
-spawn [file dirname [info script]]/../vush $script
+spawn [file dirname [info script]]/../build/vush $script
 expect {
     -re "one two\r?\n" {}
     timeout { send_user "line continuation failed\n"; exec rm $script; exit 1 }

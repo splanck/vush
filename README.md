@@ -272,7 +272,7 @@ Ensure `expect` is installed and run:
 make test
 ```
 
-The test scripts under `tests/` will launch `./vush` with predefined commands and verify the output.
+The test scripts under `tests/` will launch `build/vush` with predefined commands and verify the output.
 
 ## Debugging
 

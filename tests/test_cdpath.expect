@@ -3,7 +3,7 @@ set timeout 5
 set dir [exec mktemp -d]
 file mkdir "$dir/a"
 set env(CDPATH) $dir
-spawn [file dirname [info script]]/../vush
+spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

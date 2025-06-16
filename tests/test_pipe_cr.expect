@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set vush [file dirname [info script]]/../vush
+set vush [file dirname [info script]]/../build/vush
 set cmd [format {printf 'echo hi\r' | %s /dev/stdin} $vush]
 spawn sh -c $cmd
 expect {

@@ -9,7 +9,7 @@ close $f
 exec chmod +x "$dir/foo"
 cd $dir
 set env(PATH) ":/bin"
-spawn $scriptdir/../vush
+spawn $scriptdir/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

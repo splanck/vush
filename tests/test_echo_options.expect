@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-spawn [file dirname [info script]]/../vush -c {echo -n hi}
+spawn [file dirname [info script]]/../build/vush -c {echo -n hi}
 expect {
     "hi" {}
     timeout { send_user "echo -n output mismatch\n"; exit 1 }
@@ -9,7 +9,7 @@ expect {
     eof {}
     timeout { send_user "eof timeout\n"; exit 1 }
 }
-spawn [file dirname [info script]]/../vush -c {echo -e hi}
+spawn [file dirname [info script]]/../build/vush -c {echo -e hi}
 expect {
     -re "hi\r?\n" {}
     timeout { send_user "echo -e output mismatch\n"; exit 1 }
