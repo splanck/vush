@@ -14,36 +14,65 @@
 #include <ctype.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include "parser.h" /* for MAX_LINE */
+#include "execute.h"
 
 extern int last_status;
 extern int param_error;
 
-/* Execute CMD via popen and return its stdout output as a newly
- * allocated string with any trailing newline removed. */
+/* Execute CMD and capture its stdout using the shell itself so that shell
+ * variables and functions are visible.  The command's output is returned as a
+ * newly allocated string with any trailing newline removed. */
 static char *command_output(const char *cmd) {
     int saved_notify = opt_notify;
     opt_notify = 0;
-    FILE *fp = popen(cmd, "r");
-    if (!fp) {
+
+    int pipefd[2];
+    if (pipe(pipefd) != 0) {
         opt_notify = saved_notify;
-        char *tmp = strdup("");
-        return tmp ? tmp : NULL;
-    }
-    char out[MAX_LINE];
-    size_t total = 0;
-    while (fgets(out + total, sizeof(out) - total, fp)) {
-        total = strlen(out);
-        if (total >= sizeof(out) - 1) break;
-    }
-    pclose(fp);
-    opt_notify = saved_notify;
-    if (total > 0 && out[total - 1] == '\n')
-        out[total - 1] = '\0';
-    char *ret = strdup(out);
-    if (!ret)
         return NULL;
-    return ret;
+    }
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        signal(SIGINT, SIG_DFL);
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        char *copy = strdup(cmd);
+        Command *c = copy ? parse_line(copy) : NULL;
+        free(copy);
+        if (c) {
+            run_command_list(c, cmd);
+            free_commands(c);
+        }
+        exit(last_status);
+    } else if (pid > 0) {
+        close(pipefd[1]);
+        char out[MAX_LINE];
+        size_t total = 0;
+        ssize_t n;
+        while ((n = read(pipefd[0], out + total, sizeof(out) - 1 - total)) > 0) {
+            total += (size_t)n;
+            if (total >= sizeof(out) - 1)
+                break;
+        }
+        close(pipefd[0]);
+        waitpid(pid, NULL, 0);
+        opt_notify = saved_notify;
+        if (total > 0 && out[total - 1] == '\n')
+            total--;
+        out[total] = '\0';
+        char *ret = strdup(out);
+        return ret;
+    } else {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        opt_notify = saved_notify;
+        return NULL;
+    }
 }
 
 /* Parse a command substitution starting at *p. Supports both $(...) and
