@@ -175,18 +175,21 @@ static int printed_before(const char *name, struct alias_entry *limit)
     return 0;
 }
 
-static void list_aliases(void)
+static void list_aliases_fmt(const char *fmt)
 {
     for (struct alias_entry *a = aliases; a; a = a->next)
         if (!printed_before(a->name, a))
-            printf("%s='%s'\n", a->name, a->value);
+            printf(fmt, a->name, a->value);
+}
+
+static void list_aliases(void)
+{
+    list_aliases_fmt("%s='%s'\n");
 }
 
 static void list_aliases_p(void)
 {
-    for (struct alias_entry *a = aliases; a; a = a->next)
-        if (!printed_before(a->name, a))
-            printf("alias %s='%s'\n", a->name, a->value);
+    list_aliases_fmt("alias %s='%s'\n");
 }
 
 /* Save aliases and free all alias list entries. */
