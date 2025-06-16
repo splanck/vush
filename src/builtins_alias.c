@@ -118,8 +118,15 @@ static int set_alias(const char *name, const char *value)
         free(new_alias);
         return -1;
     }
-    new_alias->next = aliases;
-    aliases = new_alias;
+    new_alias->next = NULL;
+    if (!aliases) {
+        aliases = new_alias;
+    } else {
+        struct alias_entry *tail = aliases;
+        while (tail->next)
+            tail = tail->next;
+        tail->next = new_alias;
+    }
     return 0;
 }
 

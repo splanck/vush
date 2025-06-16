@@ -56,7 +56,7 @@ expect {
 }
 
 # Create many aliases to ensure dynamic allocation works
-for {set i 0} {$i < 40} {incr i} {
+for {set i 0} {$i < 45} {incr i} {
     send "alias a$i='echo hi$i'\r"
     expect {
         "vush> " {}
@@ -65,12 +65,12 @@ for {set i 0} {$i < 40} {incr i} {
 }
 send "alias\r"
 expect {
-    -re "a39='echo hi39'" {}
+    -re "a44='echo hi44'" {}
     timeout { send_user "alias storage failed\n"; exit 1 }
 }
-send "a39 world\r"
+send "a44 world\r"
 expect {
-    -re "\[\r\n\]+hi39 world\[\r\n\]+vush> " {}
+    -re "\[\r\n\]+hi44 world\[\r\n\]+vush> " {}
     timeout { send_user "alias expanded failed\n"; exit 1 }
 }
 send "exit\r"
