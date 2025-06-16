@@ -147,7 +147,7 @@ Use the provided `Makefile` to build the shell:
 make
 ```
 
-The resulting binary will be `./vush`. Remove the binary with:
+The resulting binary will be `build/vush`. Remove the directory with:
 
 ```sh
 make clean

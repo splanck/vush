@@ -2,6 +2,8 @@ CC ?= cc
 CFLAGS ?= -Wall -Wextra -std=c99
 PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
+BUILDDIR := build
+OBJDIR := $(BUILDDIR)
 
 .PHONY: clean test install uninstall
 
@@ -18,24 +20,25 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/hash.c src/trap.c src/startup.c src/mail.c src/repl.c \
        src/main.c
 
-OBJS := $(patsubst src/%.c,%.o,$(SRCS))
+OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(SRCS))
 
-vush: $(OBJS)
+$(BUILDDIR)/vush: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
-%.o: src/%.c
+$(OBJDIR)/%.o: src/%.c
+	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f vush $(OBJS)
+	rm -rf $(BUILDDIR)
 
 
-test: vush
+test: $(BUILDDIR)/vush
 	cd tests && ./run_tests.sh
 
-install: vush
+install: $(BUILDDIR)/vush
 	install -d $(PREFIX)/bin
-	install -m 755 vush $(PREFIX)/bin
+	install -m 755 $(BUILDDIR)/vush $(PREFIX)/bin
 	install -d $(MANPREFIX)/man1
 	install -m 644 docs/vush.1 $(MANPREFIX)/man1
 
