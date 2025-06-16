@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <limits.h>
+#include <ctype.h>
+#include <stdbool.h>
 
 extern int last_status;
 
@@ -78,6 +80,17 @@ static int parse_fc_options(char **args, FcOptions *opts) {
 
     int i = 1;
     for (; args[i] && args[i][0] == '-'; i++) {
+        if (args[i][1] && isdigit((unsigned char)args[i][1])) {
+            bool all_digits = true;
+            for (int j = 1; args[i][j]; j++) {
+                if (!isdigit((unsigned char)args[i][j])) {
+                    all_digits = false;
+                    break;
+                }
+            }
+            if (all_digits)
+                break;
+        }
         if (strcmp(args[i], "-l") == 0) {
             opts->list = 1;
         } else if (strcmp(args[i], "-n") == 0) {
