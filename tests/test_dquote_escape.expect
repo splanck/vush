@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-spawn [file dirname [info script]]/../vush -c {echo \"${HOME}\"}
+spawn [file dirname [info script]]/../build/vush -c {echo \"${HOME}\"}
 expect {
     -re "\"$env(HOME)\"\r?\n" {}
     timeout { send_user "escaped quote expansion failed\n"; exit 1 }

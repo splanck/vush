@@ -7,7 +7,7 @@ puts $f "echo hashed1"
 close $f
 exec chmod +x "$dir/foo"
 set env(PATH) "$dir:$env(PATH)"
-spawn [file dirname [info script]]/../vush
+spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

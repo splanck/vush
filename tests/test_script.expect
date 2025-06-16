@@ -4,7 +4,7 @@ set script [exec mktemp]
 set f [open $script "w"]
 puts $f "echo from_script"
 close $f
-spawn [file dirname [info script]]/../vush $script
+spawn [file dirname [info script]]/../build/vush $script
 expect {
     -re "from_script\r?\n" {}
     timeout { send_user "script output mismatch\n"; exec rm $script; exit 1 }

@@ -6,7 +6,7 @@ puts $f "echo \"\$0,\$1,\$2,\$#,\$@\""
 puts $f "shift"
 puts $f "echo \"\$0,\$1,\$2,\$#,\$@\""
 close $f
-spawn [file dirname [info script]]/../vush
+spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

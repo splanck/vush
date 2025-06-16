@@ -6,6 +6,11 @@ if ! command -v expect >/dev/null; then
     exit 1
 fi
 
+if [ ! -x ../build/vush ]; then
+    echo "Error: ../build/vush not found. Please build the project first." >&2
+    exit 1
+fi
+
 TMP_HOME=$(mktemp -d)
 export HOME="$TMP_HOME"
 export VUSH_FUNCFILE=/dev/null
