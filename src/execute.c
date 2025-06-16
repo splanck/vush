@@ -375,10 +375,10 @@ static char **parse_array_values(const char *val, int *count) {
 
         char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
         if (!tmp) {
+            free(body);
             for (int i = 0; i < *count; i++)
                 free(vals[i]);
             free(vals);
-            free(body);
             *count = 0;
             return NULL;
         }
