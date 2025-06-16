@@ -316,6 +316,13 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
     if (pipeline->next)
         return 0;
 
+    /*
+     * Expand words in the pipeline before applying temporary assignments so
+     * that command substitutions and parameter expansions occur using the
+     * current environment.  This mirrors normal shell behavior where
+     * assignment values are expanded prior to being set.
+     */
+    expand_segment(pipeline);
 
     if (!pipeline->argv[0] && pipeline->assign_count > 0) {
         for (int i = 0; i < pipeline->assign_count; i++) {
@@ -500,8 +507,6 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             }
         }
     }
-    expand_segment(pipeline);
-
     int handled = 0;
     int is_blt = is_builtin_command(pipeline->argv[0]);
     FuncEntry *fn = NULL;

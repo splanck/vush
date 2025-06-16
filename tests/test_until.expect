@@ -10,6 +10,11 @@ expect {
     -re "2\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "until output mismatch\n"; exit 1 }
 }
+send "echo \$j\r"
+expect {
+    -re "0\[\r\n\]+vush> " {}
+    timeout { send_user "until var mismatch\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
