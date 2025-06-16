@@ -55,9 +55,12 @@ static int prepare_source_args(char **args, int *old_argc, char ***old_argv,
 
 static void restore_source_args(int old_argc, char **old_argv, int new_argc)
 {
-    for (int i = 0; i <= new_argc; i++)
-        free(script_argv[i]);
-    free(script_argv);
+    (void)new_argc; /* parameters may have shifted */
+    if (script_argv) {
+        for (int i = 0; script_argv[i]; i++)
+            free(script_argv[i]);
+        free(script_argv);
+    }
     script_argv = old_argv;
     script_argc = old_argc;
     getopts_pos = NULL; /* argv replaced; reset getopts pointer */
