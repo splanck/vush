@@ -765,7 +765,8 @@ static int handle_param(const char **p, char **out, size_t *outlen) {
         }
     } else {
         const char *q = s + 1;
-        if (*q == '#' || *q == '?' || *q == '*' || *q == '@' || *q == '$' || *q == '!') {
+        if (*q == '#' || *q == '?' || *q == '*' || *q == '@' ||
+            *q == '$' || *q == '!' || *q == '-') {
             q++;
         } else if (isdigit((unsigned char)*q)) {
             q++;
