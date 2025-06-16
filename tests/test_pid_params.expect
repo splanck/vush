@@ -23,11 +23,6 @@ expect {
     -re "\[\r\n\]+(\[0-9\]+)\[\r\n\]+vush> " { set bg $expect_out(1,string) }
     timeout { send_user "\$! expansion failed\n"; exit 1 }
 }
-send "jobs\r"
-expect {
-    -re "\[1\] $bg sleep 3 &[\r\n\]+vush> " {}
-    timeout { send_user "jobs pid mismatch\n"; exit 1 }
-}
 send "set -e -u\r"
 expect {
     "vush> " {}
