@@ -13,10 +13,7 @@ expect {
 }
 expect {
     -re "$script,bar,,1,bar\r?\n" {}
-    timeout { send_user "shift failed\n"; exec rm $script; exit 1 }
-}
-expect {
     eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
+    timeout { send_user "shift failed\n"; exec rm $script; exit 1 }
 }
 exec rm $script

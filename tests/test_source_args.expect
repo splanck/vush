@@ -2,9 +2,9 @@
 set timeout 5
 set script [exec mktemp]
 set f [open $script "w"]
-puts $f "echo \"$0,$1,$2,$#,$@\""
-puts $f "shift"
-puts $f "echo \"$0,$1,$2,$#,$@\""
+puts $f {echo "$0,$1,$2,$#,$@"}
+puts $f {shift}
+puts $f {echo "$0,$1,$2,$#,$@"}
 close $f
 spawn [file dirname [info script]]/../vush
 expect {
