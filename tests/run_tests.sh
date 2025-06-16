@@ -8,6 +8,7 @@ fi
 
 TMP_HOME=$(mktemp -d)
 export HOME="$TMP_HOME"
+export VUSH_FUNCFILE=/dev/null
 trap 'rm -rf "$TMP_HOME"' EXIT
 
 failed=0
