@@ -22,6 +22,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <time.h>
 
 typedef enum { JOB_RUNNING, JOB_STOPPED } JobState;
@@ -106,9 +107,21 @@ int check_jobs_internal(int prefix) {
                     else if (prefix == 2)
                         printf("\r");
                 }
-                printf("[vush] job %d (%s) finished\n",
+                const char *cmd = curr ? curr->cmd : "?";
+                char tmp[MAX_LINE];
+                strncpy(tmp, cmd, sizeof(tmp) - 1);
+                tmp[sizeof(tmp) - 1] = '\0';
+                size_t len = strlen(tmp);
+                while (len > 0 && isspace((unsigned char)tmp[len - 1]))
+                    tmp[--len] = '\0';
+                if (len > 0 && tmp[len - 1] == '&') {
+                    tmp[--len] = '\0';
+                    while (len > 0 && isspace((unsigned char)tmp[len - 1]))
+                        tmp[--len] = '\0';
+                }
+                printf("[vush] job %d (%s &) finished\n",
                        curr ? curr->id : pid,
-                       curr ? curr->cmd : "?");
+                       tmp);
                 printed = 1;
             }
             remove_job(pid);
