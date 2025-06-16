@@ -17,7 +17,7 @@ expect {
 }
 send "echo '\${HOME}'\r"
 expect {
-    -re "\[\r\n\]+\${HOME}\[\r\n\]+vush> " {}
+    -re "\r?\n\\$\\{HOME\\}\r?\nvush> " {}
     timeout { send_user "single quote brace mismatch\n"; exit 1 }
 }
 send "exit\r"
