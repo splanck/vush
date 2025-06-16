@@ -10,6 +10,11 @@ expect {
     -re "a start\r\nb start\r\nvush> " {}
     timeout { send_user "continue 2 failed\n"; exit 1 }
 }
+send "for i in x y; do echo \$i start; while true; do continue 2; done; echo \$i end; done\r"
+expect {
+    -re "x start\r\ny start\r\nvush> " {}
+    timeout { send_user "continue 2 while failed\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
