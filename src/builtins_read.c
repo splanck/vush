@@ -95,7 +95,9 @@ static int read_terminal_line(char *buf, size_t size) {
         do {
             n = read(STDIN_FILENO, &c, 1);
         } while (n == -1 && errno == EINTR);
-        if (n <= 0)
+        if (n == 0)
+            return 1; /* EOF */
+        if (n < 0)
             return -1;
         if (c == '\n' || c == '\r')
             break;
@@ -116,7 +118,8 @@ int builtin_read(char **args) {
     }
 
     char line[MAX_LINE];
-    if (read_terminal_line(line, sizeof(line)) < 0) {
+    int r = read_terminal_line(line, sizeof(line));
+    if (r != 0) {
         last_status = 1;
         return 1;
     }
