@@ -62,7 +62,7 @@ expect {
 }
 send "echo hi\r"
 expect {
-    -re "\+ echo hi\r\nhi\r\nvush> " {}
+    -re {[+] echo hi\r\nhi\r\nvush> } {}
     timeout { send_user "xtrace output mismatch\n"; exit 1 }
 }
 send "exit\r"
