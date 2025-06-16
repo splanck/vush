@@ -1,0 +1,27 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [exec mktemp -d]
+file mkdir "$dir/real"
+exec ln -s "$dir/real" "$dir/link"
+exec ln -s "$dir/missing" "$dir/real/bad"
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "cd -P $dir/link\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exec rm -rf $dir; exit 1 }
+}
+send "pwd\r"
+expect {
+    -re "\[\r\n\]+$dir/real\[\r\n\]+vush> " {}
+    timeout { send_user "cd -P dangle failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+exec rm -rf $dir
