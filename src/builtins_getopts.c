@@ -47,10 +47,16 @@ enum {
     OPT_MISSING
 };
 
+/* Index of the argument currently being scanned. This is used so OPTIND only
+ * advances once all characters from the current option argument have been
+ * processed. */
+static int current_ind = 0;
+
 static int getopts_next_option(const char *optstr, int silent, int *ind, char *opt)
 {
     if (!script_argv || *ind > script_argc) {
         getopts_pos = NULL;
+        current_ind = 0;
         return OPT_DONE;
     }
 
@@ -59,14 +65,16 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
         if (strcmp(arg, "--") == 0) {
             (*ind)++;
             getopts_pos = NULL;
+            current_ind = 0;
             return OPT_DONE;
         }
         if (arg[0] != '-' || arg[1] == '\0') {
             getopts_pos = NULL;
+            current_ind = 0;
             return OPT_DONE;
         }
         getopts_pos = arg + 1;
-        (*ind)++;
+        current_ind = *ind;
     }
 
     *opt = *getopts_pos++;
@@ -83,8 +91,11 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
         } else {
             write_optarg("");
         }
-        if (!getopts_pos || *getopts_pos == '\0')
+        if (!getopts_pos || *getopts_pos == '\0') {
             getopts_pos = NULL;
+            *ind = current_ind + 1;
+            current_ind = 0;
+        }
         return OPT_ILLEGAL;
     }
 
@@ -92,10 +103,13 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
         if (*getopts_pos != '\0') {
             write_optarg(getopts_pos);
             getopts_pos = NULL;
-        } else if (*ind <= script_argc) {
-            write_optarg(script_argv[*ind]);
-            (*ind)++;
+            *ind = current_ind + 1;
+            current_ind = 0;
+        } else if (current_ind < script_argc) {
+            write_optarg(script_argv[current_ind + 1]);
+            *ind = current_ind + 2;
             getopts_pos = NULL;
+            current_ind = 0;
         } else {
             if (!silent)
                 fprintf(stderr, "getopts: option requires an argument -- %c\n", *opt);
@@ -106,12 +120,17 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
                 write_optarg("");
             }
             getopts_pos = NULL;
+            *ind = current_ind + 1;
+            current_ind = 0;
             return OPT_MISSING;
         }
     } else {
         write_optarg("");
-        if (!getopts_pos || *getopts_pos == '\0')
+        if (!getopts_pos || *getopts_pos == '\0') {
             getopts_pos = NULL;
+            *ind = current_ind + 1;
+            current_ind = 0;
+        }
     }
     return OPT_OK;
 }
