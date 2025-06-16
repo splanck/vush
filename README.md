@@ -272,6 +272,17 @@ Ensure `expect` is installed and run:
 make test
 ```
 
+You can also run a specific group of tests by invoking one of the helper
+scripts under `tests/`:
+
+```sh
+cd tests
+./run_alias_tests.sh       # alias related tests
+./run_var_tests.sh         # variable handling tests
+./run_builtins_tests.sh    # built-in command tests
+./run_history_tests.sh     # history and ! expansion tests
+```
+
 The test scripts under `tests/` will launch `build/vush` with predefined commands and verify the output.
 
 ## Debugging
