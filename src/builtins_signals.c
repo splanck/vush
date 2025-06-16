@@ -118,15 +118,14 @@ int builtin_continue(char **args)
 {
     int n = 1;
     if (args[1]) {
-        int val;
-        if (parse_positive_int(args[1], &val) < 0 || val <= 0) {
+        if (parse_positive_int(args[1], &n) < 0 || n <= 0) {
             fprintf(stderr, "usage: continue [N]\n");
             return 1;
         }
-        n = val;
     }
     if (n > loop_depth)
         n = loop_depth;
+    /* store remaining loop levels to unwind */
     loop_continue = n;
     return 1;
 }
