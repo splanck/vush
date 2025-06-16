@@ -302,7 +302,6 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         if (!res) { free(pattern); return NULL; }
         size_t out = 0;
         size_t pos = 0;
-        int replaced = 0;
         while (pos < vlen) {
             size_t s, l;
             if (find_glob_substring(val + pos, pattern, &s, &l)) {
@@ -311,7 +310,6 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
                 memcpy(res + out, repl, rlen);
                 out += rlen;
                 pos += s + l;
-                replaced = 1;
                 if (!global)
                     break;
             } else {
