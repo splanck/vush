@@ -9,44 +9,29 @@ expect {
     -re "a:\[\r\n\]+b:foo\[\r\n\]+index:4\[\r\n\]+" {}
     timeout { send_user "getopts parsing failed\n"; exec rm $script; exit 1 }
 }
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+set code [lindex [wait] 3]
 spawn [file dirname [info script]]/../vush $script -z
 expect {
     -re "getopts: illegal option -- z\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "invalid option not handled\n"; exec rm $script; exit 1 }
 }
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+set code [lindex [wait] 3]
 spawn [file dirname [info script]]/../vush $script -b
 expect {
     -re "getopts: option requires an argument -- b\[\r\n\]+\?:\[\r\n\]+index:2\[\r\n\]+" {}
     timeout { send_user "missing argument not detected\n"; exec rm $script; exit 1 }
 }
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+set code [lindex [wait] 3]
 spawn [file dirname [info script]]/../vush $script -b foo
 expect {
     -re "b:foo\[\r\n\]+index:3\[\r\n\]+" {}
     timeout { send_user "argument with space failed\n"; exec rm $script; exit 1 }
 }
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+set code [lindex [wait] 3]
 spawn [file dirname [info script]]/../vush $script -z -a
 expect {
     -re "getopts: illegal option -- z\[\r\n\]+\?:\[\r\n\]+a:\[\r\n\]+index:3\[\r\n\]+" {}
     timeout { send_user "invalid option reset failed\n"; exec rm $script; exit 1 }
 }
-expect {
-    eof {}
-    timeout { send_user "eof timeout\n"; exit 1 }
-}
+set code [lindex [wait] 3]
 exec rm $script
