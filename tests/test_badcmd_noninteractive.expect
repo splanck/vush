@@ -6,6 +6,7 @@ expect {
     timeout { send_user "missing command not found message\n"; exit 1 }
 }
 expect {
+    -re "\[vush\]" { send_user "unexpected notification\n"; exit 1 }
     eof {}
     timeout { send_user "eof timeout\n"; exit 1 }
 }

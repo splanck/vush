@@ -100,7 +100,7 @@ int check_jobs_internal(int prefix) {
             curr = curr->next;
 
         if (WIFEXITED(status) || WIFSIGNALED(status)) {
-            if (opt_monitor && opt_notify) {
+            if (curr && opt_monitor && opt_notify) {
                 if (prefix && !printed) {
                     if (prefix == 1)
                         printf("\n");
