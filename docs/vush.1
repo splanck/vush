@@ -21,19 +21,150 @@ Print version information and exit.
 .SH STARTUP
 If no script file or -c option is given, \fB~/.vushrc\fP is read before the first prompt if it exists. When the \fBENV\fP variable is set, the file it names is processed afterward. Enabling \fBset -p\fP prevents both files from being loaded. The \fBset -t\fP option exits after a single command is executed. The \fBset -h\fP option caches each command after it runs. The \fBset -k\fP option treats \fINAME=value\fP words after the command name as temporary environment assignments; for example, \fBset -k; sh -c 'echo $FOO' FOO=bar\fP prints \fBbar\fP.
 .SH BUILTINS
-Built-in commands cover common shell tasks such as variable
-management, flow control and job handling. Refer to README.md for the
-complete list.
-functions, history and background jobs are available. Special
-parameters like \$\$, \$!, \$PPID and \$LINENO provide process and
-status information. Expanded examples reside in docs/vushdoc.md.
-functions, history and background jobs are available. Numbers may be
-prefixed with \fIbase\fB#\fRdigits to select bases 2\(en36. Expanded
-B!P operator and the binary B-aP and B-oP operators with standard precedence. It also supports binary comparisons Ifile1P -nt Ifile2.B SHELL
-Path to the running shell executable.
 .TP
-P, Primary command prompt string. May be exported safely.
-P -ot Ifile2P and Ifile1P -ef Ifile2P.
+.B cd [-L|-P] [dir]
+Change the current directory. Without an argument it switches to \$HOME. `~user` names are expanded using the password database. After a successful change \$PWD and \$OLDPWD are updated. Use `cd -` to print and switch to \$OLDPWD. `-L` (default) keeps \$PWD as the logical path while `-P` resolves the target with realpath() and sets \$PWD to the physical location. If `dir` does not begin with `/` or `.`, each directory listed in the \fBCDPATH\fP environment variable is searched. When a \fBCDPATH\fP entry is used the resulting path is printed. Logical canonicalization processes at most \fBPATH_MAX/2\fP components.
+.TP
+.B pushd dir
+Push the current directory and change to \fIdir\fP.
+.TP
+.B popd
+Return to the directory from the stack.
+.TP
+.B "printf FORMAT [args...]"
+Print formatted text. Backslash escapes in \fIFORMAT\fP are translated before examining \% conversions. The \%b conversion interprets escapes in its argument before printing.
+.TP
+.B "echo [-n] [-e] [args...]"
+Print arguments separated by spaces. With \-n no newline is added and \-e enables backslash escapes.
+.TP
+.B dirs
+Display the directory stack.
+.TP
+.B "exit [status]"
+Terminate the shell with an optional status code.
+.TP
+.B :
+Do nothing and return success.
+.TP
+.B true
+Return a successful status.
+.TP
+.B false
+Return a failure status.
+.TP
+.B "exec command [args...]"
+Replace the shell with \fIcommand\fP.
+.TP
+.B "pwd [-L|-P]"
+Print the current working directory. \-P displays the physical directory from \fBgetcwd()\fP while \-L (the default) prints \$PWD.
+.TP
+.B "jobs [-l|-p] [ID]"
+List background jobs. \-l prints the PID and status and \-p prints only the PID. With IDs only those jobs are shown.
+.TP
+.B "fg [ID]"
+Wait for background job \fIID\fP or the most recent job when omitted.
+.TP
+.B "bg [ID]"
+Resume the specified job or the last started job if no ID is given.
+.TP
+.B "kill [-s SIGNAL|-SIGNAL] [-l] ID|PID"
+Send a signal to the given job or process. Use \-l to list signals or \-l \fINUM\fP to print the signal name for \fINUM\fP.
+.TP
+.B "wait [ID|PID]"
+Wait for the given job or process to finish.
+.TP
+.B "trap [-p|-l | 'cmd' SIGNAL]"
+Execute \fIcmd\fP when \fISIGNAL\fP is received, list traps with \-p or with no arguments, or show available signals with \-l. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
+.TP
+.B "export [-p|-n NAME] NAME[=VALUE]"
+Manage exported variables or set one. Use \-p to list all exported variables. \-n \fINAME\fP stops exporting \fINAME\fP without removing it. Without \fB=VALUE\fP the variable's current value is exported and it is created with an empty value if undefined.
+.TP
+.B "readonly [-p] NAME[=VALUE]"
+Mark variables as read-only or list them. Without \fB=VALUE\fP the variable is created with an empty value if undefined. With \-p the variables are printed using `readonly NAME=value` format.
+.TP
+.B "local NAME[=VALUE]"
+Define a variable scoped to the current function.
+.TP
+.B "unset [-f|-v] NAME"
+Remove functions with \-f, variables with \-v, or both.
+.TP
+.B "history [-c|-d NUMBER]"
+Show command history, clear it with \-c, or delete a specific entry with \-d. Entries are read from and written to the file specified by \fBVUSH_HISTFILE\fP (default \fB~/.vush_history\fP). History size is controlled by the \fBVUSH_HISTSIZE\fP environment variable (default 1000).
+.TP
+.B "fc [-lnr] [-e editor] [first [last]]"
+List or edit previous commands. Use \-s [old=new] [command] to immediately run a command with optional text replacement.
+.TP
+.B "hash [-r] [name...]"
+Manage cached command paths.
+.TP
+.B "alias [-p] [NAME[=VALUE]]"
+Set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. \-p lists using `alias NAME='value'` format.
+.TP
+.B "unalias [-a] NAME"
+Remove aliases. With \-a all aliases are cleared.
+.TP
+.B "read [-r] VAR..."
+Read a line of input into variables using the first character of \$IFS to split fields.
+.TP
+.B "return [status]"
+Return from a shell function with an optional status.
+.TP
+.B "shift [N]"
+Drop the first \fIN\fP positional parameters (default 1).
+.TP
+.B "break [N]"
+Exit \fIN\fP levels of loops (default 1).
+.TP
+.B "continue [N]"
+Start the next iteration of the \fIN\fPth enclosing loop (default 1).
+.TP
+.B "getopts OPTSTRING VAR"
+Parse positional parameters, storing the current option letter in \fIVAR\fP, any argument in \fIOPTARG\fP, and advancing \fIOPTIND\fP.
+.TP
+.B "let EXPR"
+Evaluate an arithmetic expression.
+.TP
+.B "set [options] [-- args...]"
+Set shell options or replace positional parameters.
+.TP
+.B set
+With no operands lists all shell variables and functions.
+.TP
+.B "test EXPR" or "[ EXPR ]"
+Evaluate a conditional expression. Supports string comparisons, numeric operators and POSIX unary file tests such as \-e, \-f, \-d, \-r, \-w, \-x, \-b, \-c, \-p, \-h/\-L, \-s, \-O, \-G, \-u, \-g, \-k, \-S and \-t. The unary \! operator and binary \-a/\-o apply with the usual precedence. Binary comparisons `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2` are also available.
+.TP
+.B "[[ EXPR ]]"
+Evaluate a conditional expression with pattern matching.
+.PP
+Aliases are stored in the file specified by \fBVUSH_ALIASFILE\fP (default \fB~/.vush_aliases\fP). The file contains one \fIname=value\fP pair per line without quotes.
+.TP
+.B "type NAME..."
+Display how each NAME would be interpreted.
+.TP
+.B "command [-p] [-v|-V] NAME [args...]"
+Run NAME ignoring shell functions. With \-v or \-V display how the name would be resolved. The \-p option searches or executes using /bin:/usr/bin instead of the current \$PATH.
+.TP
+.B "eval WORDS..."
+Concatenate arguments and execute the result.
+.TP
+.B "source file [args...]" or ". file [args...]"
+Execute commands from a file with optional positional parameters. If \fIfile\fP contains no \fB/\fP, each directory in \$PATH is searched.
+.TP
+.B help
+Display information about built-in commands.
+.TP
+.B "time [-p] command [args...]"
+Run a command and print timing statistics. With \-p, output follows the POSIX real, user, sys format.
+.TP
+.B times
+Print cumulative user/system CPU times.
+.TP
+.B "ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]"
+Display or set resource limits.
+.TP
+.B "umask [-S] [mask]"
+Set or display the file creation mask. \fImask\fP may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With \-S, the mask is shown in symbolic form.
+Ifile2P and Ifile1P -ef Ifile2P.
 The \fBtrap\fP builtin lists available signal names when invoked with \-l.
 The \fBkill\fP builtin prints a signal name when \-l is followed by a number.
 The \fBunset\fP builtin removes variables and functions; \-v targets variables and \-f functions.
