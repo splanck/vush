@@ -164,6 +164,29 @@ Display or set resource limits.
 .TP
 .B "umask [-S] [mask]"
 Set or display the file creation mask. \fImask\fP may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With \-S, the mask is shown in symbolic form.
+.SH SHELL OPTIONS
+Use the \fBset\fP builtin to change optional behavior. Options are enabled with a minus and disabled with a plus. They affect commands run after \fBset\fP.
+.TP
+.B -e
+Exit immediately if a simple command fails.
+.TP
+.B -u
+Error when expanding an undefined variable.
+.TP
+.B -x
+Print each command just before execution using \$PS4 as a prefix.
+.TP
+.B -C
+Refuse to overwrite existing files with \fB>\fP. Use \fB>| file\fP to override or \fBset +C\fP to disable.
+.TP
+.B -m
+Enable job control so background jobs can be managed. Interactive shells enable this by default.
+.TP
+.B "-o pipefail"
+Return the status of the first failing command in a pipeline. Disable with \fBset +o pipefail\fP.
+.TP
+.B "-o noclobber"
+Same as \fB-C\fP. Disable with \fBset +o noclobber\fP.
 Ifile2P and Ifile1P -ef Ifile2P.
 The \fBtrap\fP builtin lists available signal names when invoked with \-l.
 The \fBkill\fP builtin prints a signal name when \-l is followed by a number.
