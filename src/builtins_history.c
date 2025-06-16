@@ -61,130 +61,135 @@ static char *replace_first(const char *str, const char *old, const char *new)
     return res;
 }
 
-int builtin_fc(char **args)
-{
-    int list = 0;
-    int nonum = 0;
-    int rev = 0;
-    int immediate = 0;
-    const char *editor = NULL;
-    const char *subst = NULL;
+typedef struct {
+    int list;
+    int nonum;
+    int rev;
+    int immediate;
+    const char *editor;
+    int arg_index;
+} FcOptions;
+
+static int parse_fc_options(char **args, FcOptions *opts) {
+    opts->list = 0;
+    opts->nonum = 0;
+    opts->rev = 0;
+    opts->immediate = 0;
+    opts->editor = NULL;
+
     int i = 1;
     for (; args[i] && args[i][0] == '-'; i++) {
         if (strcmp(args[i], "-l") == 0) {
-            list = 1;
+            opts->list = 1;
         } else if (strcmp(args[i], "-n") == 0) {
-            nonum = 1;
+            opts->nonum = 1;
         } else if (strcmp(args[i], "-r") == 0) {
-            rev = 1;
+            opts->rev = 1;
         } else if (strcmp(args[i], "-s") == 0) {
-            immediate = 1;
-        } else if (strcmp(args[i], "-e") == 0 && args[i+1]) {
-            editor = args[i+1];
+            opts->immediate = 1;
+        } else if (strcmp(args[i], "-e") == 0 && args[i + 1]) {
+            opts->editor = args[i + 1];
             i++;
         } else {
             fprintf(stderr,
                     "usage: fc [-lnr] [-e editor] [first [last]] | fc -s [old=new] [command]\n");
-            return 1;
+            return -1;
         }
     }
+    opts->arg_index = i;
+    return 0;
+}
 
-    if (immediate && list) {
-        fprintf(stderr, "fc: -s cannot be used with -l\n");
-        return 1;
-    }
-
-    int max_id = 1;
-    while (history_get_by_id(max_id))
-        max_id++;
-    max_id -= 1;
-    if (max_id <= 0)
-        return 1;
-
-    if (immediate) {
-        if (args[i] && strchr(args[i], '=')) {
-            subst = args[i];
-            i++;
-        }
-        int id = max_id;
-        if (args[i]) {
-            id = atoi(args[i]);
-            if (id < 0)
-                id = max_id + id + 1;
-        }
-        if (id <= 0 || id > max_id) {
-            fprintf(stderr, "fc: history range out of bounds\n");
-            return 1;
-        }
-
-        const char *cmd = history_get_by_id(id);
-        char *temp = NULL;
-        if (subst) {
-            char *eq = strchr(subst, '=');
-            if (!eq)
-                return 1;
-            char *old = malloc(eq - subst + 1);
-            if (!old) {
-                perror("malloc");
-                free(temp);
-                return 1;
-            }
-            memcpy(old, subst, eq - subst);
-            old[eq - subst] = '\0';
-            const char *new = eq + 1;
-            temp = replace_first(cmd, old, new);
-            cmd = temp ? temp : cmd;
-            free(old);
-        }
-        printf("%s\n", cmd);
-        char *mutable = strdup(cmd);
-        if (!mutable) {
-            perror("strdup");
-            free(temp);
-            return 1;
-        }
-        Command *cmds = parse_line(mutable);
-        if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
-            run_command_list(cmds, cmd);
-        free_commands(cmds);
-        free(mutable);
-        free(temp);
-        return 1;
-    }
-
+static int get_fc_range(char **args, int idx, int max_id, int rev,
+                        int *start, int *end, int *step) {
     int first_id = max_id;
     int last_id = max_id;
-    if (args[i]) {
-        first_id = atoi(args[i]);
+    if (args[idx]) {
+        first_id = atoi(args[idx]);
         if (first_id < 0)
             first_id = max_id + first_id + 1;
-        if (args[i+1]) {
-            last_id = atoi(args[i+1]);
+        if (args[idx + 1]) {
+            last_id = atoi(args[idx + 1]);
             if (last_id < 0)
                 last_id = max_id + last_id + 1;
         } else {
             last_id = first_id;
         }
     }
-    if (first_id <= 0 || last_id <= 0 || first_id > max_id || last_id > max_id) {
+    if (first_id <= 0 || last_id <= 0 ||
+        first_id > max_id || last_id > max_id) {
+        fprintf(stderr, "fc: history range out of bounds\n");
+        return -1;
+    }
+
+    *start = first_id;
+    *end = last_id;
+    if (!rev && *start > *end) {
+        int tmp = *start; *start = *end; *end = tmp;
+    } else if (rev && *start < *end) {
+        int tmp = *start; *start = *end; *end = tmp;
+    }
+    *step = (*start <= *end) ? 1 : -1;
+    return 0;
+}
+
+static int fc_execute_immediate(char **args, int idx, int max_id) {
+    const char *subst = NULL;
+    if (args[idx] && strchr(args[idx], '=')) {
+        subst = args[idx];
+        idx++;
+    }
+    int id = max_id;
+    if (args[idx]) {
+        id = atoi(args[idx]);
+        if (id < 0)
+            id = max_id + id + 1;
+    }
+    if (id <= 0 || id > max_id) {
         fprintf(stderr, "fc: history range out of bounds\n");
         return 1;
     }
 
-    int start = first_id;
-    int end = last_id;
-    if (!rev && start > end) {
-        int tmp = start; start = end; end = tmp;
-    } else if (rev && start < end) {
-        int tmp = start; start = end; end = tmp;
+    const char *cmd = history_get_by_id(id);
+    char *temp = NULL;
+    if (subst) {
+        char *eq = strchr(subst, '=');
+        if (!eq)
+            return 1;
+        char *old = malloc(eq - subst + 1);
+        if (!old) {
+            perror("malloc");
+            return 1;
+        }
+        memcpy(old, subst, eq - subst);
+        old[eq - subst] = '\0';
+        const char *new = eq + 1;
+        temp = replace_first(cmd, old, new);
+        cmd = temp ? temp : cmd;
+        free(old);
     }
-    int step = (start <= end) ? 1 : -1;
+    printf("%s\n", cmd);
+    char *mutable = strdup(cmd);
+    if (!mutable) {
+        perror("strdup");
+        free(temp);
+        return 1;
+    }
+    Command *cmds = parse_line(mutable);
+    if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
+        run_command_list(cmds, cmd);
+    free_commands(cmds);
+    free(mutable);
+    free(temp);
+    return 1;
+}
 
-    if (list) {
+static int fc_edit_commands(int start, int end, int step, const FcOptions *opts) {
+    if (opts->list) {
         for (int id = start;; id += step) {
             const char *cmd = history_get_by_id(id);
             if (cmd) {
-                if (nonum)
+                if (opts->nonum)
                     printf("%s\n", cmd);
                 else
                     printf("%d %s\n", id, cmd);
@@ -195,6 +200,7 @@ int builtin_fc(char **args)
         return 1;
     }
 
+    const char *editor = opts->editor;
     const char *tmpdir = getenv("TMPDIR");
     if (!tmpdir || !*tmpdir)
         tmpdir = "/tmp";
@@ -257,5 +263,34 @@ int builtin_fc(char **args)
     fclose(f);
     unlink(template);
     return 1;
+}
+
+int builtin_fc(char **args)
+{
+    FcOptions opts;
+    if (parse_fc_options(args, &opts) < 0)
+        return 1;
+
+    if (opts.immediate && opts.list) {
+        fprintf(stderr, "fc: -s cannot be used with -l\n");
+        return 1;
+    }
+
+    int max_id = 1;
+    while (history_get_by_id(max_id))
+        max_id++;
+    max_id -= 1;
+    if (max_id <= 0)
+        return 1;
+
+    if (opts.immediate)
+        return fc_execute_immediate(args, opts.arg_index, max_id);
+
+    int start, end, step;
+    if (get_fc_range(args, opts.arg_index, max_id, opts.rev, &start, &end,
+                     &step) < 0)
+        return 1;
+
+    return fc_edit_commands(start, end, step, &opts);
 }
 
