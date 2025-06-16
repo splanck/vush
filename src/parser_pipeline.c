@@ -217,9 +217,11 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
     int c;
     while ((c = fgetc(in)) != EOF) {
         if (c == '\r') {
-            int n = fgetc(in);
-            if (n != '\n' && n != EOF)
-                ungetc(n, in);
+            if (!isatty(fileno(in))) {
+                int n = fgetc(in);
+                if (n != '\n' && n != EOF)
+                    ungetc(n, in);
+            }
             c = '\n';
         }
         if (c == '\n') {
