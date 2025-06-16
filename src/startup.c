@@ -64,7 +64,7 @@ int process_rc_file(const char *path, FILE *input)
 /* Load ~/.vushrc if it exists. */
 int process_startup_file(FILE *input)
 {
-    char *rcpath = make_user_path(NULL, ".vushrc");
+    char *rcpath = make_user_path(NULL, NULL, ".vushrc");
     if (!rcpath)
         return 0;
     int r = process_rc_file(rcpath, input);

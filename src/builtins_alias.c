@@ -33,7 +33,7 @@ static void remove_all_aliases(const char *name);
 /* Return the path of the alias file or NULL if $HOME is not set. */
 static char *aliasfile_path(void)
 {
-    return make_user_path("VUSH_ALIASFILE", ".vush_aliases");
+    return make_user_path("VUSH_ALIASFILE", NULL, ".vush_aliases");
 }
 
 /* Write the current alias list to the file returned by aliasfile_path(). */

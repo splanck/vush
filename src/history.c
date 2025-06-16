@@ -55,12 +55,7 @@ static void renumber_history(void)
  * be constructed.
  */
 static char *histfile_path(void) {
-    const char *env = getenv("VUSH_HISTFILE");
-    if (!env || !*env)
-        env = getenv("HISTFILE");
-    if (env && *env)
-        return strdup(env);
-    return make_user_path(NULL, ".vush_history");
+    return make_user_path("VUSH_HISTFILE", "HISTFILE", ".vush_history");
 }
 
 /* Rewrite the entire history file from the in-memory list. */
