@@ -1025,7 +1025,26 @@ static int exec_subshell(Command *cmd, const char *line) {
  */
 static int exec_cond(Command *cmd, const char *line) {
     (void)line;
-    builtin_cond(cmd->words);
+    char **args = calloc(cmd->word_count + 1, sizeof(char *));
+    if (!args) {
+        last_status = 1;
+        return 1;
+    }
+    for (int i = 0; i < cmd->word_count; i++) {
+        args[i] = expand_var(cmd->words[i]);
+        if (!args[i]) {
+            for (int j = 0; j < i; j++)
+                free(args[j]);
+            free(args);
+            last_status = 1;
+            return 1;
+        }
+    }
+    args[cmd->word_count] = NULL;
+    builtin_cond(args);
+    for (int i = 0; i < cmd->word_count; i++)
+        free(args[i]);
+    free(args);
     return last_status;
 }
 
