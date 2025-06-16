@@ -614,8 +614,11 @@ static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
     for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next)
         seg_count++;
     pid_t *pids = calloc(seg_count, sizeof(pid_t));
-    if (!pids)
+    if (!pids) {
+        perror("calloc");
+        last_status = 1;
         return 1;
+    }
 
     int spawned = 0;
     int in_fd = -1;

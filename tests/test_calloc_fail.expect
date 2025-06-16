@@ -1,0 +1,23 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [file dirname [info script]]
+set src "$dir/calloc_fail.c"
+set lib "$dir/calloc_fail.so"
+# compile failing calloc library
+exec cc -shared -fPIC $src -o $lib
+set env(LD_PRELOAD) $lib
+set env(CALLOC_FAIL_AT) 3
+spawn $dir/../vush -c {true}
+expect {
+    -re "calloc: Cannot allocate memory\r?\n" {}
+    timeout { send_user "missing calloc error\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+set code [lindex [wait] 3]
+if { $code != 1 } {
+    send_user "exit status mismatch\n"
+    exit 1
+}
