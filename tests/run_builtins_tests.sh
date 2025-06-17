@@ -37,6 +37,7 @@ test_redir.expect
 test_source.expect
 test_fg.expect
 test_bg.expect
+test_bg_chain.expect
 test_kill.expect
 test_sequence.expect
 test_andor.expect

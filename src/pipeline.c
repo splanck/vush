@@ -30,6 +30,37 @@ extern int last_status;
 extern void setup_redirections(PipelineSegment *seg);
 
 /*
+ * Convert a pipeline into a simplified command string for job tracking.
+ * Tokens are concatenated with spaces and segments are separated with "|".
+ */
+char *pipeline_to_str(PipelineSegment *pipeline) {
+    size_t len = 0;
+    for (PipelineSegment *seg = pipeline; seg; seg = seg->next) {
+        if (seg != pipeline)
+            len += 2; /* for "| " */
+        for (int i = 0; seg->argv[i]; i++) {
+            len += strlen(seg->argv[i]) + 1;
+        }
+    }
+    char *out = malloc(len + 1);
+    if (!out)
+        return NULL;
+    out[0] = '\0';
+    for (PipelineSegment *seg = pipeline; seg; seg = seg->next) {
+        if (seg != pipeline)
+            strcat(out, "| ");
+        for (int i = 0; seg->argv[i]; i++) {
+            strcat(out, seg->argv[i]);
+            if (seg->argv[i + 1])
+                strcat(out, " ");
+        }
+        if (seg->next)
+            strcat(out, " ");
+    }
+    return out;
+}
+
+/*
  * Configure the child's standard input and output.
  *
  * If 'in_fd' is valid it becomes the child's stdin.  When the segment has a

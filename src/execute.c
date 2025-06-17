@@ -711,7 +711,12 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
         cleanup_proc_subs();
         return last_status;
     }
-    int r = spawn_pipeline_segments(copy, background, line);
+    char *job_line = NULL;
+    if (background)
+        job_line = pipeline_to_str(copy);
+    int r = spawn_pipeline_segments(copy, background,
+                                    job_line ? job_line : line);
+    free(job_line);
     if (param_error)
         last_status = 1;
     free_pipeline(copy);

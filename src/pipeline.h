@@ -18,4 +18,7 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd);
  * is recorded using LINE instead of blocking. */
 void wait_for_pipeline(pid_t *pids, int count, int background, const char *line);
 
+/* Convert PIPELINE into a space-separated string suitable for job display. */
+char *pipeline_to_str(PipelineSegment *pipeline);
+
 #endif /* PIPELINE_H */
