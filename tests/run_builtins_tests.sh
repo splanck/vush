@@ -135,6 +135,7 @@ test_path_blank.expect
 test_path_long.expect
 test_command_v_path_long.expect
 test_dquote_escape.expect
+test_ifs_split.expect
 test_calloc_fail.expect
 test_fc_fork_fail.expect
 arithmetic_basic.expect

@@ -23,6 +23,59 @@
 extern int last_status;
 extern int param_error;
 
+char **split_fields(const char *text, int *count_out) {
+    if (count_out) *count_out = 0;
+    const char *ifs = get_shell_var("IFS");
+    if (!ifs) ifs = getenv("IFS");
+    if (!ifs) ifs = " \t\n";
+    if (!*ifs) {
+        char **res = malloc(2 * sizeof(char *));
+        if (!res) return NULL;
+        res[0] = strdup(text);
+        if (!res[0]) { free(res); return NULL; }
+        res[1] = NULL;
+        if (count_out) *count_out = 1;
+        return res;
+    }
+    char *dup = strdup(text);
+    if (!dup) return NULL;
+    char *sp = NULL;
+    char *tok = strtok_r(dup, ifs, &sp);
+    char **out = NULL;
+    int count = 0;
+    while (tok) {
+        char **tmp = realloc(out, sizeof(char*) * (count + 1));
+        if (!tmp) { goto fail; }
+        out = tmp;
+        out[count] = strdup(tok);
+        if (!out[count]) { goto fail; }
+        count++;
+        tok = strtok_r(NULL, ifs, &sp);
+    }
+    free(dup);
+    if (count == 0) {
+        out = malloc(sizeof(char*));
+        if (!out) return NULL;
+        out[0] = NULL;
+    } else {
+        char **tmp = realloc(out, sizeof(char*) * (count + 1));
+        if (!tmp) { goto fail_alloc; }
+        out = tmp;
+        out[count] = NULL;
+    }
+    if (count_out) *count_out = count;
+    return out;
+fail:
+    free(dup);
+fail_alloc:
+    if (out) {
+        for (int i = 0; i < count; i++) free(out[i]);
+        free(out);
+    }
+    if (count_out) *count_out = 0;
+    return NULL;
+}
+
 /* Execute CMD and capture its stdout using the shell itself so that shell
  * variables and functions are visible.  The command's output is returned as a
  * newly allocated string with any trailing newline removed. */
