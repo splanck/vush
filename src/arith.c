@@ -37,6 +37,10 @@
 #include <limits.h>
 #include <errno.h>
 
+#define PARSE_RHS(fn)              \
+    long long rhs = fn(state);    \
+    if (state->err) return 0;
+
 static ArithState *current_state = NULL;
 
 static void arith_set_error(const char *msg) {
@@ -352,8 +356,9 @@ static long long parse_shift(ArithState *state) {
 }
 
 /*
- * Parse equality and relational operators and return 1 or 0.
- * Advances *s past the comparison expression.
+ * Parse equality and relational operators (==, !=, >=, <=, >, <).
+ * Precedence: lower than bitwise AND but higher than shift. Left-associative.
+ * Advances *s past the comparison expression and returns 1 or 0.
  */
 static long long parse_equality(ArithState *state) {
     if (state->err) return 0;
@@ -362,24 +367,32 @@ static long long parse_equality(ArithState *state) {
     while (1) {
         skip_ws(&state->p);
         if (strncmp(state->p, "==", 2) == 0) {
-            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value == rhs);
+            state->p += 2;
+            PARSE_RHS(parse_shift);
+            value = (value == rhs);
+        } else if (strncmp(state->p, "!=", 2) == 0) {
+            state->p += 2;
+            PARSE_RHS(parse_shift);
+            value = (value != rhs);
+        } else if (strncmp(state->p, ">=", 2) == 0) {
+            state->p += 2;
+            PARSE_RHS(parse_shift);
+            value = (value >= rhs);
+        } else if (strncmp(state->p, "<=", 2) == 0) {
+            state->p += 2;
+            PARSE_RHS(parse_shift);
+            value = (value <= rhs);
+        } else if (*state->p == '>') {
+            state->p++;
+            PARSE_RHS(parse_shift);
+            value = (value > rhs);
+        } else if (*state->p == '<') {
+            state->p++;
+            PARSE_RHS(parse_shift);
+            value = (value < rhs);
+        } else {
+            break;
         }
-        else if (strncmp(state->p, "!=", 2) == 0) {
-            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value != rhs);
-        }
-        else if (strncmp(state->p, ">=", 2) == 0) {
-            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value >= rhs);
-        }
-        else if (strncmp(state->p, "<=", 2) == 0) {
-            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value <= rhs);
-        }
-        else if (*state->p == '>') {
-            state->p++; long long rhs = parse_shift(state); if (state->err) return 0; value = (value > rhs);
-        }
-        else if (*state->p == '<') {
-            state->p++; long long rhs = parse_shift(state); if (state->err) return 0; value = (value < rhs);
-        }
-        else break;
     }
     return value;
 }
