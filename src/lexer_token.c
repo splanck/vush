@@ -280,7 +280,8 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
         }
         if (**p == '\\') {
             if (disable_first && *(*p + 1) == '"') {
-                /* Treat \"...\" in unquoted context as a quoted segment */
+                /* Treat \"...\" in unquoted context as a quoted segment but
+                 * preserve the quote characters. */
                 char *start = *p + 2; /* skip opening \" */
                 char *end = strstr(start, "\\\"");
                 if (!end) {
@@ -301,8 +302,12 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 char *part = parse_quoted_word(&tp, &q, &de);
                 if (!part)
                     return -1;
+                if (*len < MAX_LINE - 1)
+                    buf[(*len)++] = '"';
                 for (int ci = 0; part[ci] && *len < MAX_LINE - 1; ci++)
                     buf[(*len)++] = part[ci];
+                if (*len < MAX_LINE - 1)
+                    buf[(*len)++] = '"';
                 free(part);
                 *p = end + 2; /* skip closing \" */
                 *do_expand = de;

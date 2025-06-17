@@ -828,7 +828,20 @@ char *expand_var(const char *token) {
         memcpy(inner, token + 1, innerlen);
         inner[innerlen] = '\0';
         char *res = expand_var(inner);
-        return res;
+        if (!res)
+            return NULL;
+        char *quoted = malloc(strlen(res) + 3);
+        if (!quoted) {
+            free(res);
+            return NULL;
+        }
+        quoted[0] = '"';
+        strcpy(quoted + 1, res);
+        size_t rlen = strlen(res);
+        quoted[rlen + 1] = '"';
+        quoted[rlen + 2] = '\0';
+        free(res);
+        return quoted;
     }
 
     char *out = calloc(1, 1);
