@@ -142,6 +142,7 @@ arithmetic_cmd.expect
 arithmetic_errors.expect
 arithmetic_forloop.expect
 arithmetic_overflow.expect
+arithmetic_compound.expect
 test_pipe_cr.expect
 "
 for test in $tests; do
