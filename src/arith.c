@@ -24,6 +24,7 @@
  * string and returns the resulting numeric value.
  */
 #include "vars.h" // for set_shell_var and get_shell_var
+#include "arith.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,31 +40,32 @@ static void skip_ws(const char **s) {
     while (isspace((unsigned char)**s)) (*s)++;
 }
 
-static long long parse_expression(const char **s);
-static int parse_error;
+static long long parse_expression(ArithState *state);
 
 /*
  * Parse a factor: number, variable or parenthesised subexpression.
  * Returns the parsed value and advances *s past the token.
  */
-static long long parse_factor(const char **s) {
-    skip_ws(s);
-    if (**s == '(') {
-        (*s)++; /* '(' */
-        long long value = parse_expression(s);
-        skip_ws(s);
-        if (**s == ')')
-            (*s)++;
+static long long parse_factor(ArithState *state) {
+    if (state->err) return 0;
+    skip_ws(&state->p);
+    if (*state->p == '(') {
+        state->p++; /* '(' */
+        long long value = parse_expression(state);
+        if (state->err) return 0;
+        skip_ws(&state->p);
+        if (*state->p == ')')
+            state->p++;
         else
-            parse_error = 1;
+            state->err = 1;
         return value;
     }
-    if (isalpha((unsigned char)**s) || **s == '_') {
+    if (isalpha((unsigned char)*state->p) || *state->p == '_') {
         char name[64]; int len = 0;
-        while (isalnum((unsigned char)**s) || **s == '_') {
+        while (isalnum((unsigned char)*state->p) || *state->p == '_') {
             if (len < (int)sizeof(name) - 1)
-                name[len++] = **s;
-            (*s)++;
+                name[len++] = *state->p;
+            state->p++;
         }
         name[len] = '\0';
         const char *val = get_shell_var(name);
@@ -72,35 +74,35 @@ static long long parse_factor(const char **s) {
             errno = 0;
             long long num = strtoll(val, NULL, 10);
             if (errno == ERANGE)
-                parse_error = 1;
+                state->err = 1;
             return num;
         }
         return 0;
     }
-    const char *p = *s;
+    const char *p = state->p;
     char *end;
     errno = 0;
     long long base = strtoll(p, &end, 10);
     if (errno == ERANGE)
-        parse_error = 1;
+        state->err = 1;
     if (end > p && *end == '#') {
         if (base >= 2 && base <= 36) {
             p = end + 1;
             errno = 0;
             long long val = strtoll(p, &end, (int)base);
             if (end == p || errno == ERANGE)
-                parse_error = 1;
-            *s = end;
+                state->err = 1;
+            state->p = end;
             return val;
         } else {
-            parse_error = 1;
+            state->err = 1;
         }
     }
     errno = 0;
     long long value = strtoll(p, &end, 10);
     if (end == p || errno == ERANGE)
-        parse_error = 1;
-    *s = end;
+        state->err = 1;
+    state->p = end;
     return value;
 }
 
@@ -108,21 +110,23 @@ static long long parse_factor(const char **s) {
  * Parse unary plus/minus or a factor.
  * Returns the resulting value; *s is advanced.
  */
-static long long parse_unary(const char **s) {
-    skip_ws(s);
-    if (**s == '+' || **s == '-') {
-        char op = *(*s)++;
-        long long operand = parse_unary(s);
+static long long parse_unary(ArithState *state) {
+    if (state->err) return 0;
+    skip_ws(&state->p);
+    if (*state->p == '+' || *state->p == '-') {
+        char op = *state->p++;
+        long long operand = parse_unary(state);
+        if (state->err) return 0;
         if (op == '-') {
             if (operand == LLONG_MIN) {
-                parse_error = 1;
+                state->err = 1;
                 return 0;
             }
             return -operand;
         }
         return operand;
     }
-    return parse_factor(s);
+    return parse_factor(state);
 }
 
 /*
@@ -154,38 +158,41 @@ static int add_overflow(long long a, long long b, long long *out) {
     return 0;
 }
 
-static long long parse_term(const char **s) {
-    long long value = parse_unary(s);
+static long long parse_term(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_unary(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        char op = **s;
+        skip_ws(&state->p);
+        char op = *state->p;
         if (op == '*' || op == '/' || op == '%') {
-            (*s)++;
-            long long rhs = parse_unary(s);
+            state->p++;
+            long long rhs = parse_unary(state);
+            if (state->err) return 0;
             if (op == '*') {
                 long long result;
                 if (mul_overflow(value, rhs, &result)) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
                 value = result;
             } else if (op == '/') {
                 if (rhs == 0) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
                 if (value == LLONG_MIN && rhs == -1) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
                 value /= rhs;
             } else {
                 if (rhs == 0) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
                 if (value == LLONG_MIN && rhs == -1) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
                 value %= rhs;
@@ -199,23 +206,26 @@ static long long parse_term(const char **s) {
  * Parse addition and subtraction operations.
  * Returns the computed value while advancing *s.
  */
-static long long parse_sum(const char **s) {
-    long long value = parse_term(s);
+static long long parse_sum(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_term(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        char op = **s;
+        skip_ws(&state->p);
+        char op = *state->p;
         if (op == '+' || op == '-') {
-            (*s)++;
-            long long rhs = parse_term(s);
+            state->p++;
+            long long rhs = parse_term(state);
+            if (state->err) return 0;
             long long result;
             if (op == '+') {
                 if (add_overflow(value, rhs, &result)) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
             } else {
                 if (add_overflow(value, -rhs, &result)) {
-                    parse_error = 1;
+                    state->err = 1;
                     return 0;
                 }
             }
@@ -229,23 +239,27 @@ static long long parse_sum(const char **s) {
  * Parse shift operators (<< and >>).
  * Returns the computed value while advancing *s.
  */
-static long long parse_shift(const char **s) {
-    long long value = parse_sum(s);
+static long long parse_shift(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_sum(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        if (strncmp(*s, "<<", 2) == 0) {
-            *s += 2;
-            long long rhs = parse_sum(s);
+        skip_ws(&state->p);
+        if (strncmp(state->p, "<<", 2) == 0) {
+            state->p += 2;
+            long long rhs = parse_sum(state);
+            if (state->err) return 0;
             if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
-                parse_error = 1;
+                state->err = 1;
                 return 0;
             }
             value <<= rhs;
-        } else if (strncmp(*s, ">>", 2) == 0) {
-            *s += 2;
-            long long rhs = parse_sum(s);
+        } else if (strncmp(state->p, ">>", 2) == 0) {
+            state->p += 2;
+            long long rhs = parse_sum(state);
+            if (state->err) return 0;
             if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
-                parse_error = 1;
+                state->err = 1;
                 return 0;
             }
             value >>= rhs;
@@ -258,16 +272,30 @@ static long long parse_shift(const char **s) {
  * Parse equality and relational operators and return 1 or 0.
  * Advances *s past the comparison expression.
  */
-static long long parse_equality(const char **s) {
-    long long value = parse_shift(s);
+static long long parse_equality(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_shift(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        if (strncmp(*s, "==", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value == rhs); }
-        else if (strncmp(*s, "!=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value != rhs); }
-        else if (strncmp(*s, ">=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value >= rhs); }
-        else if (strncmp(*s, "<=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value <= rhs); }
-        else if (**s == '>' ) { (*s)++; long long rhs = parse_shift(s); value = (value > rhs); }
-        else if (**s == '<' ) { (*s)++; long long rhs = parse_shift(s); value = (value < rhs); }
+        skip_ws(&state->p);
+        if (strncmp(state->p, "==", 2) == 0) {
+            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value == rhs);
+        }
+        else if (strncmp(state->p, "!=", 2) == 0) {
+            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value != rhs);
+        }
+        else if (strncmp(state->p, ">=", 2) == 0) {
+            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value >= rhs);
+        }
+        else if (strncmp(state->p, "<=", 2) == 0) {
+            state->p += 2; long long rhs = parse_shift(state); if (state->err) return 0; value = (value <= rhs);
+        }
+        else if (*state->p == '>') {
+            state->p++; long long rhs = parse_shift(state); if (state->err) return 0; value = (value > rhs);
+        }
+        else if (*state->p == '<') {
+            state->p++; long long rhs = parse_shift(state); if (state->err) return 0; value = (value < rhs);
+        }
         else break;
     }
     return value;
@@ -276,13 +304,16 @@ static long long parse_equality(const char **s) {
 /*
  * Parse bitwise AND operations.
  */
-static long long parse_bit_and(const char **s) {
-    long long value = parse_equality(s);
+static long long parse_bit_and(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_equality(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        if (**s == '&') {
-            (*s)++;
-            long long rhs = parse_equality(s);
+        skip_ws(&state->p);
+        if (*state->p == '&') {
+            state->p++;
+            long long rhs = parse_equality(state);
+            if (state->err) return 0;
             value &= rhs;
         } else break;
     }
@@ -292,13 +323,16 @@ static long long parse_bit_and(const char **s) {
 /*
  * Parse bitwise XOR operations.
  */
-static long long parse_bit_xor(const char **s) {
-    long long value = parse_bit_and(s);
+static long long parse_bit_xor(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_bit_and(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        if (**s == '^') {
-            (*s)++;
-            long long rhs = parse_bit_and(s);
+        skip_ws(&state->p);
+        if (*state->p == '^') {
+            state->p++;
+            long long rhs = parse_bit_and(state);
+            if (state->err) return 0;
             value ^= rhs;
         } else break;
     }
@@ -308,13 +342,16 @@ static long long parse_bit_xor(const char **s) {
 /*
  * Parse bitwise OR operations.
  */
-static long long parse_bit_or(const char **s) {
-    long long value = parse_bit_xor(s);
+static long long parse_bit_or(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_bit_xor(state);
+    if (state->err) return 0;
     while (1) {
-        skip_ws(s);
-        if (**s == '|') {
-            (*s)++;
-            long long rhs = parse_bit_xor(s);
+        skip_ws(&state->p);
+        if (*state->p == '|') {
+            state->p++;
+            long long rhs = parse_bit_xor(state);
+            if (state->err) return 0;
             value |= rhs;
         } else break;
     }
@@ -326,34 +363,36 @@ static long long parse_bit_or(const char **s) {
  * Side effect: updates shell variables via set_shell_var().
  * Returns the assigned or computed value and advances *s.
  */
-static long long parse_assignment(const char **s) {
-    skip_ws(s);
-    const char *save = *s;
-    if ((isalpha((unsigned char)**s) || **s == '_')) {
+static long long parse_assignment(ArithState *state) {
+    if (state->err) return 0;
+    skip_ws(&state->p);
+    const char *save = state->p;
+    if ((isalpha((unsigned char)*state->p) || *state->p == '_')) {
         char name[64]; int len = 0;
-        while (isalnum((unsigned char)**s) || **s == '_') {
+        while (isalnum((unsigned char)*state->p) || *state->p == '_') {
             if (len < (int)sizeof(name) - 1)
-                name[len++] = **s;
-            (*s)++;
+                name[len++] = *state->p;
+            state->p++;
         }
         name[len] = '\0';
-        skip_ws(s);
-        if (**s == '=') {
-            (*s)++;
-            long long value = parse_assignment(s);
+        skip_ws(&state->p);
+        if (*state->p == '=') {
+            state->p++;
+            long long value = parse_assignment(state);
+            if (state->err) return 0;
             char buf[32];
             snprintf(buf, sizeof(buf), "%lld", value);
             set_shell_var(name, buf);
             return value;
         }
     }
-    *s = save;
-    return parse_bit_or(s);
+    state->p = save;
+    return parse_bit_or(state);
 }
 
 /* Wrapper for the top-level expression parser. */
-static long long parse_expression(const char **s) {
-    return parse_assignment(s);
+static long long parse_expression(ArithState *state) {
+    return parse_assignment(state);
 }
 
 /*
@@ -361,10 +400,10 @@ static long long parse_expression(const char **s) {
  * Returns the resulting long long value; does not modify 'expr'.
  */
 long long eval_arith(const char *expr, int *err) {
-    const char *p = expr;
-    parse_error = 0;
-    long long result = parse_expression(&p);
+    ArithState st = { .p = expr, .err = 0 };
+    long long result = parse_expression(&st);
     /* Skip any whitespace the parser left behind. */
+    const char *p = st.p;
     skip_ws(&p);
     /* Historically some callers might include carriage returns
      * or stray newlines at the end of the expression.  These
@@ -374,10 +413,10 @@ long long eval_arith(const char *expr, int *err) {
         skip_ws(&p);
     }
     if (*p != '\0')
-        parse_error = 1;
+        st.err = 1;
     if (err)
-        *err = parse_error;
-    if (parse_error)
+        *err = st.err;
+    if (st.err)
         return 0;
     return result;
 }
