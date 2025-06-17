@@ -60,6 +60,26 @@ expect {
     -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "let error failed\n"; exit 1 }
 }
+send "let 1/0\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "let divide by zero failed\n"; exit 1 }
+}
+send {echo $((5 % 0))\r}
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "arith expand divide by zero output\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "arith expand status failed\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
