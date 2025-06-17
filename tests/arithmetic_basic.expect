@@ -1,0 +1,56 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+# addition
+send "echo \$((1 + 2))\r"
+expect {
+    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
+    timeout { send_user "addition failed\n"; exit 1 }
+}
+# subtraction with variable
+send "num=8\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$((num - 3))\r"
+expect {
+    -re "\[\r\n\]+5\[\r\n\]+vush> " {}
+    timeout { send_user "variable subtraction failed\n"; exit 1 }
+}
+# let modifies variable and sets status
+send "let num=num+1\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$num\r"
+expect {
+    -re "\[\r\n\]+9\[\r\n\]+vush> " {}
+    timeout { send_user "let result mismatch\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "let status mismatch\n"; exit 1 }
+}
+# let returning zero
+send "let 0\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "let zero status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

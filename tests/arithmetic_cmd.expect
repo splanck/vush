@@ -1,0 +1,60 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+# non-zero arithmetic result
+send "((1 + 1))\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "non-zero status mismatch\n"; exit 1 }
+}
+# variable usage yielding zero
+send "val=3\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "(( val -= 3 ))\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "zero status mismatch\n"; exit 1 }
+}
+send "echo \$val\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "variable update mismatch\n"; exit 1 }
+}
+# another non-zero result
+send "(( val += 5 ))\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "non-zero status mismatch\n"; exit 1 }
+}
+send "echo \$val\r"
+expect {
+    -re "\[\r\n\]+5\[\r\n\]+vush> " {}
+    timeout { send_user "variable update mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
