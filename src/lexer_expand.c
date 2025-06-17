@@ -142,8 +142,16 @@ static char *expand_tilde(const char *token) {
         size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
         char *user = strndup(rest, len);
         if (user) {
+            endpwent();
             struct passwd *pw = getpwnam(user);
-            if (pw) home = pw->pw_dir;
+            if (pw) {
+                home = pw->pw_dir;
+            } else {
+                fprintf(stderr, "cd: %s: no such user\n", user);
+                last_status = 1;
+                free(user);
+                return NULL;
+            }
             free(user);
         }
         rest = slash ? slash : rest + len;
