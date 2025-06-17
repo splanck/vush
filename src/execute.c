@@ -53,6 +53,7 @@ static int exec_case(Command *cmd, const char *line);
 static int exec_subshell(Command *cmd, const char *line);
 static int exec_cond(Command *cmd, const char *line);
 static int exec_group(Command *cmd, const char *line);
+static int exec_arith(Command *cmd, const char *line);
 
 struct assign_backup {
     char *name;
@@ -1051,6 +1052,22 @@ static int exec_cond(Command *cmd, const char *line) {
 }
 
 /*
+ * Execute a (( ... )) arithmetic command. The expression is evaluated with
+ * eval_arith() and the exit status becomes 0 for a non-zero result or 1
+ * otherwise.
+ */
+static int exec_arith(Command *cmd, const char *line) {
+    (void)line;
+    int err = 0;
+    long val = eval_arith(cmd->text ? cmd->text : "0", &err);
+    if (err)
+        last_status = 1;
+    else
+        last_status = (val != 0) ? 0 : 1;
+    return last_status;
+}
+
+/*
  * Execute a { ... } command group in the current shell.  Simply runs
  * the contained command list and returns its status.
  */
@@ -1092,6 +1109,8 @@ int run_pipeline(Command *cmd, const char *line) {
         r = exec_subshell(cmd, line); break;
     case CMD_COND:
         r = exec_cond(cmd, line); break;
+    case CMD_ARITH:
+        r = exec_arith(cmd, line); break;
     case CMD_GROUP:
         r = exec_group(cmd, line); break;
     default:

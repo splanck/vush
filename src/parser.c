@@ -75,6 +75,8 @@ void free_commands(Command *c) {
             for (int i = 0; i < c->word_count; i++)
                 free(c->words[i]);
             free(c->words);
+        } else if (c->type == CMD_ARITH) {
+            free(c->text);
         }
         free(c);
         c = next;
