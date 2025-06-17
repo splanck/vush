@@ -869,16 +869,16 @@ static int exec_for(Command *cmd, const char *line) {
                 setenv(cmd->var, w, 1);
             }
             run_command_list(cmd->body, line);
-            if (loop_break) { loop_break--; break; }
+            if (loop_break) break;
             if (loop_continue) {
                 if (--loop_continue) { free(exp); loop_depth--; return last_status; }
-                w = strtok_r(NULL, " \t", &save);
-                continue;
+                    w = strtok_r(NULL, " \t", &save);
+                    continue;
             }
             w = strtok_r(NULL, " \t", &save);
         }
         free(exp);
-        if (loop_break) break;
+        if (loop_break) { loop_break--; break; }
     }
     loop_depth--;
     return last_status;
