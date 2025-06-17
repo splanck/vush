@@ -204,14 +204,59 @@ static void expand_assignments(PipelineSegment *seg) {
 }
 
 static void expand_segment(PipelineSegment *seg) {
-    for (int i = 0; seg->argv[i]; i++) {
+    char *newargv[MAX_TOKENS];
+    int ai = 0;
+
+    for (int i = 0; seg->argv[i] && ai < MAX_TOKENS - 1; i++) {
+        char *word = seg->argv[i];
         if (seg->expand[i]) {
-            char *new = expand_var(seg->argv[i]);
-            if (new) {
-                free(seg->argv[i]);
-                seg->argv[i] = new;
+            char *exp = expand_var(word);
+            free(word);
+            if (!exp) exp = strdup("");
+            if (!seg->quoted[i]) {
+                int count = 0;
+                char **fields = split_fields(exp, &count);
+                free(exp);
+                if (fields) {
+                    for (int f = 0; f < count && ai < MAX_TOKENS - 1; f++) {
+                        newargv[ai] = fields[f];
+                        seg->expand[ai] = 0;
+                        seg->quoted[ai] = 0;
+                        ai++;
+                    }
+                    free(fields);
+                    continue;
+                } else {
+                    exp = strdup("");
+                }
             }
+            newargv[ai] = exp;
+            seg->expand[ai] = 0;
+            seg->quoted[ai] = 0;
+            ai++;
+        } else {
+            newargv[ai] = word;
+            seg->expand[ai] = 0;
+            seg->quoted[ai] = seg->quoted[i];
+            ai++;
         }
+    }
+    newargv[ai] = NULL;
+    seg->expand[ai] = 0;
+    seg->quoted[ai] = 0;
+
+    for (int j = ai; seg->argv[j]; j++)
+        free(seg->argv[j]);
+
+    for (int j = 0; j <= ai; j++) {
+        seg->argv[j] = newargv[j];
+        seg->expand[j] = 0;
+        seg->quoted[j] = 0;
+    }
+    for (int j = ai + 1; j < MAX_TOKENS; j++) {
+        seg->argv[j] = NULL;
+        seg->expand[j] = 0;
+        seg->quoted[j] = 0;
     }
 
     for (int i = 0; i < seg->assign_count; i++) {
@@ -296,9 +341,11 @@ static PipelineSegment *copy_pipeline(PipelineSegment *src) {
                 return NULL;
             }
             seg->expand[i] = src->expand[i];
+            seg->quoted[i] = src->quoted[i];
             i++;
         }
         seg->argv[i] = NULL;
+        seg->quoted[i] = 0;
 
         seg->in_file = src->in_file ? strdup(src->in_file) : NULL;
         seg->here_doc = src->here_doc;
@@ -862,9 +909,11 @@ static int exec_for(Command *cmd, const char *line) {
     for (int i = 0; i < cmd->word_count; i++) {
         char *exp = expand_var(cmd->words[i]);
         if (!exp) { loop_depth--; return last_status; }
-        char *save = NULL;
-        char *w = strtok_r(exp, " \t", &save);
-        while (w) {
+        int count = 0;
+        char **fields = split_fields(exp, &count);
+        free(exp);
+        for (int fi = 0; fi < count; fi++) {
+            char *w = fields[fi];
             if (cmd->var) {
                 set_shell_var(cmd->var, w);
                 setenv(cmd->var, w, 1);
@@ -872,13 +921,19 @@ static int exec_for(Command *cmd, const char *line) {
             run_command_list(cmd->body, line);
             if (loop_break) break;
             if (loop_continue) {
-                if (--loop_continue) { free(exp); loop_depth--; return last_status; }
-                    w = strtok_r(NULL, " \t", &save);
-                    continue;
+                if (--loop_continue) {
+                    for (int fj = fi; fj < count; fj++)
+                        free(fields[fj]);
+                    free(fields);
+                    loop_depth--;
+                    return last_status;
+                }
+                continue;
             }
-            w = strtok_r(NULL, " \t", &save);
         }
-        free(exp);
+        for (int fj = 0; fj < count; fj++)
+            free(fields[fj]);
+        free(fields);
         if (loop_break) { loop_break--; break; }
     }
     loop_depth--;

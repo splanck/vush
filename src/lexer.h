@@ -15,6 +15,10 @@ char *read_token(char **p, int *quoted, int *do_expand);
  * Returns a newly allocated string that the caller must free. */
 char *expand_var(const char *token);
 
+/* Split TEXT into fields using characters from $IFS.  Returns a malloc'd
+ * array of strings terminated by NULL. COUNT is set to the number of fields. */
+char **split_fields(const char *text, int *count);
+
 /* Apply history expansion to LINE when it begins with '!'.  The expanded
  * line is returned as a new string or NULL on error and must be freed. */
 char *expand_history(const char *line);

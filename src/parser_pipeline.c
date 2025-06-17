@@ -174,6 +174,7 @@ static int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok)
     for (; i < count && *argc < MAX_TOKENS - 1; i++) {
         seg->argv[*argc] = tokens[i];
         seg->expand[*argc] = 1;
+        seg->quoted[*argc] = 0;
         (*argc)++;
     }
     for (; i < count; i++)
@@ -532,6 +533,7 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     } else {
         seg->argv[argc] = NULL;
         seg->expand[argc] = 0;
+        seg->quoted[argc] = 0;
     }
 }
 
@@ -539,6 +541,7 @@ static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
     seg->expand[*argc] = 0;
+    seg->quoted[*argc] = 0;
     PipelineSegment *next = xcalloc(1, sizeof(PipelineSegment));
     next->dup_out = -1;
     next->dup_err = -1;
@@ -593,6 +596,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             if (!path) return -1;
             seg->argv[*argc] = path;
             seg->expand[*argc] = 0;
+            seg->quoted[*argc] = 0;
             (*argc)++;
             continue;
         }
@@ -602,6 +606,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             if (!path) return -1;
             seg->argv[*argc] = path;
             seg->expand[*argc] = 0;
+            seg->quoted[*argc] = 0;
             (*argc)++;
             continue;
         }
@@ -671,6 +676,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                         }
                         seg->argv[*argc] = dup;
                         seg->expand[*argc] = de_tok;
+                        seg->quoted[*argc] = 0;
                         (*argc)++;
                     }
                     free(bt);
@@ -681,6 +687,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
             }
             seg->argv[*argc] = bt;
             seg->expand[*argc] = de_tok;
+            seg->quoted[*argc] = quoted;
             (*argc)++;
         }
         for (int bj = bi; bj < bcount; bj++)
