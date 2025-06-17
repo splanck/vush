@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "util.h"
 
 struct var_entry {
     char *name;
@@ -118,7 +119,7 @@ static struct local_var *find_local_var(struct local_frame *f, const char *name)
 }
 
 int push_local_scope(void) {
-    struct local_frame *f = calloc(1, sizeof(*f));
+    struct local_frame *f = xcalloc(1, sizeof(*f));
     if (!f)
         return 0;
     f->next = local_stack;
@@ -164,7 +165,7 @@ void record_local_var(const char *name) {
         return;
     if (find_local_var(local_stack, name))
         return;
-    struct local_var *lv = calloc(1, sizeof(*lv));
+    struct local_var *lv = xcalloc(1, sizeof(*lv));
     if (!lv)
         return;
     lv->name = strdup(name);
@@ -177,7 +178,7 @@ void record_local_var(const char *name) {
     int len = 0;
     char **arr = get_shell_array(name, &len);
     if (arr) {
-        lv->array = calloc(len, sizeof(char *));
+        lv->array = xcalloc(len, sizeof(char *));
         if (lv->array) {
             for (int i = 0; i < len; i++)
                 lv->array[i] = strdup(arr[i]);
@@ -290,7 +291,7 @@ void set_shell_array(const char *name, char **values, int count) {
     for (struct var_entry *v = shell_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
             size_t alloc_count = count ? count : 1;
-            char **new_arr = calloc(alloc_count, sizeof(char *));
+            char **new_arr = xcalloc(alloc_count, sizeof(char *));
             if (!new_arr) {
                 perror("calloc");
                 return;
@@ -320,7 +321,7 @@ void set_shell_array(const char *name, char **values, int count) {
             return;
         }
     }
-    struct var_entry *v = calloc(1, sizeof(struct var_entry));
+    struct var_entry *v = xcalloc(1, sizeof(struct var_entry));
     if (!v) { perror("malloc"); return; }
     v->name = strdup(name);
     if (!v->name) {
@@ -331,7 +332,7 @@ void set_shell_array(const char *name, char **values, int count) {
     v->value = NULL;
 
     size_t alloc_count = count ? count : 1;
-    char **new_arr = calloc(alloc_count, sizeof(char *));
+    char **new_arr = xcalloc(alloc_count, sizeof(char *));
     if (!new_arr) {
         perror("calloc");
         free(v->name);

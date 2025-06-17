@@ -18,6 +18,7 @@
 #include <sys/wait.h>
 #include "parser.h" /* for MAX_LINE */
 #include "execute.h"
+#include "util.h"
 
 extern int last_status;
 extern int param_error;
@@ -831,9 +832,7 @@ char *expand_var(const char *token) {
         return res;
     }
 
-    char *out = calloc(1, 1);
-    if (!out)
-        return NULL;
+    char *out = xcalloc(1, 1);
     size_t outlen = 0;
 
     const char *p = token;

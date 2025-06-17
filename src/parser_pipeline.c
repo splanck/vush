@@ -539,11 +539,7 @@ static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
     seg->expand[*argc] = 0;
-    PipelineSegment *next = calloc(1, sizeof(PipelineSegment));
-    if (!next) {
-        perror("calloc");
-        return -1;
-    }
+    PipelineSegment *next = xcalloc(1, sizeof(PipelineSegment));
     next->dup_out = -1;
     next->dup_err = -1;
     next->out_fd = STDOUT_FILENO;
@@ -716,9 +712,7 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         if (cmd) cmd->negate = negate;
         return cmd;
     }
-    PipelineSegment *seg_head = calloc(1, sizeof(PipelineSegment));
-    if (!seg_head)
-        return NULL;
+    PipelineSegment *seg_head = xcalloc(1, sizeof(PipelineSegment));
     seg_head->dup_out = -1;
     seg_head->dup_err = -1;
     seg_head->out_fd = STDOUT_FILENO;
@@ -734,11 +728,7 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         return NULL;
     }
     finalize_segment(seg, argc, &background);
-    Command *cmd = calloc(1, sizeof(Command));
-    if (!cmd) {
-        free_pipeline(seg_head);
-        return NULL;
-    }
+    Command *cmd = xcalloc(1, sizeof(Command));
     cmd->pipeline = seg_head;
     cmd->background = background;
     cmd->negate = negate;
