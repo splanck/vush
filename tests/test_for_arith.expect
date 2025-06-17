@@ -28,6 +28,10 @@ expect {
 # arithmetic error aborts loop
 send "for ((i=0/0; i<3; i++)); do :; done\r"
 expect {
+    -re "arith: divide by zero\r\n" {}
+    timeout { send_user "arith init error message\n"; exit 1 }
+}
+expect {
     "vush> " {}
     timeout { send_user "arith init error prompt timeout\n"; exit 1 }
 }

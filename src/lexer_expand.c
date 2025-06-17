@@ -176,9 +176,14 @@ static char *expand_arith(const char *token) {
     char *expr = strndup(token + 3, tlen - 5);
     if (!expr) return strdup("");
     int err = 0;
-    long val = eval_arith(expr, &err);
+    char *msg = NULL;
+    long val = eval_arith(expr, &err, &msg);
     free(expr);
     if (err) {
+        if (msg) {
+            fprintf(stderr, "arith: %s\n", msg);
+            free(msg);
+        }
         param_error = 1;
         last_status = 1;
     }

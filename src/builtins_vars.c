@@ -214,7 +214,12 @@ int builtin_let(char **args) {
         strncat(expr, args[i], sizeof(expr) - strlen(expr) - 1);
     }
     int err = 0;
-    long val = eval_arith(expr, &err);
+    char *msg = NULL;
+    long val = eval_arith(expr, &err, &msg);
+    if (err && msg) {
+        fprintf(stderr, "arith: %s\n", msg);
+        free(msg);
+    }
     last_status = err ? 1 : (val != 0 ? 0 : 1);
     return 1;
 }

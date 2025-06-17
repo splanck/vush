@@ -8,7 +8,7 @@ expect {
 # numeric literal overflow
 send {echo $((9223372036854775808))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: overflow\r\n0\r\n" {}
     timeout { send_user "literal overflow output\n"; exit 1 }
 }
 send "echo $?\r"
@@ -19,7 +19,7 @@ expect {
 # addition overflow
 send {echo $((9223372036854775807 + 1))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: overflow\r\n0\r\n" {}
     timeout { send_user "addition overflow output\n"; exit 1 }
 }
 send "echo $?\r"
@@ -29,6 +29,10 @@ expect {
 }
 # let builtin overflow
 send {let 9223372036854775807 + 1\r}
+expect {
+    -re "arith: overflow\r\n" {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
@@ -41,7 +45,7 @@ expect {
 # subtraction overflow
 send {echo $((9223372036854775807 - -1))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: overflow\r\n0\r\n" {}
     timeout { send_user "subtraction overflow output\n"; exit 1 }
 }
 send "echo $?\r"
@@ -52,7 +56,7 @@ expect {
 # left shift overflow
 send {echo $((1 << 63))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: overflow\r\n0\r\n" {}
     timeout { send_user "lshift overflow output\n"; exit 1 }
 }
 send "echo $?\r"
