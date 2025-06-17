@@ -527,6 +527,108 @@ static long long parse_assignment(ArithState *state) {
             return value;
         }
 
+        int oplen = 0;
+        enum { OP_NONE, OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
+               OP_SHL, OP_SHR, OP_AND, OP_XOR, OP_OR } op = OP_NONE;
+        if (strncmp(state->p, "+=", 2) == 0) { op = OP_ADD; oplen = 2; }
+        else if (strncmp(state->p, "-=", 2) == 0) { op = OP_SUB; oplen = 2; }
+        else if (strncmp(state->p, "*=", 2) == 0) { op = OP_MUL; oplen = 2; }
+        else if (strncmp(state->p, "/=", 2) == 0) { op = OP_DIV; oplen = 2; }
+        else if (strncmp(state->p, "%=", 2) == 0) { op = OP_MOD; oplen = 2; }
+        else if (strncmp(state->p, "<<=", 3) == 0) { op = OP_SHL; oplen = 3; }
+        else if (strncmp(state->p, ">>=", 3) == 0) { op = OP_SHR; oplen = 3; }
+        else if (strncmp(state->p, "&=", 2) == 0) { op = OP_AND; oplen = 2; }
+        else if (strncmp(state->p, "^=", 2) == 0) { op = OP_XOR; oplen = 2; }
+        else if (strncmp(state->p, "|=", 2) == 0) { op = OP_OR; oplen = 2; }
+
+        if (op != OP_NONE) {
+            state->p += oplen;
+            long long rhs = parse_assignment(state);
+            if (state->err) return 0;
+
+            const char *val = get_shell_var(name);
+            if (!val) val = getenv(name);
+            long long cur = 0;
+            if (val && parse_ll(val, &cur) < 0) {
+                if (errno == ERANGE)
+                    arith_set_error("overflow");
+                else
+                    arith_set_error("invalid number");
+            }
+
+            long long newv = 0;
+            switch (op) {
+                case OP_ADD:
+                    if (add_overflow(cur, rhs, &newv)) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    break;
+                case OP_SUB:
+                    if (sub_overflow(cur, rhs, &newv)) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    break;
+                case OP_MUL:
+                    if (mul_overflow(cur, rhs, &newv)) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    break;
+                case OP_DIV:
+                    if (rhs == 0) {
+                        arith_set_error("divide by zero");
+                        return 0;
+                    }
+                    if (cur == LLONG_MIN && rhs == -1) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    newv = cur / rhs;
+                    break;
+                case OP_MOD:
+                    if (rhs == 0) {
+                        arith_set_error("divide by zero");
+                        return 0;
+                    }
+                    if (cur == LLONG_MIN && rhs == -1) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    newv = cur % rhs;
+                    break;
+                case OP_SHL:
+                    if (lshift_overflow(cur, rhs, &newv)) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    break;
+                case OP_SHR:
+                    if (rshift_overflow(cur, rhs, &newv)) {
+                        arith_set_error("overflow");
+                        return 0;
+                    }
+                    break;
+                case OP_AND:
+                    newv = cur & rhs;
+                    break;
+                case OP_XOR:
+                    newv = cur ^ rhs;
+                    break;
+                case OP_OR:
+                    newv = cur | rhs;
+                    break;
+                default:
+                    break;
+            }
+
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%lld", newv);
+            set_shell_var(name, buf);
+            return newv;
+        }
+
         /* Retrieve current variable value */
         const char *val = get_shell_var(name);
         if (!val) val = getenv(name);
