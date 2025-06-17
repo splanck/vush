@@ -38,6 +38,28 @@ expect {
     -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "let overflow status\n"; exit 1 }
 }
+# subtraction overflow
+send {echo $((9223372036854775807 - -1))\r}
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "subtraction overflow output\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "subtraction overflow status\n"; exit 1 }
+}
+# left shift overflow
+send {echo $((1 << 63))\r}
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "lshift overflow output\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "lshift overflow status\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
