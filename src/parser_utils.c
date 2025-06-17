@@ -247,20 +247,32 @@ char *trim_ws(const char *s) {
 char *gather_dbl_parens(char **p) {
     if (strncmp(*p, "((", 2) != 0)
         return NULL;
-    *p += 2;
+    *p += 2;               /* skip initial '((' */
     char *start = *p;
     int depth = 0;
+    int in_s = 0, in_d = 0, esc = 0;
     while (**p) {
-        if (**p == '(')
-            depth++;
-        else if (**p == ')') {
-            if (depth == 0 && *(*p + 1) == ')') {
-                char *res = strndup(start, *p - start);
-                *p += 2;
-                return res;
+        char c = **p;
+        if (esc) {
+            esc = 0;
+        } else if (c == '\\') {
+            esc = 1;
+        } else if (c == '\'' && !in_d) {
+            in_s = !in_s;
+        } else if (c == '"' && !in_s) {
+            in_d = !in_d;
+        } else if (!in_s && !in_d) {
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                if (depth == 0 && *(*p + 1) == ')') {
+                    char *res = strndup(start, *p - start);
+                    *p += 2;
+                    return res;
+                }
+                if (depth > 0)
+                    depth--;
             }
-            if (depth > 0)
-                depth--;
         }
         (*p)++;
     }
