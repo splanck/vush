@@ -22,7 +22,7 @@ expect {
 }
 send "umask\r"
 expect {
-    -re "\[\r\n\]+0077\[\r\n\]+vush> " {}
+    -re "\[\r\n\]+0027\[\r\n\]+vush> " {}
     timeout { send_user "umask symbolic set failed\n"; exit 1 }
 }
 send "umask $old\r"
