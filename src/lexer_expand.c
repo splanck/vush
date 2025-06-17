@@ -199,8 +199,11 @@ static char *expand_array_element(const char *name, const char *idxstr) {
     } else {
         int idx = atoi(idxstr);
         int alen = 0; char **arr = get_shell_array(name, &alen);
-        if (arr && idx >= 0 && idx < alen)
-            return strdup(arr[idx]);
+        if (arr) {
+            if (idx >= 0 && idx < alen)
+                return strdup(arr[idx]);
+            return strdup("");
+        }
         const char *val = getenv(name);
         if (!val) val = "";
         return strdup(val);

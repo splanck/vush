@@ -94,14 +94,38 @@ static int parse_word_list(char **p, char ***out, int *count) {
     char **words = NULL;
     int c = 0;
     while (1) {
+        int q = 0; int de = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == ';') {
+            (*p)++;
+            while (**p == ' ' || **p == '\t') (*p)++;
+            char *next = read_token(p, &q, &de);
+            if (!next) {
+                for (int i = 0; i < c; i++)
+                    free(words[i]);
+                free(words);
+                return -1;
+            }
+            if (!q && strcmp(next, "do") == 0) { free(next); break; }
+            char **tmp = realloc(words, sizeof(char *) * (c + 1));
+            if (!tmp) {
+                free(next);
+                for (int i = 0; i < c; i++)
+                    free(words[i]);
+                free(words);
+                return -1;
+            }
+            words = tmp;
+            words[c++] = next;
+            continue;
+        }
         if (**p == '\0') {
             for (int i = 0; i < c; i++)
                 free(words[i]);
             free(words);
             return -1;
         }
-        int q = 0; int de = 1;
+        q = 0; de = 1;
         char *w = read_token(p, &q, &de);
         if (!w) {
             for (int i = 0; i < c; i++)

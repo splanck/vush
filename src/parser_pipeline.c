@@ -470,9 +470,17 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
             int parens = 1;
             char *tmp;
             do {
+                while (**p == ' ' || **p == '\t') (*p)++;
                 int q2 = 0; int de2 = 1;
                 tmp = read_token(p, &q2, &de2);
                 if (!tmp) { free(assign); free(tok); return -1; }
+                if (*tmp == '\0') {
+                    free(tmp);
+                    free(assign);
+                    free(tok);
+                    parse_need_more = 1;
+                    return -1;
+                }
                 alloc += strlen(tmp) + 1;
                 char *new_assign = realloc(assign, alloc);
                 if (!new_assign) { free(assign); free(tmp); free(tok); return -1; }
