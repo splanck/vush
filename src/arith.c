@@ -6,8 +6,12 @@
  * function below.
  *
  *   expression  := assignment
- *   assignment  := NAME '=' assignment | equality
- *   equality    := sum ( (== | != | >= | <= | > | <) sum )*
+ *   assignment  := NAME '=' assignment | bit_or
+ *   bit_or      := bit_xor ( '|' bit_xor )*
+ *   bit_xor     := bit_and ( '^' bit_and )*
+ *   bit_and     := equality ( '&' equality )*
+ *   equality    := shift ( (== | != | >= | <= | > | <) shift )*
+ *   shift       := sum ( ('<<' | '>>') sum )*
  *   sum         := term ( ('+' | '-') term )*
  *   term        := unary ( ('*' | '/' | '%') unary )*
  *   unary       := ('+' | '-') unary | factor
@@ -222,20 +226,97 @@ static long long parse_sum(const char **s) {
 }
 
 /*
+ * Parse shift operators (<< and >>).
+ * Returns the computed value while advancing *s.
+ */
+static long long parse_shift(const char **s) {
+    long long value = parse_sum(s);
+    while (1) {
+        skip_ws(s);
+        if (strncmp(*s, "<<", 2) == 0) {
+            *s += 2;
+            long long rhs = parse_sum(s);
+            if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
+                parse_error = 1;
+                return 0;
+            }
+            value <<= rhs;
+        } else if (strncmp(*s, ">>", 2) == 0) {
+            *s += 2;
+            long long rhs = parse_sum(s);
+            if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
+                parse_error = 1;
+                return 0;
+            }
+            value >>= rhs;
+        } else break;
+    }
+    return value;
+}
+
+/*
  * Parse equality and relational operators and return 1 or 0.
  * Advances *s past the comparison expression.
  */
 static long long parse_equality(const char **s) {
-    long long value = parse_sum(s);
+    long long value = parse_shift(s);
     while (1) {
         skip_ws(s);
-        if (strncmp(*s, "==", 2) == 0) { *s += 2; long long rhs = parse_sum(s); value = (value == rhs); }
-        else if (strncmp(*s, "!=", 2) == 0) { *s += 2; long long rhs = parse_sum(s); value = (value != rhs); }
-        else if (strncmp(*s, ">=", 2) == 0) { *s += 2; long long rhs = parse_sum(s); value = (value >= rhs); }
-        else if (strncmp(*s, "<=", 2) == 0) { *s += 2; long long rhs = parse_sum(s); value = (value <= rhs); }
-        else if (**s == '>' ) { (*s)++; long long rhs = parse_sum(s); value = (value > rhs); }
-        else if (**s == '<' ) { (*s)++; long long rhs = parse_sum(s); value = (value < rhs); }
+        if (strncmp(*s, "==", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value == rhs); }
+        else if (strncmp(*s, "!=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value != rhs); }
+        else if (strncmp(*s, ">=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value >= rhs); }
+        else if (strncmp(*s, "<=", 2) == 0) { *s += 2; long long rhs = parse_shift(s); value = (value <= rhs); }
+        else if (**s == '>' ) { (*s)++; long long rhs = parse_shift(s); value = (value > rhs); }
+        else if (**s == '<' ) { (*s)++; long long rhs = parse_shift(s); value = (value < rhs); }
         else break;
+    }
+    return value;
+}
+
+/*
+ * Parse bitwise AND operations.
+ */
+static long long parse_bit_and(const char **s) {
+    long long value = parse_equality(s);
+    while (1) {
+        skip_ws(s);
+        if (**s == '&') {
+            (*s)++;
+            long long rhs = parse_equality(s);
+            value &= rhs;
+        } else break;
+    }
+    return value;
+}
+
+/*
+ * Parse bitwise XOR operations.
+ */
+static long long parse_bit_xor(const char **s) {
+    long long value = parse_bit_and(s);
+    while (1) {
+        skip_ws(s);
+        if (**s == '^') {
+            (*s)++;
+            long long rhs = parse_bit_and(s);
+            value ^= rhs;
+        } else break;
+    }
+    return value;
+}
+
+/*
+ * Parse bitwise OR operations.
+ */
+static long long parse_bit_or(const char **s) {
+    long long value = parse_bit_xor(s);
+    while (1) {
+        skip_ws(s);
+        if (**s == '|') {
+            (*s)++;
+            long long rhs = parse_bit_xor(s);
+            value |= rhs;
+        } else break;
     }
     return value;
 }
@@ -267,7 +348,7 @@ static long long parse_assignment(const char **s) {
         }
     }
     *s = save;
-    return parse_equality(s);
+    return parse_bit_or(s);
 }
 
 /* Wrapper for the top-level expression parser. */

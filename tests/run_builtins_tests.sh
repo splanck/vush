@@ -72,6 +72,7 @@ test_arith.expect
 test_arith_expr.expect
 test_arith_complex.expect
 test_arith_overflow.expect
+test_bitwise.expect
 test_read.expect
 test_read_eof.expect
 test_read_signal.expect

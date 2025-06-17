@@ -542,6 +542,9 @@ two
 
 Numbers inside arithmetic expressions may begin with `<base>#` to specify
 bases 2–36.
+Supported operators include `+`, `-`, `*`, `/` and `%` along with shifts
+`<<` and `>>` and bitwise `&`, `^` and `|`. Comparison operators `==`,
+`!=`, `>=`, `<=`, `>` and `<` yield `1` when true and `0` otherwise.
 
 ```sh
 vush> echo $((16#ff + 2#10))

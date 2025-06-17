@@ -122,7 +122,8 @@ Start the next iteration of the \fIN\fPth enclosing loop (default 1).
 Parse positional parameters, storing the current option letter in \fIVAR\fP, any argument in \fIOPTARG\fP, and advancing \fIOPTIND\fP.
 .TP
 .B "let EXPR"
-Evaluate an arithmetic expression.
+Evaluate an arithmetic expression. Operators include +, -, *, /, %,
+<<, >> and the bitwise &, ^ and | with standard precedence.
 .TP
 .B "set [options] [-- args...]"
 Set shell options or replace positional parameters.
