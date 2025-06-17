@@ -178,6 +178,33 @@ static int add_overflow(long long a, long long b, long long *out) {
     return 0;
 }
 
+static int sub_overflow(long long a, long long b, long long *out) {
+    if ((b > 0 && a < LLONG_MIN + b) || (b < 0 && a > LLONG_MAX + b))
+        return 1;
+    *out = a - b;
+    return 0;
+}
+
+static int lshift_overflow(long long a, long long b, long long *out) {
+    if (b < 0 || b >= (long long)(sizeof(long long) * 8))
+        return 1;
+    __int128 result = (__int128)a << b;
+    if (result > LLONG_MAX || result < LLONG_MIN)
+        return 1;
+    *out = (long long)result;
+    return 0;
+}
+
+static int rshift_overflow(long long a, long long b, long long *out) {
+    if (b < 0 || b >= (long long)(sizeof(long long) * 8))
+        return 1;
+    __int128 result = (__int128)a >> b;
+    if (result > LLONG_MAX || result < LLONG_MIN)
+        return 1;
+    *out = (long long)result;
+    return 0;
+}
+
 static long long parse_term(ArithState *state) {
     if (state->err) return 0;
     long long value = parse_unary(state);
@@ -244,7 +271,7 @@ static long long parse_sum(ArithState *state) {
                     return 0;
                 }
             } else {
-                if (add_overflow(value, -rhs, &result)) {
+                if (sub_overflow(value, rhs, &result)) {
                     arith_set_error("overflow");
                     return 0;
                 }
@@ -273,7 +300,12 @@ static long long parse_shift(ArithState *state) {
                 arith_set_error("shift out of range");
                 return 0;
             }
-            value <<= rhs;
+            long long result;
+            if (lshift_overflow(value, rhs, &result)) {
+                arith_set_error("overflow");
+                return 0;
+            }
+            value = result;
         } else if (strncmp(state->p, ">>", 2) == 0) {
             state->p += 2;
             long long rhs = parse_sum(state);
@@ -282,7 +314,12 @@ static long long parse_shift(ArithState *state) {
                 arith_set_error("shift out of range");
                 return 0;
             }
-            value >>= rhs;
+            long long result;
+            if (rshift_overflow(value, rhs, &result)) {
+                arith_set_error("overflow");
+                return 0;
+            }
+            value = result;
         } else break;
     }
     return value;
