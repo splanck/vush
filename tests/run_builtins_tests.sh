@@ -137,6 +137,8 @@ test_command_v_path_long.expect
 test_dquote_escape.expect
 test_calloc_fail.expect
 test_fc_fork_fail.expect
+arithmetic_basic.expect
+arithmetic_cmd.expect
 test_pipe_cr.expect
 "
 for test in $tests; do
