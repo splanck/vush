@@ -10,6 +10,26 @@ expect {
     -re "\[\r\n\]+3\[\r\n\]+vush> " {}
     timeout { send_user "arithmetic expansion failed\n"; exit 1 }
 }
+send "D=3\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send {echo $((--D))\r}
+expect {
+    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
+    timeout { send_user "prefix decrement failed\n"; exit 1 }
+}
+send {echo $((D--))\r}
+expect {
+    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
+    timeout { send_user "postfix decrement failed\n"; exit 1 }
+}
+send {echo $D\r}
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "decrement value failed\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}

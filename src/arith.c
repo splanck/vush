@@ -6,7 +6,11 @@
  * function below.
  *
  *   expression  := assignment
- *   assignment  := NAME '=' assignment | bit_or
+ *   assignment  := NAME '=' assignment |
+ *                  NAME '++' | NAME '--' | '++' NAME | '--' NAME |
+ *                  logical_or
+ *   logical_or  := logical_and ( '||' logical_and )*
+ *   logical_and := bit_or ( '&&' bit_or )*
  *   bit_or      := bit_xor ( '|' bit_xor )*
  *   bit_xor     := bit_and ( '^' bit_and )*
  *   bit_and     := equality ( '&' equality )*
@@ -14,7 +18,7 @@
  *   shift       := sum ( ('<<' | '>>') sum )*
  *   sum         := term ( ('+' | '-') term )*
  *   term        := unary ( ('*' | '/' | '%') unary )*
- *   unary       := ('+' | '-') unary | factor
+ *   unary       := ('+' | '-' | '!' | '~') unary | factor
  *   factor      := NUMBER | NAME | '(' expression ')'
  *
  * Each parse_* function consumes characters from the input string via a
@@ -113,18 +117,24 @@ static long long parse_factor(ArithState *state) {
 static long long parse_unary(ArithState *state) {
     if (state->err) return 0;
     skip_ws(&state->p);
-    if (*state->p == '+' || *state->p == '-') {
+    if (*state->p == '+' || *state->p == '-' || *state->p == '!' || *state->p == '~') {
         char op = *state->p++;
         long long operand = parse_unary(state);
         if (state->err) return 0;
-        if (op == '-') {
-            if (operand == LLONG_MIN) {
-                state->err = 1;
-                return 0;
-            }
-            return -operand;
+        switch (op) {
+            case '-':
+                if (operand == LLONG_MIN) {
+                    state->err = 1;
+                    return 0;
+                }
+                return -operand;
+            case '!':
+                return !operand;
+            case '~':
+                return ~operand;
+            default:
+                return operand; /* unary plus */
         }
-        return operand;
     }
     return parse_factor(state);
 }
@@ -359,6 +369,44 @@ static long long parse_bit_or(ArithState *state) {
 }
 
 /*
+ * Parse logical AND operations.
+ */
+static long long parse_logical_and(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_bit_or(state);
+    if (state->err) return 0;
+    while (1) {
+        skip_ws(&state->p);
+        if (strncmp(state->p, "&&", 2) == 0) {
+            state->p += 2;
+            long long rhs = parse_bit_or(state);
+            if (state->err) return 0;
+            value = value && rhs;
+        } else break;
+    }
+    return value;
+}
+
+/*
+ * Parse logical OR operations.
+ */
+static long long parse_logical_or(ArithState *state) {
+    if (state->err) return 0;
+    long long value = parse_logical_and(state);
+    if (state->err) return 0;
+    while (1) {
+        skip_ws(&state->p);
+        if (strncmp(state->p, "||", 2) == 0) {
+            state->p += 2;
+            long long rhs = parse_logical_and(state);
+            if (state->err) return 0;
+            value = value || rhs;
+        } else break;
+    }
+    return value;
+}
+
+/*
  * Parse assignments of the form NAME=expr.
  * Side effect: updates shell variables via set_shell_var().
  * Returns the assigned or computed value and advances *s.
@@ -367,6 +415,13 @@ static long long parse_assignment(ArithState *state) {
     if (state->err) return 0;
     skip_ws(&state->p);
     const char *save = state->p;
+    int prefix = 0; char incop = 0;
+    if (strncmp(state->p, "++", 2) == 0 || strncmp(state->p, "--", 2) == 0) {
+        prefix = 1; incop = state->p[0];
+        state->p += 2;
+        skip_ws(&state->p);
+    }
+
     if ((isalpha((unsigned char)*state->p) || *state->p == '_')) {
         char name[64]; int len = 0;
         while (isalnum((unsigned char)*state->p) || *state->p == '_') {
@@ -385,9 +440,42 @@ static long long parse_assignment(ArithState *state) {
             set_shell_var(name, buf);
             return value;
         }
+
+        /* Retrieve current variable value */
+        const char *val = get_shell_var(name);
+        if (!val) val = getenv(name);
+        errno = 0;
+        long long cur = val ? strtoll(val, NULL, 10) : 0;
+        if (errno == ERANGE) state->err = 1;
+
+        if (prefix) {
+            long long newv;
+            if (add_overflow(cur, (incop == '+') ? 1 : -1, &newv)) {
+                state->err = 1;
+                return 0;
+            }
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%lld", newv);
+            set_shell_var(name, buf);
+            return newv;
+        }
+
+        if (strncmp(state->p, "++", 2) == 0 || strncmp(state->p, "--", 2) == 0) {
+            incop = state->p[0];
+            state->p += 2;
+            long long newv;
+            if (add_overflow(cur, (incop == '+') ? 1 : -1, &newv)) {
+                state->err = 1;
+                return 0;
+            }
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%lld", newv);
+            set_shell_var(name, buf);
+            return cur; /* postfix returns old value */
+        }
     }
     state->p = save;
-    return parse_bit_or(state);
+    return parse_logical_or(state);
 }
 
 /* Wrapper for the top-level expression parser. */
