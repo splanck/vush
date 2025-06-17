@@ -120,6 +120,55 @@ char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     return res ? res : strdup("");
 }
 
+/* Gather tokens until an unquoted 'done' is found while tracking nested
+ * 'do'/'done' pairs.  This allows nested loop bodies to be parsed correctly. */
+char *gather_until_done(char **p) {
+    char *res = NULL;
+    int depth = 0;
+    while (**p) {
+        while (**p == ' ' || **p == '\t')
+            (*p)++;
+        if (**p == '\0')
+            break;
+        int quoted = 0;
+        int do_expand = 1;
+        char *tok = read_token(p, &quoted, &do_expand);
+        if (!tok) {
+            free(res);
+            return NULL;
+        }
+        if (!quoted) {
+            if (strcmp(tok, "do") == 0) {
+                depth++;
+            } else if (strcmp(tok, "done") == 0) {
+                if (depth == 0) {
+                    free(tok);
+                    return res ? res : strdup("");
+                }
+                depth--;
+            }
+        }
+        if (res) {
+            char *tmp;
+            if (asprintf(&tmp, "%s %s", res, tok) == -1 || !tmp) {
+                free(res);
+                free(tok);
+                return NULL;
+            }
+            free(res);
+            res = tmp;
+        } else {
+            res = strdup(tok);
+            if (!res) {
+                free(tok);
+                return NULL;
+            }
+        }
+        free(tok);
+    }
+    return res ? res : strdup("");
+}
+
 char *gather_braced(char **p) {
     if (**p != '{')
         return NULL;

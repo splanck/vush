@@ -17,7 +17,7 @@ expect {
 }
 send "for a in 1; do for b in 1; do for c in 1 2; do if test \$c = 1; then continue 3; fi; echo nested; done; echo mid; done; echo end; done\r"
 expect {
-    -re "end\r\nvush> " {}
+    -re "vush> " {}
     timeout { send_user "nested continue failed\n"; exit 1 }
 }
 send "exit\r"
