@@ -32,6 +32,7 @@ static void skip_ws(const char **s) {
 }
 
 static long parse_expr(const char **s);
+static int parse_error;
 
 /*
  * Parse a primary expression: number, variable or parenthesised subexpression.
@@ -43,7 +44,10 @@ static long parse_primary(const char **s) {
         (*s)++; /* '(' */
         long v = parse_expr(s);
         skip_ws(s);
-        if (**s == ')') (*s)++;
+        if (**s == ')')
+            (*s)++;
+        else
+            parse_error = 1;
         return v;
     }
     if (isalpha((unsigned char)**s) || **s == '_') {
@@ -65,11 +69,17 @@ static long parse_primary(const char **s) {
         if (base >= 2 && base <= 36) {
             p = end + 1;
             long val = strtol(p, &end, (int)base);
+            if (end == p)
+                parse_error = 1;
             *s = end;
             return val;
+        } else {
+            parse_error = 1;
         }
     }
     long v = strtol(p, &end, 10);
+    if (end == p)
+        parse_error = 1;
     *s = end;
     return v;
 }
@@ -185,8 +195,9 @@ static long parse_expr(const char **s) {
  * Evaluate an arithmetic expression contained in 'expr'.
  * Returns the resulting long value; does not modify 'expr'.
  */
-long eval_arith(const char *expr) {
+long eval_arith(const char *expr, int *err) {
     const char *p = expr;
+    parse_error = 0;
     long v = parse_expr(&p);
     /* Skip any whitespace the parser left behind. */
     skip_ws(&p);
@@ -197,9 +208,11 @@ long eval_arith(const char *expr) {
         p++;
         skip_ws(&p);
     }
-    if (*p != '\0') {
-        /* trailing garbage indicates a syntax error; mimic zero result */
+    if (*p != '\0')
+        parse_error = 1;
+    if (err)
+        *err = parse_error;
+    if (parse_error)
         return 0;
-    }
     return v;
 }
