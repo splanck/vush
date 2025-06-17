@@ -92,6 +92,8 @@ test_cond.expect
 test_ls_l.expect
 test_process_sub.expect
 test_array.expect
+test_array_let.expect
+test_arith_array.expect
 test_brace_expand.expect
 test_for_arith.expect
 test_printf.expect

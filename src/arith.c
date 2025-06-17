@@ -66,8 +66,28 @@ static long long parse_factor(const char **s) {
             (*s)++;
         }
         name[len] = '\0';
-        const char *val = get_shell_var(name);
-        if (!val) val = getenv(name);
+        skip_ws(s);
+        long long idx = -1;
+        if (**s == '[') {
+            (*s)++; /* '[' */
+            idx = parse_expression(s);
+            skip_ws(s);
+            if (**s == ']')
+                (*s)++;
+            else
+                parse_error = 1;
+            skip_ws(s);
+        }
+        const char *val = NULL;
+        if (idx >= 0) {
+            int alen = 0; char **arr = get_shell_array(name, &alen);
+            if (arr && idx >= 0 && idx < alen)
+                val = arr[idx];
+        } else {
+            val = get_shell_var(name);
+        }
+        if (!val)
+            val = getenv(name);
         if (val) {
             errno = 0;
             long long num = strtoll(val, NULL, 10);
@@ -338,12 +358,26 @@ static long long parse_assignment(const char **s) {
         }
         name[len] = '\0';
         skip_ws(s);
+        long long idx = -1;
+        if (**s == '[') {
+            (*s)++;
+            idx = parse_expression(s);
+            skip_ws(s);
+            if (**s == ']')
+                (*s)++;
+            else
+                parse_error = 1;
+            skip_ws(s);
+        }
         if (**s == '=') {
             (*s)++;
             long long value = parse_assignment(s);
             char buf[32];
             snprintf(buf, sizeof(buf), "%lld", value);
-            set_shell_var(name, buf);
+            if (idx >= 0)
+                set_shell_array_index(name, (int)idx, buf);
+            else
+                set_shell_var(name, buf);
             return value;
         }
     }

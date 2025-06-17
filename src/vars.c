@@ -357,6 +357,52 @@ void set_shell_array(const char *name, char **values, int count) {
     shell_vars = v;
 }
 
+void set_shell_array_index(const char *name, int idx, const char *value) {
+    if (idx < 0)
+        return;
+    if (is_readonly(name)) {
+        fprintf(stderr, "%s: readonly variable\n", name);
+        return;
+    }
+    struct var_entry *v = NULL;
+    for (v = shell_vars; v; v = v->next) {
+        if (strcmp(v->name, name) == 0)
+            break;
+    }
+    if (!v) {
+        v = calloc(1, sizeof(*v));
+        if (!v) { perror("calloc"); return; }
+        v->name = strdup(name);
+        if (!v->name) { perror("strdup"); free(v); return; }
+        v->next = shell_vars;
+        shell_vars = v;
+    }
+    if (!v->array) {
+        int new_len = idx + 1;
+        char **arr = calloc(new_len, sizeof(char *));
+        if (!arr) { perror("calloc"); return; }
+        if (v->value) {
+            arr[0] = v->value;
+            v->value = NULL;
+        }
+        v->array = arr;
+        v->array_len = new_len;
+    } else if (idx >= v->array_len) {
+        int new_len = idx + 1;
+        char **tmp = realloc(v->array, sizeof(char *) * new_len);
+        if (!tmp) { perror("realloc"); return; }
+        for (int i = v->array_len; i < new_len; i++)
+            tmp[i] = NULL;
+        v->array = tmp;
+        v->array_len = new_len;
+    }
+    char *dup = strdup(value);
+    if (!dup) { perror("strdup"); return; }
+    if (v->array[idx])
+        free(v->array[idx]);
+    v->array[idx] = dup;
+}
+
 void unset_shell_var(const char *name) {
     if (is_readonly(name)) {
         fprintf(stderr, "%s: readonly variable\n", name);
