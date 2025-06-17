@@ -175,7 +175,8 @@ for test in $tests; do
         test_history_delete.expect|\
         test_bang_*|\
         test_*search.expect|\
-        test_lineedit.expect)
+        test_lineedit.expect|\
+        test_fc.expect)
             rm -f "$HOME/.vush_history"
             ;;
     esac
