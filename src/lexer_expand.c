@@ -864,6 +864,8 @@ char *expand_history(const char *line) {
         p++;
     if (*p != '!')
         return strdup(line);
+    if (p[1] == '\0' || isspace((unsigned char)p[1]))
+        return strdup(line);
     const char *bang = p;
     const char *rest;
     char *expansion = NULL;
