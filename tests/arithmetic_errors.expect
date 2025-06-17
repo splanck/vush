@@ -1,0 +1,57 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+# invalid variable assignment with trailing letters
+send "echo \$((X=123abc))\r"
+expect {
+    -re "syntax error" {}
+    timeout { send_user "missing syntax error\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+# invalid numeric base
+send "echo \$((1#123))\r"
+expect {
+    -re "invalid base" {}
+    timeout { send_user "missing invalid base error\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+# divide by zero
+send "echo \$((1/0))\r"
+expect {
+    -re "divide by zero" {}
+    timeout { send_user "missing divide by zero error\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

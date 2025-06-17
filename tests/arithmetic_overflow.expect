@@ -1,0 +1,57 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+# overflow when parsing literal
+send "echo \$((9223372036854775808))\r"
+expect {
+    -re "overflow" {}
+    timeout { send_user "missing literal overflow\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+# overflow via shift
+send "echo \$((1<<63))\r"
+expect {
+    -re "overflow" {}
+    timeout { send_user "missing shift overflow\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+# overflow via addition
+send "echo \$((9223372036854775807 + 1))\r"
+expect {
+    -re "overflow" {}
+    timeout { send_user "missing addition overflow\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "status mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
