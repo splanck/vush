@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
+#include <errno.h>
 
 /*
  * Advance *s past any whitespace characters.
@@ -31,18 +33,18 @@ static void skip_ws(const char **s) {
     while (isspace((unsigned char)**s)) (*s)++;
 }
 
-static long parse_expr(const char **s);
+static long long parse_expr(const char **s);
 static int parse_error;
 
 /*
  * Parse a primary expression: number, variable or parenthesised subexpression.
  * Returns the parsed value and advances *s past the token.
  */
-static long parse_primary(const char **s) {
+static long long parse_primary(const char **s) {
     skip_ws(s);
     if (**s == '(') {
         (*s)++; /* '(' */
-        long v = parse_expr(s);
+        long long v = parse_expr(s);
         skip_ws(s);
         if (**s == ')')
             (*s)++;
@@ -60,16 +62,27 @@ static long parse_primary(const char **s) {
         name[n] = '\0';
         const char *val = get_shell_var(name);
         if (!val) val = getenv(name);
-        return val ? strtol(val, NULL, 10) : 0;
+        if (val) {
+            errno = 0;
+            long long n = strtoll(val, NULL, 10);
+            if (errno == ERANGE)
+                parse_error = 1;
+            return n;
+        }
+        return 0;
     }
     const char *p = *s;
     char *end;
-    long base = strtol(p, &end, 10);
+    errno = 0;
+    long long base = strtoll(p, &end, 10);
+    if (errno == ERANGE)
+        parse_error = 1;
     if (end > p && *end == '#') {
         if (base >= 2 && base <= 36) {
             p = end + 1;
-            long val = strtol(p, &end, (int)base);
-            if (end == p)
+            errno = 0;
+            long long val = strtoll(p, &end, (int)base);
+            if (end == p || errno == ERANGE)
                 parse_error = 1;
             *s = end;
             return val;
@@ -77,8 +90,9 @@ static long parse_primary(const char **s) {
             parse_error = 1;
         }
     }
-    long v = strtol(p, &end, 10);
-    if (end == p)
+    errno = 0;
+    long long v = strtoll(p, &end, 10);
+    if (end == p || errno == ERANGE)
         parse_error = 1;
     *s = end;
     return v;
@@ -88,12 +102,19 @@ static long parse_primary(const char **s) {
  * Parse unary plus/minus or a primary expression.
  * Returns the resulting value; *s is advanced.
  */
-static long parse_unary(const char **s) {
+static long long parse_unary(const char **s) {
     skip_ws(s);
     if (**s == '+' || **s == '-') {
         char op = *(*s)++;
-        long v = parse_unary(s);
-        return op == '-' ? -v : v;
+        long long v = parse_unary(s);
+        if (op == '-') {
+            if (v == LLONG_MIN) {
+                parse_error = 1;
+                return 0;
+            }
+            return -v;
+        }
+        return v;
     }
     return parse_primary(s);
 }
@@ -102,24 +123,62 @@ static long parse_unary(const char **s) {
  * Parse multiplicative operators (*, /, %).
  * Returns the computed value; *s is advanced past the expression.
  */
-static long parse_mul(const char **s) {
-    long v = parse_unary(s);
+static int mul_overflow(long long a, long long b, long long *out) {
+    if (a > 0) {
+        if (b > 0) {
+            if (a > LLONG_MAX / b) return 1;
+        } else if (b < LLONG_MIN / a) {
+            return 1;
+        }
+    } else {
+        if (b > 0) {
+            if (a < LLONG_MIN / b) return 1;
+        } else if (a != 0 && b < LLONG_MAX / a) {
+            return 1;
+        }
+    }
+    *out = a * b;
+    return 0;
+}
+
+static int add_overflow(long long a, long long b, long long *out) {
+    if ((b > 0 && a > LLONG_MAX - b) || (b < 0 && a < LLONG_MIN - b))
+        return 1;
+    *out = a + b;
+    return 0;
+}
+
+static long long parse_mul(const char **s) {
+    long long v = parse_unary(s);
     while (1) {
         skip_ws(s);
         char op = **s;
         if (op == '*' || op == '/' || op == '%') {
             (*s)++;
-            long rhs = parse_unary(s);
+            long long rhs = parse_unary(s);
             if (op == '*') {
-                v *= rhs;
+                long long res;
+                if (mul_overflow(v, rhs, &res)) {
+                    parse_error = 1;
+                    return 0;
+                }
+                v = res;
             } else if (op == '/') {
                 if (rhs == 0) {
+                    parse_error = 1;
+                    return 0;
+                }
+                if (v == LLONG_MIN && rhs == -1) {
                     parse_error = 1;
                     return 0;
                 }
                 v /= rhs;
             } else {
                 if (rhs == 0) {
+                    parse_error = 1;
+                    return 0;
+                }
+                if (v == LLONG_MIN && rhs == -1) {
                     parse_error = 1;
                     return 0;
                 }
@@ -134,16 +193,27 @@ static long parse_mul(const char **s) {
  * Parse addition and subtraction operations.
  * Returns the computed value while advancing *s.
  */
-static long parse_add(const char **s) {
-    long v = parse_mul(s);
+static long long parse_add(const char **s) {
+    long long v = parse_mul(s);
     while (1) {
         skip_ws(s);
         char op = **s;
         if (op == '+' || op == '-') {
             (*s)++;
-            long rhs = parse_mul(s);
-            if (op == '+') v += rhs;
-            else v -= rhs;
+            long long rhs = parse_mul(s);
+            long long res;
+            if (op == '+') {
+                if (add_overflow(v, rhs, &res)) {
+                    parse_error = 1;
+                    return 0;
+                }
+            } else {
+                if (add_overflow(v, -rhs, &res)) {
+                    parse_error = 1;
+                    return 0;
+                }
+            }
+            v = res;
         } else break;
     }
     return v;
@@ -153,16 +223,16 @@ static long parse_add(const char **s) {
  * Parse comparison operators and return 1 or 0.
  * Advances *s past the comparison expression.
  */
-static long parse_cmp(const char **s) {
-    long v = parse_add(s);
+static long long parse_cmp(const char **s) {
+    long long v = parse_add(s);
     while (1) {
         skip_ws(s);
-        if (strncmp(*s, "==", 2) == 0) { *s += 2; long r = parse_add(s); v = (v == r); }
-        else if (strncmp(*s, "!=", 2) == 0) { *s += 2; long r = parse_add(s); v = (v != r); }
-        else if (strncmp(*s, ">=", 2) == 0) { *s += 2; long r = parse_add(s); v = (v >= r); }
-        else if (strncmp(*s, "<=", 2) == 0) { *s += 2; long r = parse_add(s); v = (v <= r); }
-        else if (**s == '>' ) { (*s)++; long r = parse_add(s); v = (v > r); }
-        else if (**s == '<' ) { (*s)++; long r = parse_add(s); v = (v < r); }
+        if (strncmp(*s, "==", 2) == 0) { *s += 2; long long r = parse_add(s); v = (v == r); }
+        else if (strncmp(*s, "!=", 2) == 0) { *s += 2; long long r = parse_add(s); v = (v != r); }
+        else if (strncmp(*s, ">=", 2) == 0) { *s += 2; long long r = parse_add(s); v = (v >= r); }
+        else if (strncmp(*s, "<=", 2) == 0) { *s += 2; long long r = parse_add(s); v = (v <= r); }
+        else if (**s == '>' ) { (*s)++; long long r = parse_add(s); v = (v > r); }
+        else if (**s == '<' ) { (*s)++; long long r = parse_add(s); v = (v < r); }
         else break;
     }
     return v;
@@ -173,7 +243,7 @@ static long parse_cmp(const char **s) {
  * Side effect: updates shell variables via set_shell_var().
  * Returns the assigned or computed value and advances *s.
  */
-static long parse_assign(const char **s) {
+static long long parse_assign(const char **s) {
     skip_ws(s);
     const char *save = *s;
     if ((isalpha((unsigned char)**s) || **s == '_')) {
@@ -187,9 +257,9 @@ static long parse_assign(const char **s) {
         skip_ws(s);
         if (**s == '=') {
             (*s)++;
-            long val = parse_assign(s);
+            long long val = parse_assign(s);
             char buf[32];
-            snprintf(buf, sizeof(buf), "%ld", val);
+            snprintf(buf, sizeof(buf), "%lld", val);
             set_shell_var(name, buf);
             return val;
         }
@@ -199,18 +269,18 @@ static long parse_assign(const char **s) {
 }
 
 /* Wrapper for the highest precedence expression parser. */
-static long parse_expr(const char **s) {
+static long long parse_expr(const char **s) {
     return parse_assign(s);
 }
 
 /*
  * Evaluate an arithmetic expression contained in 'expr'.
- * Returns the resulting long value; does not modify 'expr'.
+ * Returns the resulting long long value; does not modify 'expr'.
  */
-long eval_arith(const char *expr, int *err) {
+long long eval_arith(const char *expr, int *err) {
     const char *p = expr;
     parse_error = 0;
-    long v = parse_expr(&p);
+    long long v = parse_expr(&p);
     /* Skip any whitespace the parser left behind. */
     skip_ws(&p);
     /* Historically some callers might include carriage returns

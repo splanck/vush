@@ -1,0 +1,45 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+# numeric literal overflow
+send {echo $((9223372036854775808))\r}
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "literal overflow output\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "literal overflow status\n"; exit 1 }
+}
+# addition overflow
+send {echo $((9223372036854775807 + 1))\r}
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "addition overflow output\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "addition overflow status\n"; exit 1 }
+}
+# let builtin overflow
+send {let 9223372036854775807 + 1\r}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo $?\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "let overflow status\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
