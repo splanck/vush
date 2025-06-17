@@ -54,6 +54,28 @@ static void skip_ws(const char **s) {
     while (isspace((unsigned char)**s)) (*s)++;
 }
 
+/*
+ * Wrapper around strtoll() that ensures the entire string was consumed.
+ * Returns 0 on success and stores the result in *out.  On failure, returns
+ * -1 and sets errno to ERANGE for overflow or EINVAL for invalid input.
+ */
+static int parse_ll(const char *s, long long *out) {
+    char *end;
+    errno = 0;
+    long long val = strtoll(s, &end, 10);
+    if (errno == ERANGE) {
+        if (out) *out = val;
+        return -1;
+    }
+    if (end == s || *end != '\0') {
+        errno = EINVAL;
+        if (out) *out = val;
+        return -1;
+    }
+    if (out) *out = val;
+    return 0;
+}
+
 static long long parse_expression(ArithState *state);
 
 /*
@@ -85,10 +107,13 @@ static long long parse_factor(ArithState *state) {
         const char *val = get_shell_var(name);
         if (!val) val = getenv(name);
         if (val) {
-            errno = 0;
-            long long num = strtoll(val, NULL, 10);
-            if (errno == ERANGE)
-                arith_set_error("overflow");
+            long long num = 0;
+            if (parse_ll(val, &num) < 0) {
+                if (errno == ERANGE)
+                    arith_set_error("overflow");
+                else
+                    arith_set_error("invalid number");
+            }
             return num;
         }
         return 0;
@@ -491,10 +516,13 @@ static long long parse_assignment(ArithState *state) {
         /* Retrieve current variable value */
         const char *val = get_shell_var(name);
         if (!val) val = getenv(name);
-        errno = 0;
-        long long cur = val ? strtoll(val, NULL, 10) : 0;
-        if (errno == ERANGE)
-            arith_set_error("overflow");
+        long long cur = 0;
+        if (val && parse_ll(val, &cur) < 0) {
+            if (errno == ERANGE)
+                arith_set_error("overflow");
+            else
+                arith_set_error("invalid number");
+        }
 
         if (prefix) {
             long long newv;
