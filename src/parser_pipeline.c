@@ -758,6 +758,8 @@ Command *parse_line(char *line) {
         if (!cmd)
             cmd = parse_conditional(&p, &op);
         if (!cmd)
+            cmd = parse_arith_command(&p, &op);
+        if (!cmd)
             cmd = parse_pipeline(&p, &op);
         if (!cmd) {
             free_commands(head);

@@ -588,6 +588,31 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+Command *parse_arith_command(char **p, CmdOp *op_out) {
+    char *expr = gather_dbl_parens(p);
+    if (!expr)
+        return NULL;
+    char *trim = trim_ws(expr);
+    free(expr);
+
+    while (**p == ' ' || **p == '\t') (*p)++;
+    CmdOp op = OP_NONE;
+    if (**p == ';') { op = OP_SEMI; (*p)++; }
+    else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
+    else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
+
+    Command *cmd = xcalloc(1, sizeof(Command));
+    if (!cmd) {
+        free(trim);
+        return NULL;
+    }
+    cmd->type = CMD_ARITH;
+    cmd->text = trim;
+    cmd->op = op;
+    if (op_out) *op_out = op;
+    return cmd;
+}
+
 Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
     if (strncmp(*p, "if", 2) == 0 && isspace((unsigned char)(*p)[2])) {

@@ -53,7 +53,8 @@ typedef enum {
     CMD_CASE,
     CMD_SUBSHELL,
     CMD_GROUP,
-    CMD_COND
+    CMD_COND,
+    CMD_ARITH
 } CmdType;
 
 typedef struct CaseItem {
@@ -98,6 +99,7 @@ Command *parse_function_def(char **p, CmdOp *op_out);
 Command *parse_subshell(char **p, CmdOp *op_out);
 Command *parse_brace_group(char **p, CmdOp *op_out);
 Command *parse_conditional(char **p, CmdOp *op_out);
+Command *parse_arith_command(char **p, CmdOp *op_out);
 Command *parse_control_clause(char **p, CmdOp *op_out);
 void free_case_items(CaseItem *ci);
 void free_pipeline(PipelineSegment *p);

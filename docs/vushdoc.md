@@ -334,6 +334,8 @@ hi
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
   `OPTIND`.
 - `let EXPR` - evaluate an arithmetic expression.
+- `(( EXPR ))` - evaluate an arithmetic expression. The exit status is 0 when
+  the value is non-zero and 1 otherwise.
 - `set [options] [-- args...]` - set shell options or replace positional parameters.
 - `set` with no operands lists all shell variables and functions.
 - `test EXPR` or `[ EXPR ]` - evaluate a conditional expression.  Supports
