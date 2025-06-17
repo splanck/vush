@@ -10,6 +10,32 @@ expect {
     -re "0\[\r\n\]+1\[\r\n\]+2\[\r\n\]+vush> " {}
     timeout { send_user "arith for output mismatch\n"; exit 1 }
 }
+
+# nested continue
+send "for ((i=0; i<2; i++)); do echo start\$i; for ((j=0; j<2; j++)); do continue 2; done; echo end\$i; done\r"
+expect {
+    -re "start0\r\nstart1\r\nvush> " {}
+    timeout { send_user "arith continue2 failed\n"; exit 1 }
+}
+
+# nested break
+send "for ((i=0; i<2; i++)); do echo bstart\$i; for ((j=0; j<2; j++)); do break 2; done; echo bend\$i; done; echo done\r"
+expect {
+    -re "bstart0\r\ndone\r\nvush> " {}
+    timeout { send_user "arith break2 failed\n"; exit 1 }
+}
+
+# arithmetic error aborts loop
+send "for ((i=0/0; i<3; i++)); do :; done\r"
+expect {
+    "vush> " {}
+    timeout { send_user "arith init error prompt timeout\n"; exit 1 }
+}
+send "echo \$?\r"
+expect {
+    -re "1\r\nvush> " {}
+    timeout { send_user "arith init error status\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
