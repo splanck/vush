@@ -7,6 +7,6 @@ typedef struct ArithState {
     char err_msg[64];
 } ArithState;
 
-long long eval_arith(const char *expr, int *err);
+long long eval_arith(const char *expr, int *err, char **errmsg);
 
 #endif /* ARITH_H */

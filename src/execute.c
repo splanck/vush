@@ -929,10 +929,16 @@ static int exec_select(Command *cmd, const char *line) {
 static int exec_for_arith(Command *cmd, const char *line) {
     (void)line;
     int err = 0;
+    char *msg = NULL;
     loop_depth++;
 
-    eval_arith(cmd->arith_init ? cmd->arith_init : "0", &err);
+    eval_arith(cmd->arith_init ? cmd->arith_init : "0", &err, &msg);
     if (err) {
+        if (msg) {
+            fprintf(stderr, "arith: %s\n", msg);
+            free(msg);
+            msg = NULL;
+        }
         last_status = 1;
         loop_depth--;
         return last_status;
@@ -940,8 +946,14 @@ static int exec_for_arith(Command *cmd, const char *line) {
 
     while (1) {
         err = 0;
-        long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1", &err);
-        if (err) { last_status = 1; break; }
+        long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1", &err, &msg);
+        if (err) { 
+            if (msg) {
+                fprintf(stderr, "arith: %s\n", msg);
+                free(msg);
+                msg = NULL;
+            }
+            last_status = 1; break; }
         if (cond == 0)
             break;
 
@@ -953,14 +965,26 @@ static int exec_for_arith(Command *cmd, const char *line) {
                 return last_status;
             }
             err = 0;
-            eval_arith(cmd->arith_update ? cmd->arith_update : "0", &err);
-            if (err) { last_status = 1; break; }
+            eval_arith(cmd->arith_update ? cmd->arith_update : "0", &err, &msg);
+            if (err) { 
+                if (msg) {
+                    fprintf(stderr, "arith: %s\n", msg);
+                    free(msg);
+                    msg = NULL;
+                }
+                last_status = 1; break; }
             continue;
         }
 
         err = 0;
-        eval_arith(cmd->arith_update ? cmd->arith_update : "0", &err);
-        if (err) { last_status = 1; break; }
+        eval_arith(cmd->arith_update ? cmd->arith_update : "0", &err, &msg);
+        if (err) { 
+            if (msg) {
+                fprintf(stderr, "arith: %s\n", msg);
+                free(msg);
+                msg = NULL;
+            }
+            last_status = 1; break; }
     }
 
     loop_depth--;
@@ -1059,9 +1083,15 @@ static int exec_cond(Command *cmd, const char *line) {
 static int exec_arith(Command *cmd, const char *line) {
     (void)line;
     int err = 0;
-    long val = eval_arith(cmd->text ? cmd->text : "0", &err);
-    if (err)
+    char *msg = NULL;
+    long val = eval_arith(cmd->text ? cmd->text : "0", &err, &msg);
+    if (err) {
+        if (msg) {
+            fprintf(stderr, "arith: %s\n", msg);
+            free(msg);
+        }
         last_status = 1;
+    }
     else
         last_status = (val != 0) ? 0 : 1;
     return last_status;

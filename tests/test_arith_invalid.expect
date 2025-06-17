@@ -12,7 +12,7 @@ expect {
 }
 send {echo $((X))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: invalid number\r\n0\r\n" {}
     timeout { send_user "invalid number output\n"; exit 1 }
 }
 send "echo $?\r"

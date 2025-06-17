@@ -52,6 +52,10 @@ expect {
 }
 send "let 1+\r"
 expect {
+    -re "arith: invalid number\r\n" {}
+    timeout { send_user "arith error message missing\n"; exit 1 }
+}
+expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
@@ -61,6 +65,10 @@ expect {
     timeout { send_user "let error failed\n"; exit 1 }
 }
 send "let 1/0\r"
+expect {
+    -re "arith: divide by zero\r\n" {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
@@ -72,8 +80,12 @@ expect {
 }
 send {echo $((5 % 0))\r}
 expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    -re "arith: divide by zero\r\n0\r\n" {}
     timeout { send_user "arith expand divide by zero output\n"; exit 1 }
+}
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "echo $?\r"
 expect {

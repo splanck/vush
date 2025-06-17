@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /*
  * Simple arithmetic expression evaluator used by the shell.
  *
@@ -563,7 +564,7 @@ static long long parse_expression(ArithState *state) {
  * Evaluate an arithmetic expression contained in 'expr'.
  * Returns the resulting long long value; does not modify 'expr'.
  */
-long long eval_arith(const char *expr, int *err) {
+long long eval_arith(const char *expr, int *err, char **errmsg) {
     ArithState st = { .p = expr, .err = 0, .err_msg = "" };
     current_state = &st;
     long long result = parse_expression(&st);
@@ -582,8 +583,13 @@ long long eval_arith(const char *expr, int *err) {
     current_state = NULL;
     if (err)
         *err = st.err;
+    if (errmsg)
+        *errmsg = NULL;
     if (st.err) {
-        fprintf(stderr, "arith: %s\n", st.err_msg[0] ? st.err_msg : "error");
+        if (errmsg)
+            *errmsg = strdup(st.err_msg[0] ? st.err_msg : "error");
+        else
+            fprintf(stderr, "arith: %s\n", st.err_msg[0] ? st.err_msg : "error");
         return 0;
     }
     return result;
