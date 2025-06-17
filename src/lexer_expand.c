@@ -166,7 +166,7 @@ static char *expand_arith(const char *token) {
         return NULL;
     char *expr = strndup(token + 3, tlen - 5);
     if (!expr) return strdup("");
-    long val = eval_arith(expr);
+    long val = eval_arith(expr, NULL);
     free(expr);
     char buf[32];
     snprintf(buf, sizeof(buf), "%ld", val);

@@ -215,8 +215,9 @@ int builtin_let(char **args) {
             strcat(expr, " ");
         strncat(expr, args[i], sizeof(expr) - strlen(expr) - 1);
     }
-    long val = eval_arith(expr);
-    last_status = (val != 0) ? 0 : 1;
+    int err = 0;
+    long val = eval_arith(expr, &err);
+    last_status = err ? 1 : (val != 0 ? 0 : 1);
     return 1;
 }
 

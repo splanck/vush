@@ -947,14 +947,14 @@ static int exec_select(Command *cmd, const char *line) {
 static int exec_for_arith(Command *cmd, const char *line) {
     (void)line;
     loop_depth++;
-    eval_arith(cmd->arith_init ? cmd->arith_init : "0");
+    eval_arith(cmd->arith_init ? cmd->arith_init : "0", NULL);
     while (1) {
-        long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1");
+        long cond = eval_arith(cmd->arith_cond ? cmd->arith_cond : "1", NULL);
         if (cond == 0)
             break;
         run_command_list(cmd->body, line);
         if (loop_break) { loop_break--; break; }
-        eval_arith(cmd->arith_update ? cmd->arith_update : "0");
+        eval_arith(cmd->arith_update ? cmd->arith_update : "0", NULL);
         if (loop_continue) {
             if (--loop_continue) {
                 loop_depth--;
