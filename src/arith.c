@@ -36,6 +36,16 @@
 #include <limits.h>
 #include <errno.h>
 
+static ArithState *current_state = NULL;
+
+static void arith_set_error(const char *msg) {
+    if (current_state && !current_state->err) {
+        current_state->err = 1;
+        strncpy(current_state->err_msg, msg, sizeof(current_state->err_msg) - 1);
+        current_state->err_msg[sizeof(current_state->err_msg) - 1] = '\0';
+    }
+}
+
 /*
  * Advance *s past any whitespace characters.
  * No return value; *s is updated in place.
@@ -61,7 +71,7 @@ static long long parse_factor(ArithState *state) {
         if (*state->p == ')')
             state->p++;
         else
-            state->err = 1;
+            arith_set_error("missing ')'");
         return value;
     }
     if (isalpha((unsigned char)*state->p) || *state->p == '_') {
@@ -78,7 +88,7 @@ static long long parse_factor(ArithState *state) {
             errno = 0;
             long long num = strtoll(val, NULL, 10);
             if (errno == ERANGE)
-                state->err = 1;
+                arith_set_error("overflow");
             return num;
         }
         return 0;
@@ -88,24 +98,24 @@ static long long parse_factor(ArithState *state) {
     errno = 0;
     long long base = strtoll(p, &end, 10);
     if (errno == ERANGE)
-        state->err = 1;
+        arith_set_error("overflow");
     if (end > p && *end == '#') {
         if (base >= 2 && base <= 36) {
             p = end + 1;
             errno = 0;
             long long val = strtoll(p, &end, (int)base);
             if (end == p || errno == ERANGE)
-                state->err = 1;
+                arith_set_error("invalid number");
             state->p = end;
             return val;
         } else {
-            state->err = 1;
+            arith_set_error("invalid base");
         }
     }
     errno = 0;
     long long value = strtoll(p, &end, 10);
     if (end == p || errno == ERANGE)
-        state->err = 1;
+        arith_set_error("invalid number");
     state->p = end;
     return value;
 }
@@ -124,7 +134,7 @@ static long long parse_unary(ArithState *state) {
         switch (op) {
             case '-':
                 if (operand == LLONG_MIN) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
                 return -operand;
@@ -182,27 +192,27 @@ static long long parse_term(ArithState *state) {
             if (op == '*') {
                 long long result;
                 if (mul_overflow(value, rhs, &result)) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
                 value = result;
             } else if (op == '/') {
                 if (rhs == 0) {
-                    state->err = 1;
+                    arith_set_error("divide by zero");
                     return 0;
                 }
                 if (value == LLONG_MIN && rhs == -1) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
                 value /= rhs;
             } else {
                 if (rhs == 0) {
-                    state->err = 1;
+                    arith_set_error("divide by zero");
                     return 0;
                 }
                 if (value == LLONG_MIN && rhs == -1) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
                 value %= rhs;
@@ -230,12 +240,12 @@ static long long parse_sum(ArithState *state) {
             long long result;
             if (op == '+') {
                 if (add_overflow(value, rhs, &result)) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
             } else {
                 if (add_overflow(value, -rhs, &result)) {
-                    state->err = 1;
+                    arith_set_error("overflow");
                     return 0;
                 }
             }
@@ -260,7 +270,7 @@ static long long parse_shift(ArithState *state) {
             long long rhs = parse_sum(state);
             if (state->err) return 0;
             if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
-                state->err = 1;
+                arith_set_error("shift out of range");
                 return 0;
             }
             value <<= rhs;
@@ -269,7 +279,7 @@ static long long parse_shift(ArithState *state) {
             long long rhs = parse_sum(state);
             if (state->err) return 0;
             if (rhs < 0 || rhs >= (long long)(sizeof(long long) * 8)) {
-                state->err = 1;
+                arith_set_error("shift out of range");
                 return 0;
             }
             value >>= rhs;
@@ -446,12 +456,13 @@ static long long parse_assignment(ArithState *state) {
         if (!val) val = getenv(name);
         errno = 0;
         long long cur = val ? strtoll(val, NULL, 10) : 0;
-        if (errno == ERANGE) state->err = 1;
+        if (errno == ERANGE)
+            arith_set_error("overflow");
 
         if (prefix) {
             long long newv;
             if (add_overflow(cur, (incop == '+') ? 1 : -1, &newv)) {
-                state->err = 1;
+                arith_set_error("overflow");
                 return 0;
             }
             char buf[32];
@@ -465,7 +476,7 @@ static long long parse_assignment(ArithState *state) {
             state->p += 2;
             long long newv;
             if (add_overflow(cur, (incop == '+') ? 1 : -1, &newv)) {
-                state->err = 1;
+                arith_set_error("overflow");
                 return 0;
             }
             char buf[32];
@@ -488,7 +499,8 @@ static long long parse_expression(ArithState *state) {
  * Returns the resulting long long value; does not modify 'expr'.
  */
 long long eval_arith(const char *expr, int *err) {
-    ArithState st = { .p = expr, .err = 0 };
+    ArithState st = { .p = expr, .err = 0, .err_msg = "" };
+    current_state = &st;
     long long result = parse_expression(&st);
     /* Skip any whitespace the parser left behind. */
     const char *p = st.p;
@@ -501,10 +513,13 @@ long long eval_arith(const char *expr, int *err) {
         skip_ws(&p);
     }
     if (*p != '\0')
-        st.err = 1;
+        arith_set_error("syntax error");
+    current_state = NULL;
     if (err)
         *err = st.err;
-    if (st.err)
+    if (st.err) {
+        fprintf(stderr, "arith: %s\n", st.err_msg[0] ? st.err_msg : "error");
         return 0;
+    }
     return result;
 }
