@@ -88,6 +88,7 @@ typedef struct Command {
 Command *parse_line(char *line);
 char *read_continuation_lines(FILE *f, char *buf, size_t size);
 char *gather_until(char **p, const char **stops, int nstops, int *idx);
+char *gather_until_done(char **p);
 char *gather_braced(char **p);
 char *gather_parens(char **p);
 char *gather_dbl_parens(char **p);

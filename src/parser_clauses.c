@@ -13,6 +13,7 @@ extern char *gather_until(char **p, const char **stops, int nstops, int *idx);
 extern char *gather_braced(char **p);
 extern char *gather_parens(char **p);
 extern char *gather_dbl_parens(char **p);
+extern char *gather_until_done(char **p);
 extern char *trim_ws(const char *s);
 
 /* Forward declaration used by parse_case_clause and free_commands */
@@ -60,8 +61,7 @@ static Command *parse_loop_clause(char **p, int until) {
     Command *cond_cmd = parse_line(cond);
     free(cond);
 
-    const char *stop2[] = {"done"};
-    char *body = gather_until(p, stop2, 1, NULL);
+    char *body = gather_until_done(p);
     if (!body) {
         free_commands(cond_cmd);
         return NULL;
@@ -165,8 +165,7 @@ static Command *parse_for_clause(char **p) {
         free(var);
         return NULL;
     }
-    const char *stop2[] = {"done"};
-    char *body = gather_until(p, stop2, 1, NULL);
+    char *body = gather_until_done(p);
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
@@ -201,8 +200,7 @@ static Command *parse_select_clause(char **p) {
         free(var);
         return NULL;
     }
-    const char *stop2[] = {"done"};
-    char *body = gather_until(p, stop2, 1, NULL);
+    char *body = gather_until_done(p);
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
@@ -283,8 +281,7 @@ static Command *parse_for_arith_clause(char **p) {
     int q = 0; int de = 1; char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "do") != 0) { free(init); free(cond); free(incr); free(tok); return NULL; }
     free(tok);
-    const char *stop[] = {"done"};
-    char *body = gather_until(p, stop, 1, NULL);
+    char *body = gather_until_done(p);
     if (!body) { free(init); free(cond); free(incr); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
     Command *cmd = calloc(1, sizeof(Command));
