@@ -140,8 +140,8 @@ test_fc_fork_fail.expect
 arithmetic_basic.expect
 arithmetic_cmd.expect
 arithmetic_errors.expect
-arithmetic_overflow.expect
 arithmetic_forloop.expect
+arithmetic_overflow.expect
 test_pipe_cr.expect
 "
 for test in $tests; do
