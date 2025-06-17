@@ -89,10 +89,17 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
         }
 
         const char *hpath = NULL;
+        int hfd = -1;
         if (!strchr(seg->argv[0], '/'))
-            hpath = hash_lookup(seg->argv[0]);
-        if (hpath)
+            hpath = hash_lookup(seg->argv[0], &hfd);
+        if (hpath) {
+#ifdef __linux__
+            extern char **environ;
+            if (hfd >= 0)
+                fexecve(hfd, seg->argv, environ);
+#endif
             execv(hpath, seg->argv);
+        }
         execvp(seg->argv[0], seg->argv);
         if (errno == ENOENT)
             fprintf(stderr, "%s: command not found\n", seg->argv[0]);
