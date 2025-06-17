@@ -110,9 +110,21 @@ static long parse_mul(const char **s) {
         if (op == '*' || op == '/' || op == '%') {
             (*s)++;
             long rhs = parse_unary(s);
-            if (op == '*') v *= rhs;
-            else if (op == '/') v /= rhs;
-            else v %= rhs;
+            if (op == '*') {
+                v *= rhs;
+            } else if (op == '/') {
+                if (rhs == 0) {
+                    parse_error = 1;
+                    return 0;
+                }
+                v /= rhs;
+            } else {
+                if (rhs == 0) {
+                    parse_error = 1;
+                    return 0;
+                }
+                v %= rhs;
+            }
         } else break;
     }
     return v;
