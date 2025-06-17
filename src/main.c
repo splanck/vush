@@ -101,11 +101,7 @@ int main(int argc, char **argv) {
             }
 
             script_argc = argc - 2;
-            script_argv = calloc(script_argc + 2, sizeof(char *));
-            if (!script_argv) {
-                perror("calloc");
-                return 1;
-            }
+            script_argv = xcalloc(script_argc + 2, sizeof(char *));
             script_argv[0] = strdup(argv[1]);
             if (!script_argv[0]) {
                 perror("strdup");

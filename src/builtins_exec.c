@@ -31,13 +31,8 @@ static int prepare_source_args(char **args, int *old_argc, char ***old_argv,
     *new_argc = argc - 1;
 
     script_argc = *new_argc;
-    script_argv = calloc(argc + 1, sizeof(char *));
+    script_argv = xcalloc(argc + 1, sizeof(char *));
     getopts_pos = NULL; /* $@ changed for sourced file */
-    if (!script_argv) {
-        script_argc = *old_argc;
-        script_argv = *old_argv;
-        return -1;
-    }
     for (int i = 0; i < argc; i++) {
         script_argv[i] = strdup(args[i + 1]);
         if (!script_argv[i]) {

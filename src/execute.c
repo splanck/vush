@@ -284,11 +284,7 @@ static PipelineSegment *copy_pipeline(PipelineSegment *src) {
     PipelineSegment *head = NULL;
     PipelineSegment **tail = &head;
     while (src) {
-        PipelineSegment *seg = calloc(1, sizeof(*seg));
-        if (!seg) {
-            free_pipeline(head);
-            return NULL;
-        }
+        PipelineSegment *seg = xcalloc(1, sizeof(*seg));
 
         int i = 0;
         while (src->argv[i]) {
@@ -321,12 +317,7 @@ static PipelineSegment *copy_pipeline(PipelineSegment *src) {
         seg->in_fd = src->in_fd;
         seg->assign_count = src->assign_count;
         if (src->assign_count > 0) {
-            seg->assigns = calloc(src->assign_count, sizeof(char *));
-            if (!seg->assigns) {
-                free_pipeline(seg);
-                free_pipeline(head);
-                return NULL;
-            }
+            seg->assigns = xcalloc(src->assign_count, sizeof(char *));
             for (int j = 0; j < src->assign_count; j++) {
                 seg->assigns[j] = strdup(src->assigns[j]);
                 if (!seg->assigns[j]) {
@@ -397,7 +388,7 @@ static char **parse_array_values(const char *val, int *count) {
     free(body);
 
     if (*count == 0) {
-        vals = calloc(1, sizeof(char *));
+        vals = xcalloc(1, sizeof(char *));
     }
 
     return vals;
@@ -437,12 +428,7 @@ static struct assign_backup *backup_assignments(PipelineSegment *pipeline) {
     if (pipeline->assign_count == 0)
         return NULL;
 
-    struct assign_backup *backs = calloc(pipeline->assign_count, sizeof(*backs));
-    if (!backs) {
-        perror("calloc");
-        last_status = 1;
-        return NULL;
-    }
+    struct assign_backup *backs = xcalloc(pipeline->assign_count, sizeof(*backs));
 
     for (int i = 0; i < pipeline->assign_count; i++) {
         char *eq = strchr(pipeline->assigns[i], '=');
@@ -660,12 +646,7 @@ static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
     int seg_count = 0;
     for (PipelineSegment *tmp = pipeline; tmp; tmp = tmp->next)
         seg_count++;
-    pid_t *pids = calloc(seg_count, sizeof(pid_t));
-    if (!pids) {
-        perror("calloc");
-        last_status = 1;
-        return 1;
-    }
+    pid_t *pids = xcalloc(seg_count, sizeof(pid_t));
 
     int spawned = 0;
     int in_fd = -1;
@@ -1032,11 +1013,7 @@ static int exec_subshell(Command *cmd, const char *line) {
  */
 static int exec_cond(Command *cmd, const char *line) {
     (void)line;
-    char **args = calloc(cmd->word_count + 1, sizeof(char *));
-    if (!args) {
-        last_status = 1;
-        return 1;
-    }
+    char **args = xcalloc(cmd->word_count + 1, sizeof(char *));
     for (int i = 0; i < cmd->word_count; i++) {
         args[i] = expand_var(cmd->words[i]);
         if (!args[i]) {

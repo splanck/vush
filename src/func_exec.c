@@ -17,6 +17,7 @@
 #include "scriptargs.h"
 #include "builtins.h"
 #include "vars.h"
+#include "util.h"
 
 extern int last_status;
 
@@ -43,13 +44,8 @@ int run_function(FuncEntry *fn, char **args) {
     int old_argc = script_argc;
     char **old_argv = script_argv;
     script_argc = argc - 1;
-    script_argv = calloc(argc + 1, sizeof(char *));
+    script_argv = xcalloc(argc + 1, sizeof(char *));
     getopts_pos = NULL; /* new $@ may invalidate getopts parsing state */
-    if (!script_argv) {
-        script_argc = old_argc;
-        script_argv = old_argv;
-        return 1;
-    }
     for (int i = 0; i < argc; i++) {
         script_argv[i] = strdup(args[i]);
         if (!script_argv[i]) {

@@ -172,9 +172,7 @@ int builtin_set(char **args) {
             count++;
 
         char *zero = script_argv ? script_argv[0] : NULL;
-        char **newv = calloc(count + 2, sizeof(char *));
-        if (!newv)
-            return 1;
+        char **newv = xcalloc(count + 2, sizeof(char *));
         newv[0] = zero;
         for (int j = 0; j < count; j++) {
             newv[j + 1] = strdup(args[i + j]);

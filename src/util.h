@@ -22,4 +22,6 @@ char *make_user_path(const char *env_var, const char *secondary,
 /* Parse S as a non-negative integer.  Return 0 on success, -1 on error or
  * overflow.  The result is stored in OUT when successful. */
 int parse_positive_int(const char *s, int *out);
+/* Allocate memory with calloc and exit on failure */
+void *xcalloc(size_t nmemb, size_t size);
 #endif /* VUSH_UTIL_H */

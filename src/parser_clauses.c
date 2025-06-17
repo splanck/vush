@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "util.h"
 
 /* helpers from parser_utils */
 extern char *gather_until(char **p, const char **stops, int nstops, int *idx);
@@ -39,7 +40,7 @@ static Command *parse_if_clause(char **p) {
     } else if (idx == 1) {
         else_cmd = parse_if_clause(p);
     }
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free_commands(cond_cmd);
         free_commands(body_cmd);
@@ -69,7 +70,7 @@ static Command *parse_loop_clause(char **p, int until) {
     Command *body_cmd = parse_line(body);
     free(body);
 
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free_commands(cond_cmd);
         free_commands(body_cmd);
@@ -192,7 +193,7 @@ static Command *parse_for_clause(char **p) {
     char *body = gather_until_done(p);
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(var);
         for (int i=0; i<count; i++)
@@ -227,7 +228,7 @@ static Command *parse_select_clause(char **p) {
     char *body = gather_until_done(p);
     if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(var);
         for (int i=0;i<count;i++)
@@ -308,7 +309,7 @@ static Command *parse_for_arith_clause(char **p) {
     char *body = gather_until_done(p);
     if (!body) { free(init); free(cond); free(incr); return NULL; }
     Command *body_cmd = parse_line(body); free(body);
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(init);
         free(cond);
@@ -382,7 +383,7 @@ static Command *parse_case_clause(char **p) {
         char *body = gather_until(p, stops, 2, &idx);
         if (!body) { free_case_items(head); free(word); return NULL; }
         Command *body_cmd = parse_line(body); free(body);
-        CaseItem *ci = calloc(1, sizeof(CaseItem));
+        CaseItem *ci = xcalloc(1, sizeof(CaseItem));
         if (!ci) {
             for (int i = 0; i < pc; i++)
                 free(patterns[i]);
@@ -399,7 +400,7 @@ static Command *parse_case_clause(char **p) {
         if (!head) head = ci; else tail->next = ci; tail = ci;
     }
 
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(word);
         free_case_items(head);
@@ -446,7 +447,7 @@ Command *parse_function_def(char **p, CmdOp *op_out) {
         char *bodytxt = gather_braced(p);
         if (!bodytxt) goto fail;
         Command *body_cmd = NULL;
-        Command *cmd = calloc(1, sizeof(Command));
+        Command *cmd = xcalloc(1, sizeof(Command));
         if (!cmd) {
             free(tok);
             free(bodytxt);
@@ -479,7 +480,7 @@ Command *parse_subshell(char **p, CmdOp *op_out) {
         return NULL;
     Command *body_cmd = parse_line(bodytxt);
     free(bodytxt);
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free_commands(body_cmd);
         return NULL;
@@ -502,7 +503,7 @@ Command *parse_brace_group(char **p, CmdOp *op_out) {
         return NULL;
     Command *body_cmd = parse_line(bodytxt);
     free(bodytxt);
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free_commands(body_cmd);
         return NULL;
@@ -553,7 +554,7 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     }
     if (!words && count==0) {
         /* ensure an empty argument list is well-formed */
-        words = calloc(1, sizeof(char*));
+        words = xcalloc(1, sizeof(char*));
         if (!words)
             return NULL;
     } else {
@@ -572,7 +573,7 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     if (**p == ';') { op = OP_SEMI; (*p)++; }
     else if (**p == '&' && *(*p + 1) == '&') { op = OP_AND; (*p) += 2; }
     else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
-    Command *cmd = calloc(1, sizeof(Command));
+    Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         for (int i = 0; i < count; i++)
             free(words[i]);

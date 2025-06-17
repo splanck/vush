@@ -12,6 +12,15 @@
 #include "options.h"
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
+
+void *xcalloc(size_t nmemb, size_t size) {
+    void *ptr = calloc(nmemb, size);
+    if (!ptr) {
+        perror("calloc");
+        exit(1);
+    }
+    return ptr;
+}
 /*
  * Read a line continuing backslash escapes across multiple physical lines.
  */
