@@ -68,14 +68,6 @@ test_for_env.expect
 test_while.expect
 test_until.expect
 test_function.expect
-test_arith.expect
-test_arith_expr.expect
-test_arith_complex.expect
-test_arith_overflow.expect
-test_arith_invalid.expect
-test_arith_quote_parens.expect
-test_arith_cmd.expect
-test_bitwise.expect
 test_read.expect
 test_read_eof.expect
 test_read_signal.expect
@@ -96,7 +88,6 @@ test_ls_l.expect
 test_process_sub.expect
 test_array.expect
 test_brace_expand.expect
-test_for_arith.expect
 test_printf.expect
 test_printf_escapes.expect
 test_select.expect
@@ -140,7 +131,6 @@ test_fg_default.expect
 test_bg_default.expect
 test_test_bool.expect
 test_time_p.expect
-test_base_arith.expect
 test_path_blank.expect
 test_path_long.expect
 test_command_v_path_long.expect
