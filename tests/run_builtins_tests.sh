@@ -72,6 +72,7 @@ test_arith.expect
 test_arith_expr.expect
 test_arith_complex.expect
 test_arith_overflow.expect
+test_arith_invalid.expect
 test_arith_quote_parens.expect
 test_arith_cmd.expect
 test_bitwise.expect
