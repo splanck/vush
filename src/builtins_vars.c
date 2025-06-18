@@ -40,6 +40,7 @@ static void list_shell_options(void)
     print_option("allexport", opt_allexport);
     print_option("errexit", opt_errexit);
     print_option("hashall", opt_hashall);
+    print_option("ignoreeof", opt_ignoreeof);
     print_option("keyword", opt_keyword);
     print_option("monitor", opt_monitor);
     print_option("noclobber", opt_noclobber);
@@ -146,6 +147,8 @@ int builtin_set(char **args) {
                 opt_noclobber = 1;
             else if (strcmp(args[i+1], "errexit") == 0)
                 opt_errexit = 1;
+            else if (strcmp(args[i+1], "ignoreeof") == 0)
+                opt_ignoreeof = 1;
             else if (strcmp(args[i+1], "posix") == 0)
                 opt_posix = 1;
             else if (strcmp(args[i+1], "vi") == 0)
@@ -193,6 +196,8 @@ int builtin_set(char **args) {
                 opt_noclobber = 0;
             else if (strcmp(args[i+1], "errexit") == 0)
                 opt_errexit = 0;
+            else if (strcmp(args[i+1], "ignoreeof") == 0)
+                opt_ignoreeof = 0;
             else if (strcmp(args[i+1], "posix") == 0)
                 opt_posix = 0;
             else if (strcmp(args[i+1], "vi") == 0)
