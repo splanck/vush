@@ -287,7 +287,7 @@ three
 ### Shell Options
 
 Use the `set` builtin to toggle behavior. `set -e` exits on command failure, `set -u` errors on undefined variables, `set -x` prints each command before execution, `set -v` echoes input lines as they are read, `set -n` parses commands without running them, `set -f` disables wildcard expansion (use `set +f` to re-enable), `set -C` prevents `>` from overwriting existing files (use `set +C` to allow clobbering again), `set -a` exports all assignments to the environment, `set -b`/`set +b` enable or disable background job completion messages, `set -m`/`set +m` toggle job tracking, `set -t`/`set +t` exit after one command, `set -p`/`set +p` toggle privileged mode which skips startup files, `set -h`/`set +h` automatically cache commands in the hash table and `set -k`/`set +k` treat `NAME=value` after the command name as temporary environment variables.
-The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` (the same as `set -C`) prevents `>` from overwriting existing files. The `posix` option disables extensions such as `;&` in `case` statements. `vi` and `emacs` select the editing mode. `ignoreeof` requires hitting `Ctrl-D` ten times to exit. Use `set +o OPTION` or `set +C` to disable an option. Invoking `set -o` or `set +o` without an argument lists all options with `on` or `off` after each name.
+The `set -o` form enables additional options: `pipefail` makes a pipeline return the status of the first failing command while `noclobber` (the same as `set -C`) prevents `>` from overwriting existing files. The `posix` option disables extensions such as `;&` in `case` statements, causing a syntax error if that form is used. `vi` and `emacs` select the editing mode. `ignoreeof` requires hitting `Ctrl-D` ten times to exit. Use `set +o OPTION` or `set +C` to disable an option. Invoking `set -o` or `set +o` without an argument lists all options with `on` or `off` after each name.
 Use `>| file` to override `noclobber` and force truncation of `file`.
 
 Example one-command mode:
@@ -476,6 +476,7 @@ vush> i=0; while true; do echo $i; break; done
 vush> case 1 in 1) echo one ;& 2) echo two ;; esac
 one
 two
+# The `;&` fall-through operator is a vush extension and causes a syntax error when `set -o posix` is enabled.
 vush> select x in foo bar; do echo $x; break; done
 1) foo
 2) bar
