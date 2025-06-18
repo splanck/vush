@@ -55,6 +55,7 @@ test_envfile.expect
 test_unmatched.expect
 test_jobs.expect
 test_type.expect
+test_type_t.expect
 test_dash_c.expect
 test_dash_c_quotes.expect
 test_echo_options.expect

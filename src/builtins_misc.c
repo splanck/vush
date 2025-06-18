@@ -89,24 +89,39 @@ int builtin_help(char **args) {
 
 /* Show how each argument would be resolved: alias, function, builtin or file. */
 int builtin_type(char **args) {
-    if (!args[1]) {
-        fprintf(stderr, "usage: type name...\n");
+    int opt_t = 0;
+    int i = 1;
+    if (args[i] && strcmp(args[i], "-t") == 0) {
+        opt_t = 1;
+        i++;
+    }
+    if (!args[i]) {
+        fprintf(stderr, "usage: type [-t] name...\n");
         return 1;
     }
-    for (int i = 1; args[i]; i++) {
+    for (; args[i]; i++) {
         const char *alias = get_alias(args[i]);
         if (alias) {
-            printf("%s is an alias for '%s'\n", args[i], alias);
+            if (opt_t)
+                printf("alias\n");
+            else
+                printf("%s is an alias for '%s'\n", args[i], alias);
             continue;
         }
         if (find_function(args[i])) {
-            printf("%s is a function\n", args[i]);
+            if (opt_t)
+                printf("function\n");
+            else
+                printf("%s is a function\n", args[i]);
             continue;
         }
         int is_builtin = 0;
         for (int j = 0; builtin_table[j].name; j++) {
             if (strcmp(args[i], builtin_table[j].name) == 0) {
-                printf("%s is a builtin\n", args[i]);
+                if (opt_t)
+                    printf("builtin\n");
+                else
+                    printf("%s is a builtin\n", args[i]);
                 is_builtin = 1;
                 break;
             }
@@ -130,7 +145,10 @@ int builtin_type(char **args) {
                 break;
             snprintf(full, len, "%s/%s", d, args[i]);
             if (access(full, X_OK) == 0) {
-                printf("%s is %s\n", args[i], full);
+                if (opt_t)
+                    printf("file\n");
+                else
+                    printf("%s is %s\n", args[i], full);
                 found = 1;
                 free(full);
                 break;
@@ -139,8 +157,12 @@ int builtin_type(char **args) {
             dir = strtok_r(NULL, ":", &saveptr);
         }
         free(paths);
-        if (!found)
-            printf("%s not found\n", args[i]);
+        if (!found) {
+            if (opt_t)
+                printf("not found\n");
+            else
+                printf("%s not found\n", args[i]);
+        }
     }
     return 1;
 }

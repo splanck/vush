@@ -1,0 +1,25 @@
+#!/usr/bin/env expect
+set dir [exec mktemp -d]
+set env(HOME) $dir
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "alias ll='echo hi'\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "type -t ll cd ls nosuch\r"
+expect {
+    -re "\[\r\n\]+alias\[\r\n\]+builtin\[\r\n\]+file\[\r\n\]+not found\[\r\n\]+vush> " {}
+    timeout { send_user "type -t output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+exec rm -rf $dir
