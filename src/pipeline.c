@@ -25,9 +25,9 @@
 #include "jobs.h"
 #include "options.h"
 #include "hash.h"
+#include "redir.h"
 extern int last_status;
 
-extern void setup_redirections(PipelineSegment *seg);
 
 /*
  * Configure the child's standard input and output.
