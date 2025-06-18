@@ -23,7 +23,7 @@
 #include "options.h"
 #include "util.h"
 #include "hash.h"
-#include "lexer.h"
+#include "var_expand.h"
 #include "redir.h"
 #include "assignment_utils.h"
 #include "parser.h"

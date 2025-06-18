@@ -19,7 +19,7 @@
 #include "func_exec.h"
 #include "arith.h"
 #include "util.h"
-#include "lexer.h"
+#include "var_expand.h"
 
 extern int last_status;
 
