@@ -37,6 +37,7 @@ int builtin_exec(char **args);
 int builtin_command(char **args);
 int builtin_time(char **args);
 int builtin_times(char **args);
+int builtin_time_callback(int (*func)(void *), void *data, int posix);
 int builtin_umask(char **args);
 int builtin_ulimit(char **args);
 int builtin_source(char **args);

@@ -42,6 +42,8 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
 void setup_redirections(PipelineSegment *seg);
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);
+static int run_pipeline_timed(PipelineSegment *pipeline, int background,
+                              const char *line);
 static int exec_pipeline(Command *cmd, const char *line);
 static int exec_funcdef(Command *cmd, const char *line);
 static int exec_if(Command *cmd, const char *line);
@@ -818,6 +820,24 @@ static int run_pipeline_internal(PipelineSegment *pipeline, int background, cons
     return r;
 }
 
+struct time_data { PipelineSegment *pipeline; int background; const char *line; };
+
+static int pipeline_cb(void *arg)
+{
+    struct time_data *td = arg;
+    return run_pipeline_internal(td->pipeline, td->background, td->line);
+}
+
+static int run_pipeline_timed(PipelineSegment *pipeline, int background, const char *line)
+{
+    struct time_data td = { pipeline, background, line };
+    int status = builtin_time_callback(pipeline_cb, &td, 0);
+    last_status = status;
+    if (opt_errexit && !background && last_status != 0)
+        exit(last_status);
+    return status;
+}
+
 int run_command_list(Command *cmds, const char *line) {
     CmdOp prev = OP_SEMI;
     for (Command *c = cmds; c; c = c->next) {
@@ -854,7 +874,10 @@ int run_command_list(Command *cmds, const char *line) {
  * run_pipeline_internal() and returns its resulting status.
  */
 static int exec_pipeline(Command *cmd, const char *line) {
-    return run_pipeline_internal(cmd->pipeline, cmd->background, line);
+    if (cmd->time_pipeline)
+        return run_pipeline_timed(cmd->pipeline, cmd->background, line);
+    else
+        return run_pipeline_internal(cmd->pipeline, cmd->background, line);
 }
 
 /*

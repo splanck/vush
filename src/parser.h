@@ -84,6 +84,7 @@ typedef struct Command {
     struct Command *group;    /* commands for subshell or group */
     int negate;               /* invert status with leading ! */
     int background;
+    int time_pipeline;        /* time entire pipeline when set */
     CmdOp op; /* operator connecting to next command */
     struct Command *next;
 } Command;

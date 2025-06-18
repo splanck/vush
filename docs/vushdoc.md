@@ -369,7 +369,10 @@ hi
 - `eval WORDS...` - concatenate arguments and execute the result.
 - `source file [args...]` or `. file [args...]` - execute commands from a file with optional positional parameters. If `file` contains no `/`, each directory in `$PATH` is searched.
 - `help` - display information about built-in commands.
-- `time [-p] command [args...]` - run a command and print timing statistics. With `-p`, output follows the POSIX `real`, `user`, `sys` format.
+- `time [-p] command [args...]` - run a command and print timing statistics. With `-p`, output follows the POSIX `real`, `user`, `sys` format. Placing `time` before a pipeline times the entire sequence.
+```sh
+time ls | wc
+```
 - `times` - print cumulative user/system CPU times.
 - `ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` - display or set resource limits.
 - `umask [-S] [mask]` - set or display the file creation mask. `mask` may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With `-S`, the mask is shown in symbolic form.
