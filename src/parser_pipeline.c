@@ -760,16 +760,32 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
         (*p)++;
         while (**p == ' ' || **p == '\t') (*p)++;
     }
+    int timed = 0;
+    char *save_p = *p;
+    int q = 0; int de = 1;
+    char *tok = read_token(&save_p, &q, &de);
+    if (tok && !q && strcmp(tok, "time") == 0) {
+        char *tmp = save_p;
+        while (*tmp == ' ' || *tmp == '\t') tmp++;
+        if (*tmp && *tmp != '-') {
+            timed = 1;
+            *p = save_p;
+            while (**p == ' ' || **p == '\t') (*p)++;
+        }
+    }
+    free(tok);
     if (**p == '(')
     {
         Command *cmd = parse_subshell(p, op_out);
         if (cmd) cmd->negate = negate;
+        if (cmd) cmd->time_pipeline = timed;
         return cmd;
     }
     if (**p == '{')
     {
         Command *cmd = parse_brace_group(p, op_out);
         if (cmd) cmd->negate = negate;
+        if (cmd) cmd->time_pipeline = timed;
         return cmd;
     }
     PipelineSegment *seg_head = xcalloc(1, sizeof(PipelineSegment));
@@ -792,6 +808,7 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     cmd->pipeline = seg_head;
     cmd->background = background;
     cmd->negate = negate;
+    cmd->time_pipeline = timed;
     cmd->op = op;
     clear_temp_vars();
     if (op_out) *op_out = op;
