@@ -26,6 +26,17 @@ See [docs/vushdoc.md](docs/vushdoc.md) for complete details.
 
 vush includes a wide range of built-ins for job control, variable management, file operations, and more. See [docs/vushdoc.md](docs/vushdoc.md) for the full reference.
 
+## Roadmap
+
+The project is currently at **version 0.1.0** and will progress through the following milestones:
+
+* **0.1.x – Initial Development Phase** (current phase)
+* **0.2.x – Feature Incomplete Unstable Public Releases**
+* **0.3.x – Near Feature Complete Unstable Versions**
+* **0.4.x – Feature Complete Test Builds**
+* **0.9.x – Feature Complete Release Candidates**
+* **1.0 – Initial Version Final Release**
+
 ## Building
 
 Use the provided `Makefile` to build the shell:
