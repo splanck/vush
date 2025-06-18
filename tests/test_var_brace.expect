@@ -10,7 +10,7 @@ expect {
     -re "\[\r\n\]+$env(HOME)\[\r\n\]+vush> " {}
     timeout { send_user "brace expansion failed\n"; exit 1 }
 }
-send "echo \\\"\${HOME}\\\"\r"
+send "echo \"\${HOME}\"\r"
 expect {
     -re "\[\r\n\]+$env(HOME)\[\r\n\]+vush> " {}
     timeout { send_user "quoted brace expansion failed\n"; exit 1 }
