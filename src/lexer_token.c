@@ -5,9 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* Forward declaration from lexer_expand.c */
-char *parse_substitution(char **p);
+#include "cmd_subst.h"
 static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out);
 static char *parse_ansi_quoted_word(char **p, int *quoted, int *do_expand_out);
 

@@ -14,6 +14,7 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/builtins_signals.c src/execute.c src/history.c \
        src/jobs.c src/lineedit.c src/history_search.c src/completion.c \
        src/parser.c src/lexer.c src/lexer_token.c src/lexer_expand.c src/arith.c \
+       src/cmd_subst.c \
        src/parser_utils.c src/parser_clauses.c \
        src/parser_pipeline.c \
        src/dirstack.c src/util.c src/assignment_utils.c src/pipeline.c src/pipeline_exec.c src/control.c src/redir.c src/func_exec.c \
