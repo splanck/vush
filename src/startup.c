@@ -6,7 +6,7 @@
 #include "startup.h"
 #include "parser.h"
 #include "history.h"
-#include "lexer.h"
+#include "var_expand.h"
 #include "execute.h"
 #include "util.h"
 #include "options.h"
