@@ -78,7 +78,9 @@ to the current user's home directory while `~user` resolves to that user's
 home directory using the system password database.
 
 Single quotes disable all expansion. Double quotes preserve spaces while still
-expanding variables. Use a backslash to escape the next character. A `#` that
+expanding variables. Use a backslash to escape the next character. The form
+`$'...'` interprets common backslash escapes like `\n` and `\t` without
+performing variable expansion. A `#` that
 appears outside of quotes starts a comment and everything after it on the line
 is ignored.
 
@@ -101,6 +103,9 @@ vush> echo \$HOME
 $HOME
 vush> echo '${HOME}'
 ${HOME}
+vush> echo $'one\nTwo'
+one
+Two
 vush> false
 vush> echo $?
 1
