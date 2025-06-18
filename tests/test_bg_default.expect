@@ -5,7 +5,7 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "sleep 2 &\r"
+send "sleep 1 &\r"
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
@@ -17,7 +17,7 @@ expect {
 }
 send "bg\r"
 expect {
-    -re {.*\[vush\] job [0-9]+ \(sleep 2 \&\) finished[\r\n]+vush> } {}
+    -re {.*\[vush\] job [0-9]+ \(sleep 1 \&\) finished[\r\n]+vush> } {}
     timeout { send_user "bg output mismatch\n"; exit 1 }
 }
 send "exit\r"
