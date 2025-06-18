@@ -16,6 +16,16 @@ expect {
     -re "\[\r\n\]+g1.c g2.c\[\r\n\]+vush> " {}
     timeout { send_user "glob expansion failed\n"; exit 1 }
 }
+send "PAT='*.c'\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo \$PAT\r"
+expect {
+    -re "\[\r\n\]+g1.c g2.c\[\r\n\]+vush> " {}
+    timeout { send_user "glob var expansion failed\n"; exit 1 }
+}
 send "exit\r"
 expect {
     eof {}
