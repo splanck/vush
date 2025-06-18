@@ -24,6 +24,7 @@ void repl_loop(FILE *input)
     char linebuf[MAX_LINE];
     char *line;
     int interactive = (input == stdin);
+    int eof_count = 0;
 
     while (1) {
         process_pending_traps();
@@ -53,8 +54,16 @@ void repl_loop(FILE *input)
                     process_pending_traps();
                     continue;
                 }
+                if (opt_ignoreeof) {
+                    eof_count++;
+                    if (eof_count < 10) {
+                        printf("\nUse \"exit\" to leave the shell.\n");
+                        continue;
+                    }
+                }
                 break;
             }
+            eof_count = 0;
             current_lineno++;
         } else {
             if (!read_logical_line(input, linebuf, sizeof(linebuf))) {
