@@ -1,5 +1,7 @@
 #!/usr/bin/env expect
 set timeout 5
+# disable history writes so RLIMIT_FSIZE tests do not kill the shell
+set env(VUSH_HISTFILE) "/dev/null"
 spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
@@ -29,6 +31,21 @@ send "ulimit -H -f\r"
 expect {
     -re "\r\n1234\r?\nvush> " {}
     timeout { send_user "ulimit hard set failed\n"; exit 1 }
+}
+send "ulimit -S -f 123\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "ulimit -S -f\r"
+expect {
+    -re "\r\n123\r?\nvush> " {}
+    timeout { send_user "ulimit soft set failed\n"; exit 1 }
+}
+send "ulimit -H -f\r"
+expect {
+    -re "\r\n1234\r?\nvush> " {}
+    timeout { send_user "ulimit hard query failed\n"; exit 1 }
 }
 send "exit\r"
 expect {
