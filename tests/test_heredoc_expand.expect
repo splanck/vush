@@ -1,0 +1,25 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "VAR=hello\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "cat <<EOF\r"
+send "\${VAR}\r"
+send "\$(echo world)\r"
+send "EOF\r"
+expect {
+    -re "\[\r\n\]+hello\[\r\n\]+world\[\r\n\]+vush> " {}
+    timeout { send_user "heredoc expansion failed\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

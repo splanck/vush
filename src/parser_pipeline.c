@@ -194,16 +194,24 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         rest++;
     }
     char *delim;
+    int delim_quoted = 0;
     if (*rest) {
-        delim = strdup(rest);
+        char *rp = rest;
+        int de = 1;
+        delim = read_token(&rp, &delim_quoted, &de);
+        if (!delim || *rp) {
+            free(delim);
+            delim = strdup(rest);
+            delim_quoted = 0;
+        }
         if (!delim) {
             free(tok);
             return -1;
         }
     } else {
         while (**p == ' ' || **p == '\t') (*p)++;
-        int q = 0; int de = 1;
-        delim = read_token(p, &q, &de);
+        int de = 1;
+        delim = read_token(p, &delim_quoted, &de);
         if (!delim) { free(tok); return -1; }
     }
     char template[] = "/tmp/vushXXXXXX";
@@ -238,7 +246,20 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
                 while (*line == '\t') line++;
             }
             if (strcmp(line, delim) == 0) { found = 1; break; }
-            fprintf(tf, "%s\n", line);
+            char *out_line = line;
+            if (!delim_quoted) {
+                out_line = expand_var(line);
+                if (!out_line) {
+                    fclose(tf);
+                    unlink(template);
+                    free(delim);
+                    free(tok);
+                    return -1;
+                }
+            }
+            fprintf(tf, "%s\n", out_line);
+            if (!delim_quoted)
+                free(out_line);
             pos = 0;
         } else if (pos < sizeof(buf) - 1) {
             buf[pos++] = c;
@@ -253,13 +274,28 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         if (strcmp(line, delim) == 0) {
             found = 1;
         } else {
-            if (fprintf(tf, "%s\n", line) < 0) {
+            char *out_line = line;
+            if (!delim_quoted) {
+                out_line = expand_var(line);
+                if (!out_line) {
+                    fclose(tf);
+                    unlink(template);
+                    free(delim);
+                    free(tok);
+                    return -1;
+                }
+            }
+            if (fprintf(tf, "%s\n", out_line) < 0) {
+                if (!delim_quoted)
+                    free(out_line);
                 fclose(tf);
                 unlink(template);
                 free(delim);
                 free(tok);
                 return -1;
             }
+            if (!delim_quoted)
+                free(out_line);
         }
     }
     if (!found) {
