@@ -7,6 +7,9 @@ manual, and [docs/vushdoc.md](docs/vushdoc.md) holds a more detailed tutorial.
 
 Current version: 0.1.0
 
+**DISCLAIMER**:
+vush is currently in development and should not be considered stable software. This project is under active construction and likely contains bugs, incomplete features, and unstable behavior. Use at your own risk. We do not recommend relying on vush for critical or production use at this time.
+
 ## Features
 
 - Command line parsing with rudimentary quoting support
