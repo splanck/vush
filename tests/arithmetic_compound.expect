@@ -19,15 +19,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
-    timeout { send_user "plus assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "plus status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
+    timeout { send_user "plus assign failed\n"; exit 1 }
 }
 
 # -=
@@ -36,15 +36,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
-    timeout { send_user "minus assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+1\[\r\n\]+vush> " {}
     timeout { send_user "minus status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+0\[\r\n\]+vush> " {}
+    timeout { send_user "minus assign failed\n"; exit 1 }
 }
 
 # reset var
@@ -60,15 +60,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+15\[\r\n\]+vush> " {}
-    timeout { send_user "mul assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "mul status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+15\[\r\n\]+vush> " {}
+    timeout { send_user "mul assign failed\n"; exit 1 }
 }
 
 # /=
@@ -77,15 +77,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
-    timeout { send_user "div assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "div status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
+    timeout { send_user "div assign failed\n"; exit 1 }
 }
 
 # %=
@@ -94,15 +94,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
-    timeout { send_user "mod assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "mod status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+1\[\r\n\]+vush> " {}
+    timeout { send_user "mod assign failed\n"; exit 1 }
 }
 
 # <<=
@@ -111,15 +111,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+8\[\r\n\]+vush> " {}
-    timeout { send_user "lshift assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "lshift status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+8\[\r\n\]+vush> " {}
+    timeout { send_user "lshift assign failed\n"; exit 1 }
 }
 
 # >>=
@@ -128,15 +128,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
-    timeout { send_user "rshift assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "rshift status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
+    timeout { send_user "rshift assign failed\n"; exit 1 }
 }
 
 # &=
@@ -145,15 +145,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
-    timeout { send_user "and assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "and status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+2\[\r\n\]+vush> " {}
+    timeout { send_user "and assign failed\n"; exit 1 }
 }
 
 # ^=
@@ -162,15 +162,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
-    timeout { send_user "xor assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "xor status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+3\[\r\n\]+vush> " {}
+    timeout { send_user "xor assign failed\n"; exit 1 }
 }
 
 # |=
@@ -179,15 +179,15 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "echo \$var\r"
-expect {
-    -re "\[\r\n\]+7\[\r\n\]+vush> " {}
-    timeout { send_user "or assign failed\n"; exit 1 }
-}
 send "echo \$?\r"
 expect {
     -re "\[\r\n\]+0\[\r\n\]+vush> " {}
     timeout { send_user "or status mismatch\n"; exit 1 }
+}
+send "echo \$var\r"
+expect {
+    -re "\[\r\n\]+7\[\r\n\]+vush> " {}
+    timeout { send_user "or assign failed\n"; exit 1 }
 }
 
 send "exit\r"

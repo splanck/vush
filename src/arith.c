@@ -37,6 +37,8 @@
 #include <limits.h>
 #include <errno.h>
 
+extern int last_status;
+
 #define PARSE_RHS(fn)              \
     long long rhs = fn(state);    \
     if (state->err) return 0;
@@ -705,7 +707,9 @@ long long eval_arith(const char *expr, int *err, char **errmsg) {
             *errmsg = strdup(st.err_msg[0] ? st.err_msg : "error");
         else
             fprintf(stderr, "arith: %s\n", st.err_msg[0] ? st.err_msg : "error");
+        last_status = 1;
         return 0;
     }
+    last_status = (result != 0) ? 0 : 1;
     return result;
 }
