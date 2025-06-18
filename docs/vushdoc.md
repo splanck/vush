@@ -186,6 +186,21 @@ separated by spaces while `$*` joins them using the first character of `IFS`
 (space by default).  `$#` gives the count of arguments.  The `shift` builtin
 discards the first *n* parameters (one if omitted) and shifts the rest down.
 
+Splitting honors empty fields when `IFS` contains non-whitespace characters:
+
+```sh
+vush> IFS=:
+vush> set -- :a::b:
+vush> echo "$#"
+5
+vush> for p in "$@"; do echo "[$p]"; done
+[]
+[a]
+[]
+[b]
+[]
+```
+
 ### History Expansion
 
 Previous commands can be reused with `!` expansions. `!!` recalls the last
