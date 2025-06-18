@@ -1,20 +1,24 @@
 #!/usr/bin/env expect
+# Validate IFS splitting behavior
 set timeout 5
 spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+# Assign a variable containing a space
 send "FOO='a b'\r"
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
+# Expanding without quotes should split
 send "for w in \$FOO; do echo \$w; done\r"
 expect {
     -re "\r\na\r\nb\r\nvush> " {}
     timeout { send_user "split failed\n"; exit 1 }
 }
+# Quoting preserves the space
 send "for w in \"\$FOO\"; do echo \$w; done\r"
 expect {
     -re "\r\na b\r\nvush> " {}
