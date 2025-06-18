@@ -319,7 +319,7 @@ hi
   process. Use `-l` to list signals or `-l NUM` to print the signal name for
   `NUM`.
 - `wait [ID|PID]` - wait for the given job or process to finish.
-- `trap [-p|-l | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received, list traps with `-p` or with no arguments, or show available signals with `-l`. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
+- `trap [-p [SIGNAL]|-l | 'cmd' SIGNAL]` - execute `cmd` when `SIGNAL` is received. List traps with `-p` or no arguments, use `-p SIGNAL` to show a single trap, and `-l` to display available signals. Use `trap SIGNAL` to clear. Use `EXIT` or `0` for a command run when the shell exits.
 - `export [-p|-n NAME] NAME[=VALUE]` - manage exported variables or set one.
   Use `-p` to list all exported variables. `-n NAME` stops exporting `NAME`
   without removing it. Without `=VALUE` the variable's current value is
