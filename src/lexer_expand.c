@@ -267,6 +267,48 @@ char *parse_substitution(char **p) {
 
 /* -- Expansion helper functions --------------------------------------- */
 
+/* Translate backslash escapes like \n and \0NNN used by $'..' quoting. */
+static char *ansi_unescape(const char *src) {
+    size_t len = strlen(src);
+    char *out = malloc(len + 1);
+    if (!out)
+        return NULL;
+    char *d = out;
+    for (const char *s = src; *s; s++) {
+        if (*s == '\\' && s[1]) {
+            s++;
+            switch (*s) {
+            case 'n': *d++ = '\n'; break;
+            case 't': *d++ = '\t'; break;
+            case 'r': *d++ = '\r'; break;
+            case 'b': *d++ = '\b'; break;
+            case 'a': *d++ = '\a'; break;
+            case 'f': *d++ = '\f'; break;
+            case 'v': *d++ = '\v'; break;
+            case '\\': *d++ = '\\'; break;
+            case '\'': *d++ = '\''; break;
+            case '"': *d++ = '"'; break;
+            case '0': {
+                int val = 0, cnt = 0;
+                while (cnt < 3 && s[1] >= '0' && s[1] <= '7') {
+                    s++; cnt++; val = val * 8 + (*s - '0');
+                }
+                *d++ = (char)val;
+                break;
+            }
+            default:
+                *d++ = '\\';
+                *d++ = *s;
+                break;
+            }
+        } else {
+            *d++ = *s;
+        }
+    }
+    *d = '\0';
+    return out;
+}
+
 /* Expand ~ or ~user to the appropriate home directory path. */
 static char *expand_tilde(const char *token) {
     const char *rest = token + 1;
@@ -971,6 +1013,15 @@ char *expand_var(const char *token) {
      * processing so that expansions inside quoted strings don't
      * preserve the quote characters. */
     size_t tlen = strlen(token);
+    if (tlen >= 3 && token[0] == '$' && token[1] == '\'' && token[tlen - 1] == '\'') {
+        size_t innerlen = tlen - 3;
+        if (innerlen >= MAX_LINE)
+            innerlen = MAX_LINE - 1;
+        char inner[MAX_LINE];
+        memcpy(inner, token + 2, innerlen);
+        inner[innerlen] = '\0';
+        return ansi_unescape(inner);
+    }
     if (tlen >= 2 && token[0] == '\'' && token[tlen - 1] == '\'') {
         return strndup(token + 1, tlen - 2);
     }

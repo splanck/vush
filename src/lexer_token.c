@@ -9,6 +9,7 @@
 /* Forward declaration from lexer_expand.c */
 char *parse_substitution(char **p);
 static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out);
+static char *parse_ansi_quoted_word(char **p, int *quoted, int *do_expand_out);
 
 /* set when a memory allocation fails inside parse_redirect_token */
 static int token_alloc_failed = 0;
@@ -222,6 +223,18 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             first = 0;
             continue;
         }
+        if (**p == '$' && *(*p + 1) == '\'') {
+            int q = 0; int de = 0;
+            char *part = parse_ansi_quoted_word(p, &q, &de);
+            if (!part)
+                return -1;
+            for (int ci = 0; part[ci] && *len < MAX_LINE - 1; ci++)
+                buf[(*len)++] = part[ci];
+            free(part);
+            *do_expand = 0;
+            first = 0;
+            continue;
+        }
         if (**p == '\'' || **p == '"') {
             int q = 0; int de = 1;
             char *part = parse_quoted_word(p, &q, &de);
@@ -402,6 +415,63 @@ static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out) {
     return strdup(buf);
 }
 
+/* Parse an ANSI-C quoted word starting at *p of the form $'...'.  QUOTED is
+ * set and DO_EXPAND_OUT receives whether expansion should occur (always 0).
+ * Returns the resulting allocated string or NULL on syntax errors. */
+static char *parse_ansi_quoted_word(char **p, int *quoted, int *do_expand_out) {
+    char buf[MAX_LINE];
+    int len = 0;
+    int do_expand = 0;
+    *quoted = 1;
+    *p += 2; /* skip $' */
+    while (**p && **p != '\'' && len < MAX_LINE - 1) {
+        if (**p == '\\' && (*p)[1]) {
+            (*p)++;
+            char c = **p;
+            switch (c) {
+            case 'n': buf[len++] = '\n'; break;
+            case 't': buf[len++] = '\t'; break;
+            case 'r': buf[len++] = '\r'; break;
+            case 'b': buf[len++] = '\b'; break;
+            case 'a': buf[len++] = '\a'; break;
+            case 'f': buf[len++] = '\f'; break;
+            case 'v': buf[len++] = '\v'; break;
+            case '\\': buf[len++] = '\\'; break;
+            case '\'': buf[len++] = '\''; break;
+            case '"': buf[len++] = '"'; break;
+            case '0': {
+                int val = 0, cnt = 0;
+                while (cnt < 3 && (*p)[1] >= '0' && (*p)[1] <= '7') {
+                    (*p)++; cnt++; val = val * 8 + (**p - '0');
+                }
+                buf[len++] = (char)val;
+                break;
+            }
+            default:
+                buf[len++] = '\\';
+                buf[len++] = c;
+                break;
+            }
+        } else {
+            buf[len++] = **p;
+        }
+        (*p)++;
+    }
+    if (**p == '\'') {
+        (*p)++;
+    } else if (**p == '\0') {
+        fprintf(stderr, "syntax error: unmatched '\''\n");
+        parse_need_more = 0;
+        return NULL;
+    } else {
+        fprintf(stderr, "syntax error: unmatched '\''\n");
+        return NULL;
+    }
+    buf[len] = '\0';
+    if (do_expand_out) *do_expand_out = do_expand;
+    return strdup(buf);
+}
+
 /* Read the next shell token from *p performing necessary expansions.
  * QUOTED is set when the token was quoted.  The returned string is
  * dynamically allocated and *p is advanced past the token. */
@@ -415,6 +485,11 @@ char *read_token(char **p, int *quoted, int *do_expand_out) {
         return NULL;
     if (redir)
         return redir;
+    if (**p == '$' && *(*p + 1) == '\'') {
+        char *res = parse_ansi_quoted_word(p, quoted, &do_expand);
+        if (do_expand_out) *do_expand_out = do_expand;
+        return res;
+    }
     if (**p == '\'' || **p == '"') {
         char *res = parse_quoted_word(p, quoted, &do_expand);
         if (do_expand_out) *do_expand_out = do_expand;
