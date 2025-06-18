@@ -24,64 +24,7 @@ See [docs/vushdoc.md](docs/vushdoc.md) for complete details.
 
 ### Built-in Commands
 
-The shell includes many built-ins. The brief summaries below show what each one
-does; consult [docs/vushdoc.md](docs/vushdoc.md) for complete usage details.
-
-#### Job Control
-- `bg [ID]` &ndash; resume a stopped job in the background (uses the last
-  job when ID is omitted)
-- `fg [ID]` &ndash; bring a background job to the foreground (defaults to
-  the most recent job)
-- `jobs [-l|-p] [ID]` &ndash; list active jobs
-- `kill [-s SIG|-l] ID|PID` &ndash; send a signal. `kill -l NUM` prints the
-  signal name for `NUM`.
-- `wait [ID|PID]` &ndash; wait for a job or process to finish
-- `trap [-p|-l|'cmd' SIGNAL]` &ndash; run a command when a signal is received
-- `set -b` &ndash; notify when background jobs complete
-- `set -m` &ndash; enable job control features
-
-#### Variable Management
-- `export [-p|-n NAME] NAME[=VALUE]` &ndash; set or display exported variables
-- `readonly [-p] NAME[=VALUE]` &ndash; mark variables read-only
-- `local NAME[=VALUE]` &ndash; define a local variable in a function
-- `unset [-f|-v] NAME` &ndash; remove functions with `-f`, variables with `-v`, or both
-- `set [options] [-- args...]` &ndash; change shell options or parameters
-- `shift [N]` &ndash; rotate positional parameters
-- `alias [-p] [NAME[=VALUE]]` &ndash; define command aliases
-- `unalias [-a] NAME` &ndash; remove command aliases
-- `let EXPR` &ndash; evaluate arithmetic expressions
-- `getopts OPTSTRING VAR` &ndash; parse positional parameters
-
-#### File and Resource Operations
-- `cd [-L|-P] [dir]` &ndash; change directories
-- `pushd dir`, `popd`, `dirs` &ndash; manage the directory stack
-- `pwd [-L|-P]` &ndash; print the current directory
-- `umask [-S] [mask]` &ndash; set or display the file creation mask
-- `ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` &ndash; view or set resource limits
-
-#### Command Execution and Utilities
-- `command [-p|-v|-V] NAME [args...]` &ndash; run a command without function lookup
-- `eval WORDS...` &ndash; execute constructed commands
-- `exec command [args...]` &ndash; replace the shell with a command
-- `source file [args...]` (or `.`) &ndash; read commands from a file
-- `time [-p] command` and `times` &ndash; report timing statistics
-- `hash [-r] [name...]` &ndash; manage the command path cache
-- `type NAME...` &ndash; show how a command would be interpreted
-- `fc` and `history` &ndash; edit or list command history
-- `echo [-n] [-e] [args...]` &ndash; print text
-- `printf FORMAT [args...]` &ndash; formatted output. Backslash escapes in `FORMAT`
-  are translated before `%` conversions are handled; `%b` still expands escapes
-  in its argument.
-- `read [-r] [-a NAME] [VAR...]` &ndash; read a line of input, splitting fields
-  using the first character of `$IFS` and storing it in `$REPLY` when no
-  variables are listed
-- `test EXPR` and `[[ EXPR ]]` &ndash; evaluate conditions
-- `:`/`true`/`false` &ndash; return fixed status codes
-- `return [status]` &ndash; exit from a function
-- `break [N]` and `continue [N]` &ndash; loop control
-- `help` &ndash; display summaries of built-ins
-- `exit [status]` &ndash; terminate the shell
-- Extended parameter expansion for pattern replacement `${var/pat/repl}`, substrings `${var:off[:len]}` and error checking `${var?word}`
+vush includes a wide range of built-ins for job control, variable management, file operations, and more. See [docs/vushdoc.md](docs/vushdoc.md) for the full reference.
 
 ## Building
 
