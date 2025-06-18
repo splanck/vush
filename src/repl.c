@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "execute.h"
 #include "history.h"
+#include "history_expand.h"
 #include "var_expand.h"
 #include "lineedit.h"
 #include "jobs.h"
