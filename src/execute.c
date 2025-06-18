@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fnmatch.h>
+#include <glob.h>
 
 #include "execute.h"
 #include "jobs.h"
@@ -212,6 +213,7 @@ static void expand_segment(PipelineSegment *seg) {
         if (seg->expand[i]) {
             char *exp = expand_var(word);
             free(word);
+            seg->argv[i] = NULL;
             if (!exp) exp = strdup("");
             if (!seg->quoted[i]) {
                 int count = 0;
@@ -219,10 +221,41 @@ static void expand_segment(PipelineSegment *seg) {
                 free(exp);
                 if (fields) {
                     for (int f = 0; f < count && ai < MAX_TOKENS - 1; f++) {
-                        newargv[ai] = fields[f];
+                        char *fld = fields[f];
+                        if (!opt_noglob &&
+                            (strchr(fld, '*') || strchr(fld, '?'))) {
+                            glob_t g;
+                            int r = glob(fld, 0, NULL, &g);
+                            if (r == 0 && g.gl_pathc > 0) {
+                                size_t start = (size_t)ai;
+                                for (size_t gi = 0; gi < g.gl_pathc &&
+                                                 ai < MAX_TOKENS - 1; gi++) {
+                                    char *dup = strdup(g.gl_pathv[gi]);
+                                    if (!dup) {
+                                        while ((size_t)ai > start) {
+                                            free(newargv[--ai]);
+                                            newargv[ai] = NULL;
+                                        }
+                                        free(fld);
+                                        globfree(&g);
+                                        goto skip_field;
+                                    }
+                                    newargv[ai] = dup;
+                                    seg->expand[ai] = 0;
+                                    seg->quoted[ai] = 0;
+                                    ai++;
+                                }
+                                free(fld);
+                                globfree(&g);
+                                continue;
+                            }
+                            globfree(&g);
+                        }
+                        newargv[ai] = fld;
                         seg->expand[ai] = 0;
                         seg->quoted[ai] = 0;
                         ai++;
+                    skip_field: ;
                     }
                     free(fields);
                     continue;
