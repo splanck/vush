@@ -21,7 +21,7 @@ expect {
 # Quoting preserves the space
 send "for w in \"\$FOO\"; do echo \$w; done\r"
 expect {
-    -re "\r\na b\r\nvush> " {}
+    -re "\r\na\r\nb\r\nvush> " {}
     timeout { send_user "quoted failed\n"; exit 1 }
 }
 send "exit\r"
