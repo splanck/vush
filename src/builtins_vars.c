@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <errno.h>
 #include "util.h"
+#include "assignment_utils.h"
 
 extern int last_status;
 
@@ -445,49 +446,6 @@ int builtin_readonly(char **args) {
     return 1;
 }
 
-static char **parse_array_values(const char *val, int *count) {
-    *count = 0;
-    char *body = strndup(val + 1, strlen(val) - 2);
-    if (!body)
-        return NULL;
-
-    char **vals = NULL;
-    char *p = body;
-    while (*p) {
-        while (*p == ' ' || *p == '\t')
-            p++;
-        if (*p == '\0')
-            break;
-        char *start = p;
-        while (*p && *p != ' ' && *p != '\t')
-            p++;
-        if (*p)
-            *p++ = '\0';
-
-        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
-        if (!tmp) {
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
-            free(body);
-            *count = 0;
-            return NULL;
-        }
-        vals = tmp;
-        vals[*count] = strdup(start);
-        if (!vals[*count]) {
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
-            free(body);
-            *count = 0;
-            return NULL;
-        }
-        (*count)++;
-    }
-    free(body);
-    return vals;
-}
 
 int builtin_local(char **args) {
     if (!args[1])
