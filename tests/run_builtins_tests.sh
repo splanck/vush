@@ -149,6 +149,7 @@ arithmetic_forloop.expect
 arithmetic_overflow.expect
 arithmetic_compound.expect
 test_pipe_cr.expect
+test_set_o.expect
 "
 for test in $tests; do
     echo "Running $test"
