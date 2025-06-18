@@ -28,6 +28,32 @@
 extern int last_status;
 
 
+static void print_option(const char *name, int enabled)
+{
+    printf("%s\t%s\n", name, enabled ? "on" : "off");
+}
+
+/* List all shell options in a `name\ton|off` format. */
+static void list_shell_options(void)
+{
+    print_option("allexport", opt_allexport);
+    print_option("errexit", opt_errexit);
+    print_option("hashall", opt_hashall);
+    print_option("keyword", opt_keyword);
+    print_option("monitor", opt_monitor);
+    print_option("noclobber", opt_noclobber);
+    print_option("noexec", opt_noexec);
+    print_option("noglob", opt_noglob);
+    print_option("notify", opt_notify);
+    print_option("nounset", opt_nounset);
+    print_option("onecmd", opt_onecmd);
+    print_option("pipefail", opt_pipefail);
+    print_option("privileged", opt_privileged);
+    print_option("verbose", opt_verbose);
+    print_option("xtrace", opt_xtrace);
+}
+
+
 /*
  * Implements the `shift` builtin which discards the first n positional
  * parameters.  On error an explanatory message is printed and 1 is returned.
@@ -67,6 +93,11 @@ int builtin_set(char **args) {
     if (!args[1]) {
         print_shell_vars();
         print_functions();
+        return 1;
+    }
+
+    if ((strcmp(args[1], "-o") == 0 || strcmp(args[1], "+o") == 0) && !args[2]) {
+        list_shell_options();
         return 1;
     }
 
