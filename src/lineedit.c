@@ -17,6 +17,8 @@
 #include "completion.h"
 #include "history_search.h"
 
+enum lineedit_mode lineedit_mode = LINEEDIT_EMACS;
+
 static void redraw_line(const char *prompt, const char *buf, int prev_len,
                         int pos);
 
@@ -36,6 +38,7 @@ static void handle_arrow_keys(const char *prompt, char *buf, int *lenp,
 static int process_keypress(char c, const char *prompt, char *buf,
                             int *lenp, int *posp, int *disp_lenp);
 static char *read_raw_line(const char *prompt);
+static char *read_simple_line(const char *prompt);
 
 
 /* Redraw the prompt and buffer after edits, leaving the cursor at pos. */
@@ -299,8 +302,22 @@ static char *read_raw_line(const char *prompt) {
     return strdup(buf);
 }
 
+static char *read_simple_line(const char *prompt) {
+    fputs(prompt, stdout);
+    fflush(stdout);
+    char buf[MAX_LINE];
+    if (!fgets(buf, sizeof(buf), stdin))
+        return NULL;
+    size_t len = strlen(buf);
+    if (len && buf[len - 1] == '\n')
+        buf[len - 1] = '\0';
+    return strdup(buf);
+}
+
 /* Read a line using the editor and return it as a new string. */
 char *line_edit(const char *prompt) {
+    if (lineedit_mode == LINEEDIT_VI)
+        return read_simple_line(prompt);
     return read_raw_line(prompt);
 }
 

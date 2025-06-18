@@ -9,6 +9,13 @@
 #ifndef LINEEDIT_H
 #define LINEEDIT_H
 
+enum lineedit_mode {
+    LINEEDIT_EMACS,
+    LINEEDIT_VI
+};
+
+extern enum lineedit_mode lineedit_mode;
+
 char *line_edit(const char *prompt);
 
 #endif /* LINEEDIT_H */
