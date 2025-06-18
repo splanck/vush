@@ -185,6 +185,14 @@ static void expand_assignments(PipelineSegment *seg) {
         if (eq) {
             char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
             char *val = expand_var(eq + 1);
+            if (val) {
+                size_t len = strlen(val);
+                if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
+                                 (val[0] == '"' && val[len - 1] == '"'))) {
+                    char *trim = strndup(val + 1, len - 2);
+                    if (trim) { free(val); val = trim; }
+                }
+            }
             char *tmp = NULL;
             if (name && val)
                 asprintf(&tmp, "%s=%s", name, val);
@@ -297,6 +305,14 @@ static void expand_segment(PipelineSegment *seg) {
         if (eq) {
             char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
             char *val = expand_var(eq + 1);
+            if (val) {
+                size_t len = strlen(val);
+                if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
+                                 (val[0] == '"' && val[len - 1] == '"'))) {
+                    char *trim = strndup(val + 1, len - 2);
+                    if (trim) { free(val); val = trim; }
+                }
+            }
             char *tmp = NULL;
             if (name && val)
                 asprintf(&tmp, "%s=%s", name, val);
