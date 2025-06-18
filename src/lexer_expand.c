@@ -195,8 +195,9 @@ static char *expand_tilde(const char *token) {
         size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
         char *user = strndup(rest, len);
         if (user) {
-            endpwent();
+            setpwent();
             struct passwd *pw = getpwnam(user);
+            endpwent();
             if (pw) {
                 home = pw->pw_dir;
             } else {
