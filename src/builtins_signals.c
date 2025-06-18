@@ -46,11 +46,30 @@ int builtin_trap(char **args)
     }
 
     if (strcmp(args[1], "-p") == 0) {
-        if (args[2]) {
-            fprintf(stderr, "usage: trap -p\n");
+        if (!args[2]) {
+            print_traps();
+            last_status = 0;
             return 1;
         }
-        print_traps();
+        for (int i = 2; args[i]; i++) {
+            if (strcasecmp(args[i], "EXIT") == 0 || strcmp(args[i], "0") == 0) {
+                if (exit_trap_cmd)
+                    printf("trap '%s' EXIT\n", exit_trap_cmd);
+                continue;
+            }
+            int sig = sig_from_name(args[i]);
+            if (sig <= 0 || sig >= NSIG) {
+                fprintf(stderr, "trap: invalid signal %s\n", args[i]);
+                continue;
+            }
+            if (trap_cmds[sig]) {
+                const char *name = name_from_sig(sig);
+                if (name)
+                    printf("trap '%s' %s\n", trap_cmds[sig], name);
+                else
+                    printf("trap '%s' %d\n", trap_cmds[sig], sig);
+            }
+        }
         last_status = 0;
         return 1;
     }

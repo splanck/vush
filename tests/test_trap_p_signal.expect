@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "trap 'echo hi' INT\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "trap -p INT\r"
+expect {
+    -re "\[\r\n\]+trap 'echo hi' INT\[\r\n\]+vush> " {}
+    timeout { send_user "trap -p INT output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

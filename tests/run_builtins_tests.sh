@@ -118,6 +118,7 @@ test_cd_P_dangle.expect
 test_pwd_options.expect
 test_fc.expect
 test_trap_p.expect
+test_trap_p_signal.expect
 test_negate.expect
 test_negate_multi.expect
 test_jobs_l.expect
