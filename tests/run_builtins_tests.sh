@@ -119,6 +119,7 @@ test_pwd_options.expect
 test_fc.expect
 test_trap_p.expect
 test_negate.expect
+test_negate_multi.expect
 test_jobs_l.expect
 test_jobs_p.expect
 test_kill_s.expect
