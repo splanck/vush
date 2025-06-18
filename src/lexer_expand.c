@@ -887,6 +887,9 @@ char *expand_var(const char *token) {
      * processing so that expansions inside quoted strings don't
      * preserve the quote characters. */
     size_t tlen = strlen(token);
+    if (tlen >= 2 && token[0] == '\'' && token[tlen - 1] == '\'') {
+        return strndup(token + 1, tlen - 2);
+    }
     if (tlen >= 2 && token[0] == '"' && token[tlen - 1] == '"') {
         size_t innerlen = tlen - 2;
         if (innerlen >= MAX_LINE)
