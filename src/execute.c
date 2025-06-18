@@ -382,6 +382,7 @@ static PipelineSegment *copy_pipeline(PipelineSegment *src) {
 
         seg->in_file = src->in_file ? strdup(src->in_file) : NULL;
         seg->here_doc = src->here_doc;
+        seg->here_doc_quoted = src->here_doc_quoted;
         seg->out_file = src->out_file ? strdup(src->out_file) : NULL;
         seg->append = src->append;
         seg->force = src->force;

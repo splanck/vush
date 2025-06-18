@@ -208,11 +208,27 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
             free(tok);
             return -1;
         }
+        size_t dlen = strlen(delim);
+        if (!delim_quoted && dlen >= 2 &&
+            ((delim[0] == '"' && delim[dlen - 1] == '"') ||
+             (delim[0] == '\'' && delim[dlen - 1] == '\''))) {
+            delim_quoted = 1;
+            memmove(delim, delim + 1, dlen - 2);
+            delim[dlen - 2] = '\0';
+        }
     } else {
         while (**p == ' ' || **p == '\t') (*p)++;
         int de = 1;
         delim = read_token(p, &delim_quoted, &de);
         if (!delim) { free(tok); return -1; }
+        size_t dlen = strlen(delim);
+        if (!delim_quoted && dlen >= 2 &&
+            ((delim[0] == '"' && delim[dlen - 1] == '"') ||
+             (delim[0] == '\'' && delim[dlen - 1] == '\''))) {
+            delim_quoted = 1;
+            memmove(delim, delim + 1, dlen - 2);
+            delim[dlen - 2] = '\0';
+        }
     }
     char template[] = "/tmp/vushXXXXXX";
     int fd = mkstemp(template);
@@ -323,6 +339,7 @@ static int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quote
         return -1;
     }
     seg->here_doc = 1;
+    seg->here_doc_quoted = delim_quoted;
     free(delim);
     free(tok);
     return 1;

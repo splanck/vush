@@ -110,6 +110,7 @@ test_heredoc_dash.expect
 test_heredoc_tabs.expect
 test_heredoc_expand.expect
 test_heredoc_noexpand.expect
+test_heredoc_dquote.expect
 test_version.expect
 test_ulimit.expect
 test_cd_P.expect

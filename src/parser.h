@@ -19,6 +19,7 @@ typedef struct PipelineSegment {
     int quoted[MAX_TOKENS];
     char *in_file;
     int here_doc;     /* input file is temporary here-doc */
+    int here_doc_quoted; /* delimiter was quoted */
     char *out_file;
     int append;
     int force;       /* >| force overwrite */
