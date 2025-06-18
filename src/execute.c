@@ -1236,7 +1236,7 @@ int run_pipeline(Command *cmd, const char *line) {
         r = 0; break;
     }
     if (cmd->negate) {
-        last_status = (r == 0 ? 1 : 0);
+        last_status = (last_status == 0 ? 1 : 0);
         r = last_status;
     }
     return r;
