@@ -12,74 +12,15 @@ vush is currently in development and should not be considered stable software. T
 
 ## Features
 
-- Command line parsing with rudimentary quoting support
-- Execution of external commands via `fork` and `exec`
-- Extensive built-in commands handle job control, variable management and file
-  operations (see "Built-in Commands" below).
+- Execute external commands and built-ins with job control
+- Command history with line editing
+- Alias and function definitions saved across sessions
+- Shell scripting constructs: loops, conditionals, and subshells
+- Expansions for variables, globbing, command substitution, and arithmetic
+- I/O redirection and pipelines
+- Configurable environment via startup files and shell options
 
-- Environment variable expansion using `$VAR`, `${VAR}` and forms like
-  `${VAR:-word}`, `${VAR:=word}`, `${VAR:+word}`, `${VAR#pat}`, `${VAR##pat}`,
-- `${VAR%pat}`, `${VAR%%pat}` and `${#VAR}`
-- `$?` expands to the exit status of the last foreground command
-- `$$` expands to the PID of the running shell and `$!` to the last background job
-- `$PPID` expands to the PID of the shell's parent process
-- `$-` expands to the currently enabled option letters
-- `$LINENO` expands to the current input line number
- - Wildcard expansion for unquoted `*` and `?` patterns (disable with `set -f`,
-   re-enable with `set +f`)
-- Brace expansion for patterns like `{foo,bar}` and `{1..3}`
-- Command substitution using backticks or `$(...)`
-- Arithmetic expansion using `$((...))` and a `let` builtin
-- Numbers may specify a base using `<base>#<digits>` inside arithmetic expressions
-  (bases 2–36)
-- Background job management using `&`
-- Simple pipelines using `|` to connect commands
-- Process substitution using `<(cmd)` and `>(cmd)`
-- Command chaining with `;`, `&&`, and `||`
-- Command negation using `! command`
-- Subshells using `( ... )` to group commands
-- Brace groups using `{ ... ; }` executed in the current shell
-- Shell functions defined with `name() { ... }` or `function name { ... }` and a `return` builtin
-- Conditional expressions using `[[ ... ]]` with pattern matching
-- POSIX `test` builtin supporting string, numeric and file operators
-  like `-e`, `-f`, `-d`, `-r`, `-w`, `-x`, `-b`, `-c`, `-p`, `-h`/`-L`, `-s`,
-  `-O`, `-G`, `-u`, `-g`, `-k`, `-S` and `-t`. The unary `!` operator and binary `-a`/`-o` are recognized with standard precedence. Binary comparisons `file1 -nt file2`, `file1 -ot file2` and `file1 -ef file2` are also available
-- `case` selection statements with optional fall-through using `;&`
-- `select` loops presenting a numbered menu of choices
- - Input and output redirection with `<`, `>`, `>|`, `>>`, `2>`, `2>>` and `&>`,
-   including descriptor duplication like `2>&1` or `>&file`, descriptor
-   closure using `>&-` or `2>&-`, and numbered descriptors such as `3>` or `4<`
-- Persistent command history saved to `~/.vush_history` (overridable with `VUSH_HISTFILE`)
-- Maximum history size of 1000 entries (overridable with `VUSH_HISTSIZE`)
-- Alias definitions persisted in `~/.vush_aliases` (overridable with `VUSH_ALIASFILE`)
-- Function definitions persisted in `~/.vush_funcs` (overridable with `VUSH_FUNCFILE`)
-- Logical path cleanup handles at most `PATH_MAX/2` components
-- Variables can be removed with `unset -v` and functions with `unset -f`
-- Arrow-key command line editing with history recall
-- `Ctrl-A`/`Home` moves to the beginning of the line, `Ctrl-E`/`End` to the end
-  and `Ctrl-U` clears back to the start
-- Startup commands read from `~/.vushrc` if the file exists
-- Additional startup commands read from the file named by the `ENV`
-  environment variable if set
-- `set -p` enters privileged mode and skips startup files; use `set +p` to
-  re-enable them
-- `set -t` exits after a single command. Example:\
-`vush$ set -t; echo hi` prints `hi` and the shell terminates.
-- `set -h` automatically caches command paths; use `set +h` to disable.
-- `set -k` treats `NAME=value` after the command name as a temporary
-  environment assignment. Example:\
-`vush$ set -k; sh -c 'echo $FOO' FOO=bar` prints `bar`.
- - Prompt string configurable via the `PS1` environment variable, which may be exported safely (see [docs/vush.1](docs/vush.1) for details)
-- `exit` accepts an optional status argument
- - Shell options toggled with `set -e`, `set -u`, `set -x`, `set -v`, `set -n`,
-  `set -f`/`set +f`, `set -C`/`set +C`, `set -a`, `set -b`/`set +b`, `set -m`/`set +m`,
- `set -t`/`set +t`, `set -p`/`set +p`, `set -h`/`set +h`, `set -k`/`set +k` and `set -o OPTION` such as
-  `pipefail` or `noclobber`
-- Use `>| file` to force overwriting a file when `noclobber` is active
-- `set --` can replace positional parameters inside the running shell
-- Array assignments and `${name[index]}` access
-- Here-documents (`<<`) and here-strings (`<<<`)
-- History expansion with `!!`, `!n`, `!prefix`, `!$`, `!*`
+See [docs/vushdoc.md](docs/vushdoc.md) for complete details.
 
 ### Built-in Commands
 
