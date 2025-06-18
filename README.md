@@ -204,3 +204,5 @@ will record a backtrace on failure, making it easier to locate memory errors.
 
 This project is licensed under the terms of the GNU General Public License
 version 3. See [LICENSE](LICENSE) for the full license text.
+
+Your feedback, bug reports, and contributions are welcome and appreciated. Please open issues or submit pull requests to help improve vush.
