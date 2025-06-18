@@ -49,6 +49,7 @@ static void list_shell_options(void)
     print_option("onecmd", opt_onecmd);
     print_option("pipefail", opt_pipefail);
     print_option("privileged", opt_privileged);
+    print_option("posix", opt_posix);
     print_option("verbose", opt_verbose);
     print_option("xtrace", opt_xtrace);
 }
@@ -142,6 +143,8 @@ int builtin_set(char **args) {
                 opt_noclobber = 1;
             else if (strcmp(args[i+1], "errexit") == 0)
                 opt_errexit = 1;
+            else if (strcmp(args[i+1], "posix") == 0)
+                opt_posix = 1;
             else {
                 fprintf(stderr, "set: unknown option %s\n", args[i+1]);
                 return 1;
@@ -183,6 +186,8 @@ int builtin_set(char **args) {
                 opt_noclobber = 0;
             else if (strcmp(args[i+1], "errexit") == 0)
                 opt_errexit = 0;
+            else if (strcmp(args[i+1], "posix") == 0)
+                opt_posix = 0;
             else {
                 fprintf(stderr, "set: unknown option %s\n", args[i+1]);
                 return 1;

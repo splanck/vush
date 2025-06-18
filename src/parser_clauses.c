@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "util.h"
+#include "options.h"
 
 /* helpers from parser_utils */
 extern char *gather_until(char **p, const char **stops, int nstops, int *idx);
@@ -382,6 +383,16 @@ static Command *parse_case_clause(char **p) {
         int idx = -1;
         char *body = gather_until(p, stops, 2, &idx);
         if (!body) { free_case_items(head); free(word); return NULL; }
+        if (idx == 1 && opt_posix) {
+            fprintf(stderr, "syntax error: ';&' not allowed in posix mode\n");
+            for (int i = 0; i < pc; i++)
+                free(patterns[i]);
+            free(patterns);
+            free_case_items(head);
+            free(word);
+            free(body);
+            return NULL;
+        }
         Command *body_cmd = parse_line(body); free(body);
         CaseItem *ci = xcalloc(1, sizeof(CaseItem));
         if (!ci) {
@@ -421,6 +432,11 @@ Command *parse_function_def(char **p, CmdOp *op_out) {
 
     int using_kw = 0;
     if (!qfunc && strcmp(tok, "function") == 0 && (**p == ' ' || **p == '\t')) {
+        if (opt_posix) {
+            *p = savep;
+            free(tok);
+            return NULL;
+        }
         using_kw = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
         free(tok);
@@ -522,6 +538,8 @@ Command *parse_brace_group(char **p, CmdOp *op_out) {
 
 Command *parse_conditional(char **p, CmdOp *op_out) {
     if (strncmp(*p, "[[", 2) != 0)
+        return NULL;
+    if (opt_posix)
         return NULL;
     *p += 2;
     char **words = NULL;
