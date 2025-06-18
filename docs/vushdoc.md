@@ -362,7 +362,9 @@ hi
 - Aliases are stored in the file specified by `VUSH_ALIASFILE` (default
   `~/.vush_aliases`).
   The file contains one `name=value` pair per line without quotes.
-- `type NAME...` - display how each NAME would be interpreted.
+- `type [-t] NAME...` - display how each NAME would be interpreted. With `-t`
+  only the classification (`alias`, `function`, `builtin`, `file` or `not found`)
+  is printed.
 - `command [-p] [-v|-V] NAME [args...]` - run `NAME` ignoring shell functions.
   With `-v` or `-V` display how the name would be resolved. The `-p` option searches or executes using `/bin:/usr/bin` instead of the current `$PATH`.
 
@@ -524,6 +526,11 @@ ll is an alias for 'ls -l'
 cd is a builtin
 ls is /bin/ls
 unknown not found
+vush> type -t ll cd ls unknown
+alias
+builtin
+file
+not found
 ```
 
 ## Trap Example
