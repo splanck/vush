@@ -88,7 +88,7 @@ static int run_builtin_shell(PipelineSegment *seg) {
 
 /* Expand only the temporary assignment words of SEG using the current
  * environment. */
-static void expand_assignments(PipelineSegment *seg) {
+static void expand_temp_assignments(PipelineSegment *seg) {
     for (int i = 0; i < seg->assign_count; i++) {
         char *eq = strchr(seg->assigns[i], '=');
         if (eq) {
@@ -343,22 +343,11 @@ static PipelineSegment *copy_pipeline(PipelineSegment *src) {
     return head;
 }
 
-/*
- * Apply temporary variable assignments before running a pipeline.
- * Builtins and functions are executed directly while environment
- * variables are preserved and restored around the call.
- */
-
-static int apply_temp_assignments(PipelineSegment *pipeline, int background,
-                                  const char *line) {
-    if (pipeline->next)
-        return 0;
-
-    /* Expand assignment values using the current environment before setting
-     * them so that subsequent word expansions see the temporary bindings. */
-    expand_assignments(pipeline);
-
-    if (!pipeline->argv[0] && pipeline->assign_count > 0) {
+/* Export temporary assignments and return the previous values to be
+ * restored later.  When no command is present, assignments are applied
+ * permanently and NULL is returned. */
+static struct assign_backup *set_temp_environment(PipelineSegment *pipeline) {
+    if (!pipeline->argv[0]) {
         for (int i = 0; i < pipeline->assign_count; i++) {
             char *eq = strchr(pipeline->assigns[i], '=');
             if (!eq)
@@ -368,7 +357,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
                 continue;
             char *val = eq + 1;
             size_t vlen = strlen(val);
-            if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
+            if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {
                 apply_array_assignment(name, val, opt_allexport);
             } else {
                 set_shell_var(name, val);
@@ -378,15 +367,12 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             free(name);
         }
         last_status = 0;
-        return 0;
+        return NULL;
     }
-
-    if (!pipeline->argv[0])
-        return 0;
 
     struct assign_backup *backs = backup_assignments(pipeline);
     if (pipeline->assign_count > 0 && !backs)
-        return 1;
+        return NULL;
 
     for (int i = 0; i < pipeline->assign_count; i++) {
         char *eq = strchr(pipeline->assigns[i], '=');
@@ -394,7 +380,7 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
             continue;
         char *val = eq + 1;
         size_t vlen = strlen(val);
-        if (vlen > 1 && val[0] == '(' && val[vlen-1] == ')') {
+        if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {
             apply_array_assignment(backs[i].name, val, 1);
         } else {
             setenv(backs[i].name, val, 1);
@@ -402,6 +388,12 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
         }
     }
 
+    return backs;
+}
+
+/* Execute the command with temporary assignments already exported. */
+static int run_temp_command(PipelineSegment *pipeline, int background,
+                            const char *line) {
     expand_segment_no_assign(pipeline);
 
     int has_redir =
@@ -429,7 +421,40 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
         handled = 1;
     }
 
+    return handled;
+}
+
+/* Restore the previous environment saved by set_temp_environment(). */
+static void restore_temp_environment(PipelineSegment *pipeline,
+                                     struct assign_backup *backs) {
     restore_assignments(pipeline, backs);
+}
+
+/*
+ * Apply temporary variable assignments before running a pipeline.
+ * Builtins and functions are executed directly while environment
+ * variables are preserved and restored around the call.
+ */
+
+static int apply_temp_assignments(PipelineSegment *pipeline, int background,
+                                  const char *line) {
+    if (pipeline->next)
+        return 0;
+
+    /* Expand assignment values using the current environment before setting
+     * them so that subsequent word expansions see the temporary bindings. */
+    expand_temp_assignments(pipeline);
+
+    struct assign_backup *backs = set_temp_environment(pipeline);
+
+    if (!pipeline->argv[0])
+        return 0;
+
+    if (pipeline->assign_count > 0 && !backs)
+        return 1;
+
+    int handled = run_temp_command(pipeline, background, line);
+    restore_temp_environment(pipeline, backs);
 
     if (handled && opt_errexit && last_status != 0)
         exit(last_status);
