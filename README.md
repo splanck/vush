@@ -198,7 +198,14 @@ Run the shell under `gdb` or `valgrind` to catch crashes. Using
 gdb ./vush
 ```
 
+
 will record a backtrace on failure, making it easier to locate memory errors.
+
+## Development Notes
+
+Use the memory allocation helpers provided in `util.c` when adding new
+code.  The `xmalloc`, `xcalloc` and `xstrdup` wrappers exit with an error
+message if allocation fails, simplifying error handling.
 
 ## License
 

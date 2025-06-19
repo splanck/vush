@@ -48,14 +48,12 @@ static char *replace_first(const char *str, const char *old, const char *new)
 {
     const char *p = strstr(str, old);
     if (!p)
-        return strdup(str);
+        return xstrdup(str);
     size_t pre = (size_t)(p - str);
     size_t oldlen = strlen(old);
     size_t newlen = strlen(new);
     size_t len = pre + newlen + strlen(p + oldlen);
-    char *res = malloc(len + 1);
-    if (!res)
-        return NULL;
+    char *res = xmalloc(len + 1);
     memcpy(res, str, pre);
     memcpy(res + pre, new, newlen);
     strcpy(res + pre + newlen, p + oldlen);
@@ -168,11 +166,7 @@ static int fc_execute_immediate(char **args, int idx, int max_id) {
         char *eq = strchr(subst, '=');
         if (!eq)
             return 1;
-        char *old = malloc(eq - subst + 1);
-        if (!old) {
-            perror("malloc");
-            return 1;
-        }
+        char *old = xmalloc(eq - subst + 1);
         memcpy(old, subst, eq - subst);
         old[eq - subst] = '\0';
         const char *new = eq + 1;
@@ -181,12 +175,7 @@ static int fc_execute_immediate(char **args, int idx, int max_id) {
         free(old);
     }
     printf("%s\n", cmd);
-    char *mutable = strdup(cmd);
-    if (!mutable) {
-        perror("strdup");
-        free(temp);
-        return 1;
-    }
+    char *mutable = xstrdup(cmd);
     Command *cmds = parse_line(mutable);
     if (cmds && cmds->pipeline && cmds->pipeline->argv[0])
         run_command_list(cmds, cmd);

@@ -94,7 +94,7 @@ const char *get_alias(const char *name)
     return NULL;
 }
 
-/* Create or update an alias.  Returns 0 on success, -1 on allocation failure. */
+/* Create or update an alias. */
 static int set_alias(const char *name, const char *value)
 {
     /* If an alias with this NAME already exists make sure it is fully
@@ -103,19 +103,9 @@ static int set_alias(const char *name, const char *value)
      * querying the alias list. */
     remove_all_aliases(name);
 
-    struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
-    CHECK_ALLOC(new_alias);
-    new_alias->name = strdup(name);
-    if (!new_alias->name) {
-        free(new_alias);
-        RETURN_IF_ERR_RET(1, "strdup", -1);
-    }
-    new_alias->value = strdup(value);
-    if (!new_alias->value) {
-        free(new_alias->name);
-        free(new_alias);
-        RETURN_IF_ERR_RET(1, "strdup", -1);
-    }
+    struct alias_entry *new_alias = xmalloc(sizeof(struct alias_entry));
+    new_alias->name = xstrdup(name);
+    new_alias->value = xstrdup(value);
     list_append(&aliases, &new_alias->node);
     return 0;
 }
