@@ -57,7 +57,7 @@ static int max_history = MAX_HISTORY;
 static int max_file_history = MAX_HISTORY;
 
 /* Renumber history entries sequentially starting at 1. */
-static void renumber_history(void)
+void history_renumber(void)
 {
     int id = 1;
     for (ListNode *n = history.head; n; n = n->next) {
@@ -68,30 +68,11 @@ static void renumber_history(void)
 }
 
 /*
- * Determine the path to the history file.  ``$VUSH_HISTFILE`` takes
- * precedence over ``$HOME/.vush_history``.  Returns NULL if no path can
- * be constructed.
+ * File persistence helpers provided by history_file.c
  */
-static char *histfile_path(void) {
-    return make_user_path("VUSH_HISTFILE", "HISTFILE", ".vush_history");
-}
-
-/* Rewrite the entire history file from the in-memory list. */
-static void rewrite_history_file(void)
-{
-    char *path = histfile_path();
-    if (!path)
-        return;
-    FILE *f = fopen(path, "w");
-    free(path);
-    if (!f)
-        return;
-    for (ListNode *n = history.head; n; n = n->next) {
-        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
-        fprintf(f, "%s\n", e->cmd);
-    }
-    fclose(f);
-}
+void history_file_append(const char *cmd);
+void history_file_rewrite(void);
+void history_file_clear(void);
 
 /*
  * Initialise history settings from environment variables.  This function is
@@ -127,7 +108,9 @@ static void history_init(void) {
  * Internal helper to append an entry to the history list.  When
  * ``save_file`` is non-zero the entry is also appended to the history file.
  */
-static void add_history_entry(const char *cmd, int save_file) {
+/* Add a history entry. When SAVE_FILE is non-zero the entry is also
+ * persisted via history_file_append(). */
+void history_add_entry(const char *cmd, int save_file) {
     history_init();
     HistEntry *e = malloc(sizeof(HistEntry));
     RETURN_IF_ERR_RET(!e, "malloc", );
@@ -145,27 +128,18 @@ static void add_history_entry(const char *cmd, int save_file) {
         history_size--;
     }
 
-    if (save_file) {
-        char *path = histfile_path();
-        if (path) {
-            FILE *f = fopen(path, "a");
-            free(path);
-            if (f) {
-                fprintf(f, "%s\n", cmd);
-                fclose(f);
-            }
-        }
+    if (save_file)
+        history_file_append(cmd);
 
-        while (history_size > max_file_history) {
-            HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
-            list_remove(&history, &old->node);
-            free(old);
-            history_size--;
-        }
-
-        if (history_size > max_history || history_size > max_file_history)
-            rewrite_history_file();
+    while (history_size > max_file_history) {
+        HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
+        list_remove(&history, &old->node);
+        free(old);
+        history_size--;
     }
+
+    if (save_file && (history_size > max_history || history_size > max_file_history))
+        history_file_rewrite();
 }
 
 /*
@@ -178,7 +152,7 @@ void add_history(const char *cmd) {
         skip_next = 0;
         return;
     }
-    add_history_entry(cmd, 1);
+    history_add_entry(cmd, 1);
 }
 
 /*
@@ -186,51 +160,13 @@ void add_history(const char *cmd) {
  * Returns nothing.
  */
 void print_history(void) {
-    renumber_history();
+    history_renumber();
     LIST_FOR_EACH(n, &history) {
         HistEntry *e = LIST_ENTRY(n, HistEntry, node);
         printf("%d %s\n", e->id, e->cmd);
     }
 }
 
-/*
- * Load history entries from the history file into memory.
- * Returns nothing if the file cannot be read.
- */
-void load_history(void) {
-    history_init();
-    char *path = histfile_path();
-    if (!path)
-        return;
-    FILE *f = fopen(path, "r");
-    free(path);
-    if (!f)
-        return;
-    char line[MAX_LINE];
-    while (fgets(line, sizeof(line), f)) {
-        size_t len = strlen(line);
-        if (len && line[len - 1] == '\n')
-            line[len - 1] = '\0';
-        add_history_entry(line, 0);
-    }
-    fclose(f);
-
-    while (history_size > max_file_history) {
-        HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
-        list_remove(&history, &old->node);
-        free(old);
-        history_size--;
-    }
-
-    /*
-     * If the history file contained more entries than allowed by
-     * max_history older commands may have been dropped while loading.
-     * Renumber the remaining entries so identifiers start at 1 for
-     * the current session and next_id reflects the new list.
-     */
-    renumber_history();
-    rewrite_history_file();
-}
 
 /*
  * Step backwards through history and return the previous command.
@@ -329,13 +265,7 @@ void clear_history(void) {
     next_id = 1;
     history_size = 0;
 
-    char *path = histfile_path();
-    if (path) {
-        FILE *f = fopen(path, "w");
-        free(path);
-        if (f)
-            fclose(f);
-    }
+    history_file_clear();
 }
 
 /*
@@ -360,8 +290,8 @@ void delete_history_entry(int id) {
     free(e);
     history_size--;
 
-    renumber_history();
-    rewrite_history_file();
+    history_renumber();
+    history_file_rewrite();
 }
 
 /*
@@ -462,5 +392,13 @@ char *history_all_words(void) {
     if (!cmd)
         return NULL;
     return dup_all_args(cmd);
+}
+
+/* Iterate over all history entries, invoking CB for each command. */
+void history_list_iter(void (*cb)(const char *cmd, void *arg), void *arg) {
+    LIST_FOR_EACH(n, &history) {
+        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
+        cb(e->cmd, arg);
+    }
 }
 

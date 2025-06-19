@@ -11,7 +11,7 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
        src/builtins_read.c src/builtins_getopts.c src/builtins_exec.c src/vars.c \
        src/builtins_misc.c src/builtins_test.c src/builtins_print.c src/builtins_history.c src/builtins_time.c src/builtins_sys.c \
-       src/builtins_signals.c src/execute.c src/history.c \
+       src/builtins_signals.c src/execute.c src/history_list.c src/history_file.c \
        src/jobs.c src/lineedit.c src/history_search.c src/completion.c \
        src/parser.c src/lexer.c src/lexer_token.c src/lexer_expand.c src/history_expand.c src/param_expand.c src/field_split.c src/quote_utils.c src/prompt_expand.c src/brace_expand.c src/arith.c \
        src/cmd_subst.c \
