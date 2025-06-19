@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "unset FOO\r"
+expect {
+    "vush> " {}
+    timeout { send_user "unset failed\n"; exit 1 }
+}
+send "echo \${FOO:-bar}\r"
+expect {
+    -re "\r\nbar\r\nvush> " {}
+    timeout { send_user "expand failed\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

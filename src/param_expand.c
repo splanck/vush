@@ -19,187 +19,16 @@
 #include "util.h"
 #include "cmd_subst.h"
 
-
-
-char **split_fields(const char *text, int *count_out) {
-    if (count_out)
-        *count_out = 0;
-
-    const char *ifs = get_shell_var("IFS");
-    if (!ifs)
-        ifs = getenv("IFS");
-    if (!ifs)
-        ifs = " \t\n";
-
-    /* Empty IFS disables splitting completely. */
-    if (!*ifs) {
-        char **res = malloc(2 * sizeof(char *));
-        if (!res)
-            return NULL;
-        res[0] = strdup(text);
-        if (!res[0]) {
-            free(res);
-            return NULL;
-        }
-        res[1] = NULL;
-        if (count_out)
-            *count_out = 1;
-        return res;
-    }
-
-    char ws_tab[256] = {0};
-    char other_tab[256] = {0};
-    for (const char *p = ifs; *p; p++) {
-        unsigned char c = (unsigned char)*p;
-        if (c == ' ' || c == '\t' || c == '\n')
-            ws_tab[c] = 1;
-        else
-            other_tab[c] = 1;
-    }
-
-    char *dup = strdup(text);
-    if (!dup)
-        return NULL;
-    char *p = dup;
-    char *field_start = dup;
-    char **out = NULL;
-    int count = 0;
-    int last_nonspace = 0;
-
-    while (*p) {
-        unsigned char c = (unsigned char)*p;
-        if (ws_tab[c]) {
-            if (p > field_start) {
-                char save = *p;
-                *p = '\0';
-                char **tmp = realloc(out, sizeof(char *) * (count + 1));
-                if (!tmp) {
-                    goto fail;
-                }
-                out = tmp;
-                out[count] = strdup(field_start);
-                if (!out[count]) {
-                    goto fail;
-                }
-                count++;
-                *p = save;
-            }
-            while (ws_tab[(unsigned char)*p])
-                p++;
-            field_start = p;
-            last_nonspace = 0;
-            continue;
-        } else if (other_tab[c]) {
-            char save = *p;
-            *p = '\0';
-            char **tmp = realloc(out, sizeof(char *) * (count + 1));
-            if (!tmp) {
-                goto fail;
-            }
-            out = tmp;
-            out[count] = strdup(field_start);
-            if (!out[count]) {
-                goto fail;
-            }
-            count++;
-            *p = save;
-            p++;
-            field_start = p;
-            last_nonspace = 1;
-            continue;
-        }
-        last_nonspace = 0;
-        p++;
-    }
-
-    if (p > field_start || last_nonspace) {
-        char **tmp = realloc(out, sizeof(char *) * (count + 1));
-        if (!tmp) {
-            goto fail;
-        }
-        out = tmp;
-        out[count] = strdup(field_start);
-        if (!out[count]) {
-            goto fail;
-        }
-        count++;
-    }
-
-    free(dup);
-
-    if (count == 0) {
-        out = malloc(sizeof(char *));
-        if (!out)
-            return NULL;
-        out[0] = NULL;
-    } else {
-        char **tmp = realloc(out, sizeof(char *) * (count + 1));
-        if (!tmp) {
-            goto fail_alloc;
-        }
-        out = tmp;
-        out[count] = NULL;
-    }
-    if (count_out)
-        *count_out = count;
-    return out;
-
-fail:
-    free(dup);
-fail_alloc:
-    if (out) {
-        for (int i = 0; i < count; i++)
-            free(out[i]);
-        free(out);
-    }
-    if (count_out)
-        *count_out = 0;
-    return NULL;
-}
-
-/* -- Expansion helper functions --------------------------------------- */
-
-/* Translate backslash escapes like \n and \0NNN used by $'..' quoting. */
-char *ansi_unescape(const char *src) {
-    size_t len = strlen(src);
-    char *out = malloc(len + 1);
-    if (!out)
-        return NULL;
-    char *d = out;
-    for (const char *s = src; *s; s++) {
-        if (*s == '\\' && s[1]) {
-            s++;
-            switch (*s) {
-            case 'n': *d++ = '\n'; break;
-            case 't': *d++ = '\t'; break;
-            case 'r': *d++ = '\r'; break;
-            case 'b': *d++ = '\b'; break;
-            case 'a': *d++ = '\a'; break;
-            case 'f': *d++ = '\f'; break;
-            case 'v': *d++ = '\v'; break;
-            case '\\': *d++ = '\\'; break;
-            case '\'': *d++ = '\''; break;
-            case '"': *d++ = '"'; break;
-            case '0': {
-                int val = 0, cnt = 0;
-                while (cnt < 3 && s[1] >= '0' && s[1] <= '7') {
-                    s++; cnt++; val = val * 8 + (*s - '0');
-                }
-                *d++ = (char)val;
-                break;
-            }
-            default:
-                *d++ = '\\';
-                *d++ = *s;
-                break;
-            }
-        } else {
-            *d++ = *s;
-        }
-    }
-    *d = '\0';
-    return out;
-}
+static char *expand_tilde(const char *token);
+static char *expand_arith(const char *token);
+static char *expand_array_element(const char *name, const char *idxstr);
+static int find_glob_substring(const char *text, const char *pat,
+                               size_t *start, size_t *len);
+static char *apply_modifier(const char *name, const char *val, const char *p);
+static char *expand_length(const char *name);
+static char *expand_braced(const char *inner);
+static char *expand_special(const char *token);
+static char *expand_plain_var(const char *name);
 
 /* Expand ~ or ~user to the appropriate home directory path. */
 static char *expand_tilde(const char *token) {
@@ -263,8 +92,6 @@ static char *expand_arith(const char *token) {
     return strdup(buf);
 }
 
-/* Expand NAME[IDX] style references. IDX may be '@' to join all elements.
- * Falls back to environment variables when the shell array is unset. */
 static char *expand_array_element(const char *name, const char *idxstr) {
     if (strcmp(idxstr, "@") == 0) {
         int alen = 0; char **arr = get_shell_array(name, &alen);
@@ -300,9 +127,6 @@ static char *expand_array_element(const char *name, const char *idxstr) {
     }
 }
 
-/* Find the first substring of TEXT that matches PAT using fnmatch().
- * On success *START and *LEN indicate the matched range and 1 is returned.
- * Returns 0 if no match is found. */
 static int find_glob_substring(const char *text, const char *pat,
                                size_t *start, size_t *len) {
     size_t tlen = strlen(text);
@@ -324,10 +148,6 @@ static int find_glob_substring(const char *text, const char *pat,
     return 0;
 }
 
-/* Apply parameter expansion modifiers contained in P to VAL. Handles
- * operations such as default values, assignment, removal of prefixes or
- * suffixes, and others used in ${NAMEMOD}. NAME is used for error messages
- * and assignments. */
 static char *apply_modifier(const char *name, const char *val, const char *p) {
     if (*p == ':' && (p[1] == '-' || p[1] == '=' || p[1] == '+')) {
         char op = p[1];
@@ -521,7 +341,6 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
     }
 }
 
-/* Expand ${#NAME} to the length of NAME's value. */
 static char *expand_length(const char *name) {
     const char *val = get_shell_var(name);
     if (!val) val = getenv(name);
@@ -538,8 +357,6 @@ static char *expand_length(const char *name) {
     return strdup(buf);
 }
 
-/* Expand a ${...} expression contained in INNER. Handles array indexing,
- * length expansion and parameter modifiers. */
 static char *expand_braced(const char *inner) {
     if (inner[0] == '#')
         return expand_length(inner + 1);
@@ -576,7 +393,6 @@ static char *expand_braced(const char *inner) {
     return strdup(val);
 }
 
-/* Expand special parameters such as $?, $#, $@, $*, and positional arguments. */
 static char *expand_special(const char *token) {
     if (strcmp(token, "$$") == 0) {
         char buf[16];
@@ -694,7 +510,6 @@ static char *expand_special(const char *token) {
     return NULL;
 }
 
-/* Expand a normal variable name to its value or an empty string. */
 static char *expand_plain_var(const char *name) {
     const char *val = get_shell_var(name);
     if (!val) val = getenv(name);
@@ -709,10 +524,6 @@ static char *expand_plain_var(const char *name) {
     return strdup(val);
 }
 
-/* Expand a TOKEN that may contain variable, arithmetic, tilde or
- * parameter expansion syntax. Returns a newly allocated string with the
- * result of the expansion. */
-/* Existing variable expansion logic that handles a single expansion token. */
 char *expand_simple(const char *token) {
     char *s = expand_special(token);
     if (s)
@@ -721,8 +532,6 @@ char *expand_simple(const char *token) {
     if (token[0] == '~')
         return expand_tilde(token);
 
-    /* Handle arithmetic expansion before command substitution so that
-     * tokens like $((1+2)) are not treated as $( command ). */
     if (token[0] == '$') {
         s = expand_arith(token);
         if (s)
@@ -735,7 +544,6 @@ char *expand_simple(const char *token) {
         if (out && *p == '\0')
             return out;
         free(out);
-        /* fall through to regular expansion on failure */
     }
 
     if (token[0] != '$')
@@ -755,5 +563,3 @@ char *expand_simple(const char *token) {
 
     return expand_plain_var(token + 1);
 }
-
-
