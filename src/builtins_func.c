@@ -6,7 +6,7 @@
  * and the original source text so it can be written back verbatim.
  *
  * On shell exit free_functions() serializes this list one definition per
- * line and writes it to the file returned by funcfile_path().  The path
+ * line and writes it to the file returned by get_func_file().  The path
  * defaults to ~/.vush_funcs but can be overridden with the VUSH_FUNCFILE
  * environment variable.  load_functions() reads the same file at start up
  * and recreates the in-memory list by parsing each saved line.
@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "util.h"
+#include "state_paths.h"
 #include "shell_state.h"
 #include "list.h"
 
@@ -42,10 +43,6 @@ FuncEntry *find_function(const char *name)
  * VUSH_FUNCFILE environment variable is set its value is returned,
  * otherwise ~/.vush_funcs is used.
  */
-static char *funcfile_path(void)
-{
-    return make_user_path("VUSH_FUNCFILE", NULL, ".vush_funcs");
-}
 
 /*
  * Write the current list of functions to the persistence file.  Each
@@ -54,7 +51,7 @@ static char *funcfile_path(void)
  */
 static void save_functions(void)
 {
-    char *path = funcfile_path();
+    char *path = get_func_file();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
@@ -75,7 +72,7 @@ static void save_functions(void)
 void load_functions(void)
 {
     list_init(&functions);
-    char *path = funcfile_path();
+    char *path = get_func_file();
     if (!path)
         return;
     FILE *f = fopen(path, "r");
