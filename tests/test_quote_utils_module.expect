@@ -1,0 +1,11 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush -c {printf '%s\n' $'x\ny'}
+expect {
+    -re "x\r\ny\r" {}
+    timeout { send_user "quote failed\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
