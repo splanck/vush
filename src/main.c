@@ -32,8 +32,8 @@
 #include "lexer.h"
 #include "history.h"
 #include "lineedit.h"
+#include "shell_state.h"
 #include "scriptargs.h"
-#include "options.h"
 #include "dirstack.h"
 #include "util.h"
 #include "version.h"
@@ -44,30 +44,12 @@
 #include "repl.h"
 
 
-int last_status = 0;
-int param_error = 0;
-int script_argc = 0;
-char **script_argv = NULL;
-int opt_errexit = 0;
-int opt_nounset = 0;
-int opt_xtrace = 0;
-int opt_verbose = 0;
-int opt_pipefail = 0;
-int opt_ignoreeof = 0;
-int opt_noclobber = 0;
-int opt_noexec = 0;
-int opt_noglob = 0;
-int opt_allexport = 0;
-int opt_monitor = 1;
-int opt_notify = 1;
-int opt_privileged = 0;
-int opt_posix = 0;
-int opt_onecmd = 0;
-int opt_hashall = 0;
-int opt_keyword = 0;
-int current_lineno = 0;
-pid_t parent_pid = 0;
+ShellState shell_state = {
+    .opt_monitor = 1,
+    .opt_notify = 1
+};
 
+#include "options.h"
 
 int main(int argc, char **argv) {
 

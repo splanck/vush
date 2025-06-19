@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <time.h>
+#include "shell_state.h"
 #include <string.h>
 #include <sys/times.h>
 #include <unistd.h>
 
-extern int last_status;
 
 static int do_time(int posix, int (*func)(void *), void *data)
 {

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "shell_state.h"
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
@@ -12,7 +13,6 @@
 #include "signal_map.h"
 #include "util.h"
 
-extern int last_status;
 void list_signals(void);
 
 /* Map signal names to numbers for trap builtin is now defined in signal_map.h */

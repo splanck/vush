@@ -24,7 +24,6 @@
 extern char *process_substitution(char **p, int read_from);
 extern char *gather_dbl_parens(char **p); /* for arithmetic for loops */
 extern char *trim_ws(const char *s);
-extern int last_status;
 
 #define MAX_ALIAS_DEPTH 10
 

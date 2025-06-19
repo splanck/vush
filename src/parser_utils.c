@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "execute.h"
+#include "shell_state.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -16,7 +17,6 @@
 #include <sys/stat.h>
 #include <signal.h>
 
-extern int last_status;
 
 /* Temporary variable tracking for process substitutions */
 struct proc_sub {

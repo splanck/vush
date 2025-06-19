@@ -26,7 +26,6 @@
 #include "options.h"
 #include "hash.h"
 #include "redir.h"
-extern int last_status;
 
 
 /*

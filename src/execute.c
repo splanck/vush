@@ -33,8 +33,6 @@
 #include "assignment_utils.h"
 #include "control.h"
 
-extern int last_status;
-extern int param_error;
 
 int loop_break = 0;
 int loop_continue = 0;

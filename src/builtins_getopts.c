@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-extern int last_status;
 
 /* Pointer into the current $@ item being parsed by getopts. When script_argv
  * is replaced or freed this must be cleared so it does not reference stale

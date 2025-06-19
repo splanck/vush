@@ -19,8 +19,6 @@
 #include "util.h"
 #include "cmd_subst.h"
 
-extern int last_status;
-extern int param_error;
 
 
 char **split_fields(const char *text, int *count_out) {

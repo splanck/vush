@@ -4,7 +4,6 @@
  *
  * Expressions are parsed using a tiny recursive–descent parser with the
  * following grammar.  Each non‑terminal corresponds to a static parse_*()
- * function below.
  *
  *   expression  := assignment
  *   assignment  := NAME '=' assignment |
@@ -29,6 +28,7 @@
  * string and returns the resulting numeric value.
  */
 #include "vars.h" // for set_shell_var and get_shell_var
+#include "shell_state.h"
 #include "arith.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -37,7 +37,6 @@
 #include <limits.h>
 #include <errno.h>
 
-extern int last_status;
 
 #define PARSE_RHS(fn)              \
     long long rhs = fn(state);    \

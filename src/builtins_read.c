@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "shell_state.h"
 #include <unistd.h>
 #include <errno.h>
-extern int last_status;
 
 /* ---- helper functions for builtin_read -------------------------------- */
 static int parse_read_options(char **args, int *raw, const char **array_name,

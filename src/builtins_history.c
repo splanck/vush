@@ -5,6 +5,7 @@
 #include "execute.h"
 #include "util.h"
 
+#include "shell_state.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,6 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-extern int last_status;
 
 /* Display the command history or modify it with -c to clear or -d N to
  * delete a specific entry. */

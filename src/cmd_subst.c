@@ -10,7 +10,6 @@
 #include <sys/wait.h>
 #include <stdio.h>
 
-extern int last_status;
 
 /* Execute CMD and capture its stdout using the shell itself so that shell
  * variables and functions are visible.  The command's output is returned as a

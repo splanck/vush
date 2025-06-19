@@ -5,6 +5,7 @@
  * creation masks such as `ulimit` and `umask`.
  */
 #define _GNU_SOURCE
+#include "shell_state.h"
 #include "builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +15,6 @@
 #include <sys/stat.h>
 #include <sys/resource.h>
 
-extern int last_status;
 
 /* Helper to print a mask in symbolic form like u=rwx,g=rx,o=rx. */
 static void print_symbolic_umask(mode_t mask)

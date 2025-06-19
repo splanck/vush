@@ -5,6 +5,7 @@
  */
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "shell_state.h"
 #include "vars.h"
 #include "history.h"
 #include <stdio.h>
@@ -12,7 +13,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-extern int last_status;
 
 /* Exit the shell, freeing resources and using the provided status
  * or the status of the last command when none is given. */

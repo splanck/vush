@@ -16,7 +16,6 @@
 #include <limits.h>
 #include <sys/wait.h>
 
-extern int last_status;
 extern FILE *parse_input;
 
 static int prepare_source_args(char **args, int *old_argc, char ***old_argv,

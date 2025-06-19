@@ -12,7 +12,6 @@
 #include "util.h"
 #include "options.h"
 
-extern int last_status;
 
 /* Source the specified RC file and execute its commands. */
 int process_rc_file(const char *path, FILE *input)

@@ -28,8 +28,6 @@
 #include "assignment_utils.h"
 #include "parser.h"
 
-extern int last_status;
-extern int param_error;
 
 static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
                                    const char *line);

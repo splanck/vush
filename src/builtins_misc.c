@@ -4,7 +4,6 @@
  * This file gathers builtins that don't fit the alias, variable,
  * file system or job-control groups.  Keeping them here avoids
  * cluttering those more focused modules.
- *
  * Some helpers, such as `source` and `eval`, invoke the parser and
  * executor directly so they behave like normal command evaluation.
  */
@@ -16,7 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-extern int last_status;
+#include "shell_state.h"
 /* Manage or display command hash table. */
 int builtin_hash(char **args) {
     int i = 1;
