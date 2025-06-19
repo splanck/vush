@@ -21,8 +21,8 @@
 #include <unistd.h>
 #include <limits.h>
 #include "util.h"
+#include "shell_state.h"
 
-extern int last_status;
 
 static FuncEntry *functions = NULL;
 

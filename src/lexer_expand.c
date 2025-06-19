@@ -20,7 +20,6 @@
 #include "util.h"
 #include "cmd_subst.h"
 
-extern int last_status;
 
 /* Append STR to OUT reallocating as needed. Returns 0 on allocation failure. */
 static int append_str(char **out, size_t *len, const char *str) {

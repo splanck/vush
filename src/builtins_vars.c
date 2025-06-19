@@ -27,7 +27,6 @@
 #include "util.h"
 #include "assignment_utils.h"
 
-extern int last_status;
 
 
 static void print_option(const char *name, int enabled)

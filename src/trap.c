@@ -5,9 +5,9 @@
 #include "trap.h"
 #include "parser.h"
 #include "execute.h"
+#include "shell_state.h"
 #include "builtins.h"
 
-extern int last_status;
 
 static volatile sig_atomic_t pending_traps[NSIG];
 

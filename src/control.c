@@ -5,6 +5,7 @@
  */
 #define _GNU_SOURCE
 #include <stdio.h>
+#include "shell_state.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -21,7 +22,6 @@
 #include "util.h"
 #include "var_expand.h"
 
-extern int last_status;
 
 int exec_if(Command *cmd, const char *line) {
     run_command_list(cmd->cond, line);

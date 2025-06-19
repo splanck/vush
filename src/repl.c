@@ -18,7 +18,6 @@
 #include "options.h"
 #include "vars.h"
 
-extern int last_status;
 
 void repl_loop(FILE *input)
 {

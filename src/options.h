@@ -1,26 +1,26 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <sys/types.h>
+#include "shell_state.h"
 
-extern int opt_errexit;
-extern int opt_nounset;
-extern int opt_xtrace;
-extern int opt_verbose;
-extern int opt_pipefail;
-extern int opt_ignoreeof;
-extern int opt_noclobber;
-extern int opt_noexec;
-extern int opt_noglob;
-extern int opt_allexport;
-extern int opt_monitor;
-extern int opt_notify;
-extern int opt_privileged;
-extern int opt_posix;
-extern int opt_onecmd;
-extern int opt_hashall;
-extern int opt_keyword;
-extern int current_lineno;
-extern pid_t parent_pid;
+#define opt_errexit   (shell_state.opt_errexit)
+#define opt_nounset   (shell_state.opt_nounset)
+#define opt_xtrace    (shell_state.opt_xtrace)
+#define opt_verbose   (shell_state.opt_verbose)
+#define opt_pipefail  (shell_state.opt_pipefail)
+#define opt_ignoreeof (shell_state.opt_ignoreeof)
+#define opt_noclobber (shell_state.opt_noclobber)
+#define opt_noexec    (shell_state.opt_noexec)
+#define opt_noglob    (shell_state.opt_noglob)
+#define opt_allexport (shell_state.opt_allexport)
+#define opt_monitor   (shell_state.opt_monitor)
+#define opt_notify    (shell_state.opt_notify)
+#define opt_privileged (shell_state.opt_privileged)
+#define opt_posix     (shell_state.opt_posix)
+#define opt_onecmd    (shell_state.opt_onecmd)
+#define opt_hashall   (shell_state.opt_hashall)
+#define opt_keyword   (shell_state.opt_keyword)
+#define current_lineno (shell_state.current_lineno)
+#define parent_pid    (shell_state.parent_pid)
 
 #endif /* OPTIONS_H */

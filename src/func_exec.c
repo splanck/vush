@@ -19,7 +19,6 @@
 #include "vars.h"
 #include "util.h"
 
-extern int last_status;
 
 int func_return = 0;
 

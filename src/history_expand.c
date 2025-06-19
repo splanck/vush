@@ -5,6 +5,7 @@
  * references with the corresponding history entry.
  */
 #define _GNU_SOURCE
+#include "shell_state.h"
 #include "history_expand.h"
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */
@@ -13,7 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern int last_status;
 
 char *expand_history(const char *line) {
     const char *p = line;

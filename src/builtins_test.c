@@ -5,6 +5,7 @@
  * expression evaluator.
  */
 #define _GNU_SOURCE
+#include "shell_state.h"
 #include "builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,6 @@
 #include <sys/stat.h>
 #include <fnmatch.h>
 
-extern int last_status;
 
 static int eval_primary(char ***cur);
 static int eval_not(char ***cur);

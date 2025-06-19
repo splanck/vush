@@ -5,11 +5,11 @@
 #include "builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "shell_state.h"
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
 
-extern int last_status;
 
 /* Print arguments separated by spaces. Supports -n to suppress the
  * trailing newline and -e to interpret common backslash escapes. */
