@@ -1,7 +1,7 @@
 /*
  * Alias builtins and helpers.
  *
- * Aliases are stored in a simple linked list of `struct alias_entry`
+ * Aliases are stored in a simple list of `struct alias_entry`
  * nodes.  At startup `load_aliases()` reads the file specified by the
  * `VUSH_ALIASFILE` environment variable or `~/.vush_aliases` when the
  * variable is unset.  Each line in the file contains a single
@@ -19,14 +19,15 @@
 #include <limits.h>
 #include "util.h"
 #include "error.h"
+#include "list.h"
 
 struct alias_entry {
     char *name;
     char *value;
-    struct alias_entry *next;
+    ListNode node;
 };
 
-static struct alias_entry *aliases = NULL;
+static List aliases;
 
 static int set_alias(const char *name, const char *value);
 static void remove_all_aliases(const char *name);
@@ -47,14 +48,17 @@ static void save_aliases(void)
     free(path);
     if (!f)
         return;
-    for (struct alias_entry *a = aliases; a; a = a->next)
+    LIST_FOR_EACH(n, &aliases) {
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         fprintf(f, "%s=%s\n", a->name, a->value);
+    }
     fclose(f);
 }
 
 /* Populate the alias list from the alias file if it exists. */
 void load_aliases(void)
 {
+    list_init(&aliases);
     char *path = aliasfile_path();
     if (!path)
         return;
@@ -82,7 +86,8 @@ void load_aliases(void)
 /* Find the value for NAME or return NULL if it is not defined. */
 const char *get_alias(const char *name)
 {
-    for (struct alias_entry *a = aliases; a; a = a->next) {
+    LIST_FOR_EACH(n, &aliases) {
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         if (strcmp(a->name, name) == 0)
             return a->value;
     }
@@ -111,28 +116,17 @@ static int set_alias(const char *name, const char *value)
         free(new_alias);
         RETURN_IF_ERR_RET(1, "strdup", -1);
     }
-    new_alias->next = NULL;
-    if (!aliases) {
-        aliases = new_alias;
-    } else {
-        struct alias_entry *tail = aliases;
-        while (tail->next)
-            tail = tail->next;
-        tail->next = new_alias;
-    }
+    list_append(&aliases, &new_alias->node);
     return 0;
 }
 
 /* Remove NAME from the alias list if present. */
 static void remove_alias(const char *name)
 {
-    struct alias_entry *prev = NULL;
-    for (struct alias_entry *a = aliases; a; prev = a, a = a->next) {
+    LIST_FOR_EACH(n, &aliases) {
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         if (strcmp(a->name, name) == 0) {
-            if (prev)
-                prev->next = a->next;
-            else
-                aliases = a->next;
+            list_remove(&aliases, &a->node);
             free(a->name);
             free(a->value);
             free(a);
@@ -144,37 +138,40 @@ static void remove_alias(const char *name)
 /* Remove all entries matching NAME from the alias list. */
 static void remove_all_aliases(const char *name)
 {
-    struct alias_entry **pprev = &aliases;
-    struct alias_entry *a = aliases;
-    while (a) {
+    ListNode *n = aliases.head;
+    while (n) {
+        ListNode *next = n->next;
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         if (strcmp(a->name, name) == 0) {
-            *pprev = a->next;
+            list_remove(&aliases, &a->node);
             free(a->name);
             free(a->value);
-            struct alias_entry *next = a->next;
             free(a);
-            a = next;
-            continue;
         }
-        pprev = &a->next;
-        a = a->next;
+        n = next;
     }
 }
 
 /* Print all defined aliases to stdout. */
 static int printed_before(const char *name, struct alias_entry *limit)
 {
-    for (struct alias_entry *b = aliases; b && b != limit; b = b->next)
+    LIST_FOR_EACH(n, &aliases) {
+        struct alias_entry *b = LIST_ENTRY(n, struct alias_entry, node);
+        if (b == limit)
+            break;
         if (strcmp(b->name, name) == 0)
             return 1;
+    }
     return 0;
 }
 
 static void list_aliases_fmt(const char *fmt)
 {
-    for (struct alias_entry *a = aliases; a; a = a->next)
+    LIST_FOR_EACH(n, &aliases) {
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         if (!printed_before(a->name, a))
             printf(fmt, a->name, a->value);
+    }
 }
 
 static void list_aliases(void)
@@ -191,15 +188,16 @@ static void list_aliases_p(void)
 void free_aliases(void)
 {
     save_aliases();
-    struct alias_entry *a = aliases;
-    while (a) {
-        struct alias_entry *next = a->next;
+    ListNode *n = aliases.head;
+    while (n) {
+        ListNode *next = n->next;
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
         free(a->name);
         free(a->value);
         free(a);
-        a = next;
+        n = next;
     }
-    aliases = NULL;
+    list_init(&aliases);
 }
 
 /* builtin_alias - list aliases or define name=value pairs. */

@@ -7,6 +7,7 @@
 #define BUILTINS_H
 
 #include "parser.h"
+#include "list.h"
 #include <signal.h>
 #ifndef NSIG
 #define NSIG _NSIG
@@ -46,7 +47,7 @@ typedef struct func_entry {
     char *name;
     char *text;
     Command *body;
-    struct func_entry *next;
+    ListNode node;
 } FuncEntry;
 void define_function(const char *name, Command *body, const char *text);
 FuncEntry *find_function(const char *name);
