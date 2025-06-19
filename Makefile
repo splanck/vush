@@ -16,7 +16,8 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/parser.c src/lexer.c src/lexer_token.c src/lexer_expand.c src/history_expand.c src/var_expand.c src/prompt_expand.c src/brace_expand.c src/arith.c \
        src/cmd_subst.c \
        src/parser_utils.c src/parser_clauses.c \
-       src/parser_pipeline.c \
+       src/parser_pipeline.c src/parser_here_doc.c src/alias_expand.c \
+       src/parser_brace_expand.c \
        src/dirstack.c src/util.c src/assignment_utils.c src/pipeline.c src/pipeline_exec.c src/control.c src/redir.c src/func_exec.c \
        src/hash.c src/trap.c src/startup.c src/mail.c src/repl.c \
        src/main.c
