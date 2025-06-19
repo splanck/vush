@@ -226,7 +226,7 @@ int builtin_command(char **args) {
                 continue;
             }
             int is_builtin = 0;
-            for (int j = 0; builtin_table[j].name; j++) {
+            for (int j = 0; j < BI_COUNT; j++) {
                 if (strcmp(args[i], builtin_table[j].name) == 0) {
                     if (opt_V)
                         printf("%s is a builtin\n", args[i]);

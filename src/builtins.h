@@ -17,30 +17,27 @@ struct builtin {
     int (*func)(char **);
 };
 
-extern const struct builtin builtin_table[];
+/*
+ * Builtin registration list.  Each entry provides an identifier, the
+ * command name and the implementing function.  The list is consumed with
+ * different definitions of DEF_BUILTIN to generate enums, prototypes and
+ * tables.
+ */
+#define DEF_BUILTIN(id, name, func) int func(char **);
+#include "builtins_list.h"
+#undef DEF_BUILTIN
+
+enum builtin_id {
+#define DEF_BUILTIN(id, name, func) BI_##id,
+#include "builtins_list.h"
+#undef DEF_BUILTIN
+    BI_COUNT
+};
+
+extern const struct builtin builtin_table[BI_COUNT];
 
 int run_builtin(char **args);
-int builtin_exit(char **args);
-int builtin_colon(char **args);
-int builtin_true(char **args);
-int builtin_false(char **args);
-int builtin_type(char **args);
-int builtin_dirs(char **args);
-int builtin_read(char **args);
-int builtin_getopts(char **args);
-int builtin_eval(char **args);
-int builtin_printf(char **args);
-int builtin_echo(char **args);
-int builtin_history(char **args);
-int builtin_fc(char **args);
-int builtin_exec(char **args);
-int builtin_command(char **args);
-int builtin_time(char **args);
-int builtin_times(char **args);
 int builtin_time_callback(int (*func)(void *), void *data, int posix);
-int builtin_umask(char **args);
-int builtin_ulimit(char **args);
-int builtin_source(char **args);
 const char **get_builtin_names(void);
 const char *get_alias(const char *name);
 void load_aliases(void);
@@ -58,11 +55,6 @@ void remove_function(const char *name);
 void load_functions(void);
 void free_functions(void);
 void print_functions(void);
-int builtin_local(char **args);
-int builtin_break(char **args);
-int builtin_continue(char **args);
-int builtin_test(char **args);
-int builtin_cond(char **args);
 void list_signals(void);
 
 extern char *trap_cmds[NSIG];
@@ -72,6 +64,5 @@ extern char *getopts_pos;
 extern char *exit_trap_cmd;
 void run_exit_trap(void);
 void free_trap_cmds(void);
-int builtin_trap(char **args);
 
 #endif /* BUILTINS_H */
