@@ -11,95 +11,11 @@
 #include <string.h>
 
 /* builtin_table is used by run_builtin and builtin_type */
-extern int builtin_cd(char **);
-extern int builtin_pushd(char **);
-extern int builtin_popd(char **);
-extern int builtin_dirs(char **);
-extern int builtin_echo(char **);
-extern int builtin_pwd(char **);
-extern int builtin_jobs(char **);
-extern int builtin_fg(char **);
-extern int builtin_bg(char **);
-extern int builtin_kill(char **);
-extern int builtin_wait(char **);
-extern int builtin_export(char **);
-extern int builtin_readonly(char **);
-extern int builtin_local(char **);
-extern int builtin_unset(char **);
-extern int builtin_history(char **);
-extern int builtin_fc(char **);
-extern int builtin_hash(char **);
-extern int builtin_alias(char **);
-extern int builtin_unalias(char **);
-extern int builtin_read(char **);
-extern int builtin_getopts(char **);
-extern int builtin_printf(char **);
-extern int builtin_time(char **);
-extern int builtin_times(char **);
-extern int builtin_umask(char **);
-extern int builtin_ulimit(char **);
-extern int builtin_return(char **);
-extern int builtin_break(char **);
-extern int builtin_continue(char **);
-extern int builtin_shift(char **);
-extern int builtin_let(char **);
-extern int builtin_set(char **);
-extern int builtin_trap(char **);
-extern int builtin_test(char **);
-extern int builtin_cond(char **);
-extern int builtin_type(char **);
-extern int builtin_help(char **);
 
-const struct builtin builtin_table[] = {
-    {"cd", builtin_cd},
-    {"pushd", builtin_pushd},
-    {"popd", builtin_popd},
-    {"printf", builtin_printf},
-    {"dirs", builtin_dirs},
-    {"exit", builtin_exit},
-    {":", builtin_colon},
-    {"true", builtin_true},
-    {"false", builtin_false},
-    {"echo", builtin_echo},
-    {"pwd", builtin_pwd},
-    {"jobs", builtin_jobs},
-    {"fg", builtin_fg},
-    {"bg", builtin_bg},
-    {"kill", builtin_kill},
-    {"wait", builtin_wait},
-    {"export", builtin_export},
-    {"readonly", builtin_readonly},
-    {"local", builtin_local},
-    {"unset", builtin_unset},
-    {"history", builtin_history},
-    {"fc", builtin_fc},
-    {"hash", builtin_hash},
-    {"alias", builtin_alias},
-    {"unalias", builtin_unalias},
-    {"read", builtin_read},
-    {"return", builtin_return},
-    {"break", builtin_break},
-    {"continue", builtin_continue},
-    {"shift", builtin_shift},
-    {"getopts", builtin_getopts},
-    {"let", builtin_let},
-    {"set", builtin_set},
-    {"trap", builtin_trap},
-    {"test", builtin_test},
-    {"[", builtin_test},
-    {"[[", builtin_cond},
-    {"type", builtin_type},
-    {"command", builtin_command},
-    {"eval", builtin_eval},
-    {"exec", builtin_exec},
-    {"time", builtin_time},
-    {"times", builtin_times},
-    {"umask", builtin_umask},
-    {"ulimit", builtin_ulimit},
-    {"source", builtin_source},
-    {".", builtin_source},
-    {"help", builtin_help},
-    {NULL, NULL}
+const struct builtin builtin_table[BI_COUNT] = {
+#define DEF_BUILTIN(id, name, func) [BI_##id] = { name, func },
+#include "builtins_list.h"
+#undef DEF_BUILTIN
 };
 
 /*
@@ -109,7 +25,7 @@ const struct builtin builtin_table[] = {
  */
 int run_builtin(char **args)
 {
-    for (int i = 0; builtin_table[i].name; i++) {
+    for (int i = 0; i < BI_COUNT; i++) {
         if (strcmp(args[0], builtin_table[i].name) == 0)
             return builtin_table[i].func(args);
     }
@@ -122,10 +38,9 @@ int run_builtin(char **args)
  */
 const char **get_builtin_names(void)
 {
-    static const char *names[sizeof(builtin_table) / sizeof(builtin_table[0])];
-    int i = 0;
-    for (; builtin_table[i].name; i++)
+    static const char *names[BI_COUNT + 1];
+    for (int i = 0; i < BI_COUNT; i++)
         names[i] = builtin_table[i].name;
-    names[i] = NULL;
+    names[BI_COUNT] = NULL;
     return names;
 }
