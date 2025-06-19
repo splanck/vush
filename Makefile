@@ -20,7 +20,7 @@ SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c
        src/parser_brace_expand.c \
        src/dirstack.c src/util.c src/assignment_utils.c src/pipeline.c src/pipeline_exec.c src/control.c src/redir.c src/func_exec.c \
        src/hash.c src/trap.c src/startup.c src/mail.c src/repl.c \
-       src/main.c
+       src/main.c src/strarray.c
 
 OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(SRCS))
 

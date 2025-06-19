@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "var_expand.h"
 #include "vars.h"
+#include "strarray.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,8 +45,8 @@ char **split_fields(const char *text, int *count_out) {
         return NULL;
     char *p = dup;
     char *field_start = dup;
-    char **out = NULL;
-    int count = 0;
+    StrArray arr;
+    strarray_init(&arr);
     int last_nonspace = 0;
 
     while (*p) {
@@ -54,16 +55,11 @@ char **split_fields(const char *text, int *count_out) {
             if (p > field_start) {
                 char save = *p;
                 *p = '\0';
-                char **tmp = realloc(out, sizeof(char *) * (count + 1));
-                if (!tmp) {
+                char *dup_field = strdup(field_start);
+                if (!dup_field || strarray_push(&arr, dup_field) == -1) {
+                    free(dup_field);
                     goto fail;
                 }
-                out = tmp;
-                out[count] = strdup(field_start);
-                if (!out[count]) {
-                    goto fail;
-                }
-                count++;
                 *p = save;
             }
             while (ws_tab[(unsigned char)*p])
@@ -74,16 +70,11 @@ char **split_fields(const char *text, int *count_out) {
         } else if (other_tab[c]) {
             char save = *p;
             *p = '\0';
-            char **tmp = realloc(out, sizeof(char *) * (count + 1));
-            if (!tmp) {
+            char *dup_field = strdup(field_start);
+            if (!dup_field || strarray_push(&arr, dup_field) == -1) {
+                free(dup_field);
                 goto fail;
             }
-            out = tmp;
-            out[count] = strdup(field_start);
-            if (!out[count]) {
-                goto fail;
-            }
-            count++;
             *p = save;
             p++;
             field_start = p;
@@ -95,45 +86,26 @@ char **split_fields(const char *text, int *count_out) {
     }
 
     if (p > field_start || last_nonspace) {
-        char **tmp = realloc(out, sizeof(char *) * (count + 1));
-        if (!tmp) {
+        char *dup_field = strdup(field_start);
+        if (!dup_field || strarray_push(&arr, dup_field) == -1) {
+            free(dup_field);
             goto fail;
         }
-        out = tmp;
-        out[count] = strdup(field_start);
-        if (!out[count]) {
-            goto fail;
-        }
-        count++;
     }
 
     free(dup);
 
-    if (count == 0) {
-        out = malloc(sizeof(char *));
-        if (!out)
-            return NULL;
-        out[0] = NULL;
-    } else {
-        char **tmp = realloc(out, sizeof(char *) * (count + 1));
-        if (!tmp) {
-            goto fail_alloc;
-        }
-        out = tmp;
-        out[count] = NULL;
-    }
+    char **res = strarray_finish(&arr);
+    if (!res)
+        goto fail_alloc;
     if (count_out)
-        *count_out = count;
-    return out;
+        *count_out = arr.count ? arr.count - 1 : 0;
+    return res;
 
 fail:
     free(dup);
 fail_alloc:
-    if (out) {
-        for (int i = 0; i < count; i++)
-            free(out[i]);
-        free(out);
-    }
+    strarray_release(&arr);
     if (count_out)
         *count_out = 0;
     return NULL;

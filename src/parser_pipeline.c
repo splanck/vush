@@ -9,6 +9,7 @@
 #include "parser_brace_expand.h"
 #include "parser_here_doc.h"
 #include "util.h"
+#include "strarray.h"
 #include "execute.h"
 #include "options.h"
 #include <stdlib.h>
@@ -196,6 +197,15 @@ static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quot
     return 0;
 }
 
+static int push_assign(char ***arr, int *count, char *val) {
+    StrArray tmp = { *arr, *count, *count };
+    if (strarray_push(&tmp, val) == -1)
+        return -1;
+    *arr = tmp.items;
+    *count = tmp.count;
+    return 0;
+}
+
 static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
                                       char **tok_ptr, int quoted) {
     char *tok = *tok_ptr;
@@ -236,14 +246,10 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
             tok = assign;
             eq = strchr(tok, '=');
         }
-        char **new_assigns = realloc(seg->assigns,
-                                    sizeof(char *) * (seg->assign_count + 1));
-        if (!new_assigns) {
+        if (push_assign(&seg->assigns, &seg->assign_count, tok) == -1) {
             free(tok);
             return -1;
         }
-        seg->assigns = new_assigns;
-        seg->assigns[seg->assign_count++] = tok;
         if (eq) {
             char *name = strndup(tok, eq - tok);
             if (name) { set_temp_var(name, eq + 1); free(name); }
