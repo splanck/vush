@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "var_expand.h"
+#include "brace_expand.h"
 #include "builtins.h"
 #include "util.h"
 #include "execute.h"
