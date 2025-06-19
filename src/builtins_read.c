@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "shell_state.h"
+#include "strarray.h"
 #include <unistd.h>
 #include <errno.h>
 
@@ -32,7 +33,8 @@ static int parse_read_options(char **args, int *raw, const char **array_name,
 }
 
 static char **split_array_values(char *line, int *count, char sep) {
-    char **vals = NULL;
+    StrArray arr;
+    strarray_init(&arr);
     *count = 0;
     char *p = line;
     while (*p) {
@@ -45,25 +47,20 @@ static char **split_array_values(char *line, int *count, char sep) {
             p++;
         if (*p)
             *p++ = '\0';
-        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
-        if (!tmp) {
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
+        char *dup = strdup(start);
+        if (!dup || strarray_push(&arr, dup) == -1) {
+            free(dup);
+            strarray_release(&arr);
             *count = 0;
             return NULL;
         }
-        vals = tmp;
-        vals[*count] = strdup(start);
-        if (!vals[*count]) {
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
-            *count = 0;
-            return NULL;
-        }
-        (*count)++;
     }
+    char **vals = strarray_finish(&arr);
+    if (!vals)
+        return NULL;
+    *count = arr.count ? arr.count - 1 : 0;
+    if (*count == 0)
+        vals[0] = NULL;
     return vals;
 }
 

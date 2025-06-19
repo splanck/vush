@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "strarray.h"
 #include <unistd.h>
 #include <limits.h>
 
@@ -32,14 +33,14 @@ static int has_match(char **matches, int count, const char *name) {
  * failure NULL is returned and countp is set to 0. */
 static char **collect_builtin_matches(const char *prefix, int prefix_len,
                                       int *countp) {
-    int count = 0;
-    int cap = 16;
-    char **matches = malloc(cap * sizeof(char *));
-    if (!matches) {
-        if (countp)
-            *countp = 0;
+    StrArray arr; strarray_init(&arr);
+    int count = 0; int cap = 16;
+    arr.items = malloc(cap * sizeof(char *));
+    if (!arr.items) {
+        if (countp) *countp = 0;
         return NULL;
     }
+    arr.capacity = cap;
 
     const char **bn = get_builtin_names();
     for (int i = 0; bn[i]; i++) {
@@ -48,58 +49,56 @@ static char **collect_builtin_matches(const char *prefix, int prefix_len,
         if (strncmp(bn[i], prefix, prefix_len) == 0) {
             if (count == cap) {
                 cap *= 2;
-                char **tmp = realloc(matches, cap * sizeof(char *));
+                char **tmp = realloc(arr.items, cap * sizeof(char *));
                 if (!tmp) {
                     for (int j = 0; j < count; j++)
-                        free(matches[j]);
-                    free(matches);
-                    if (countp)
-                        *countp = 0;
+                        free(arr.items[j]);
+                    free(arr.items);
+                    if (countp) *countp = 0;
                     return NULL;
                 }
-                matches = tmp;
+                arr.items = tmp; arr.capacity = cap;
             }
             char *dup = strdup(bn[i]);
             if (!dup) {
                 for (int j = 0; j < count; j++)
-                    free(matches[j]);
-                free(matches);
-                if (countp)
-                    *countp = 0;
+                    free(arr.items[j]);
+                free(arr.items);
+                if (countp) *countp = 0;
                 return NULL;
             }
-            matches[count++] = dup;
+            arr.items[count++] = dup; arr.count = count;
         }
     }
 
     if (countp)
         *countp = count;
     if (count == cap) {
-        char **tmp = realloc(matches, (cap + 1) * sizeof(char *));
+        char **tmp = realloc(arr.items, (cap + 1) * sizeof(char *));
         if (!tmp) {
             for (int j = 0; j < count; j++)
-                free(matches[j]);
-            free(matches);
-            if (countp)
-                *countp = 0;
+                free(arr.items[j]);
+            free(arr.items);
+            if (countp) *countp = 0;
             return NULL;
         }
-        matches = tmp;
+        arr.items = tmp; arr.capacity = cap + 1;
     }
-    matches[count] = NULL;
-    return matches;
+    arr.items[count] = NULL; arr.count = count + 1;
+    return arr.items;
 }
 
 /* Collect filesystem and PATH matches for the given prefix. */
 static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
+    StrArray arr; strarray_init(&arr);
     int count = 0;
     int cap = 16;
-    char **matches = malloc(cap * sizeof(char *));
-    if (!matches)
-        matches = NULL;
+    arr.items = malloc(cap * sizeof(char *));
+    if (!arr.items)
+        arr.items = NULL;
 
     DIR *d = opendir(".");
-    if (!matches) {
+    if (!arr.items) {
         if (d)
             closedir(d); /* early return when initial allocation failed */
         return NULL;
@@ -110,41 +109,41 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
             if (strncmp(de->d_name, prefix, prefix_len) == 0) {
                 if (access(de->d_name, X_OK) != 0)
                     continue;
-                if (has_match(matches, count, de->d_name))
+                if (has_match(arr.items, count, de->d_name))
                     continue;
                 if (count == cap) {
                     cap *= 2;
-                    char **tmp = realloc(matches, cap * sizeof(char *));
+                    char **tmp = realloc(arr.items, cap * sizeof(char *));
                     if (!tmp) {
                         for (int j = 0; j < count; j++)
-                            free(matches[j]);
-                        free(matches);
+                            free(arr.items[j]);
+                        free(arr.items);
                         closedir(d);
                         return NULL;
                     }
-                    matches = tmp;
+                    arr.items = tmp; arr.capacity = cap;
                 }
                 char *dup = strdup(de->d_name);
                 if (!dup) {
                     for (int j = 0; j < count; j++)
-                        free(matches[j]);
-                    free(matches);
+                        free(arr.items[j]);
+                    free(arr.items);
                     closedir(d);
                     return NULL;
                 }
-                matches[count++] = dup;
+                arr.items[count++] = dup; arr.count = count;
             }
         }
         closedir(d);
     }
 
     const char *path = getenv("PATH");
-    if (path && matches) {
+    if (path && arr.items) {
         char *pdup = strdup(path);
         if (!pdup) {
             for (int j = 0; j < count; j++)
-                free(matches[j]);
-            free(matches);
+                free(arr.items[j]);
+            free(arr.items);
             return NULL;
         }
         char *saveptr = NULL;
@@ -161,40 +160,40 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                         char *full = malloc(len);
                         if (!full) {
                             for (int j = 0; j < count; j++)
-                                free(matches[j]);
-                            free(matches);
+                                free(arr.items[j]);
+                            free(arr.items);
                             closedir(pd);
                             free(pdup);
                             return NULL;
                         }
                         snprintf(full, len, "%s/%s", d, pe->d_name);
                         if (access(full, X_OK) == 0) {
-                            if (!has_match(matches, count, pe->d_name)) {
+                            if (!has_match(arr.items, count, pe->d_name)) {
                                 if (count == cap) {
                                     cap *= 2;
-                                    char **tmp = realloc(matches, cap * sizeof(char *));
+                                    char **tmp = realloc(arr.items, cap * sizeof(char *));
                                     if (!tmp) {
                                         for (int j = 0; j < count; j++)
-                                            free(matches[j]);
-                                        free(matches);
+                                            free(arr.items[j]);
+                                        free(arr.items);
                                         closedir(pd);
                                         free(pdup);
                                         free(full);
                                         return NULL;
                                     }
-                                    matches = tmp;
+                                    arr.items = tmp; arr.capacity = cap;
                                 }
                                 char *dup = strdup(pe->d_name);
                                 if (!dup) {
                                     for (int j = 0; j < count; j++)
-                                        free(matches[j]);
-                                    free(matches);
+                                        free(arr.items[j]);
+                                    free(arr.items);
                                     closedir(pd);
                                     free(pdup);
                                     free(full);
                                     return NULL;
                                 }
-                                matches[count++] = dup;
+                                arr.items[count++] = dup; arr.count = count;
                                 found = 1;
                             }
                         }
@@ -202,7 +201,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                     }
                 }
                 closedir(pd);
-                if (found || !matches)
+                if (found || !arr.items)
                     break;
                 }
             if (found)
@@ -213,8 +212,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     }
 
     if (countp)
-        *countp = matches ? count : 0;
-    return matches;
+        *countp = arr.items ? count : 0;
+    return arr.items;
 }
 
 /* Insert the completed text into the buffer and redraw the line. */

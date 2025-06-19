@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "strarray.h"
 #include "util.h"
 #include "options.h"
 
@@ -93,8 +94,8 @@ static Command *parse_until_clause(char **p) {
 }
 
 static int parse_word_list(char **p, char ***out, int *count) {
-    char **words = NULL;
-    int c = 0;
+    StrArray arr;
+    strarray_init(&arr);
     while (1) {
         int q = 0; int de = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
@@ -103,36 +104,26 @@ static int parse_word_list(char **p, char ***out, int *count) {
             while (**p == ' ' || **p == '\t') (*p)++;
             char *next = read_token(p, &q, &de);
             if (!next) {
-                for (int i = 0; i < c; i++)
-                    free(words[i]);
-                free(words);
+                strarray_release(&arr);
                 return -1;
             }
             if (!q && strcmp(next, "do") == 0) { free(next); break; }
-            char **tmp = realloc(words, sizeof(char *) * (c + 1));
-            if (!tmp) {
-                free(next);
-                for (int i = 0; i < c; i++)
-                    free(words[i]);
-                free(words);
+            char *dup_tok = next;
+            if (strarray_push(&arr, dup_tok) == -1) {
+                free(dup_tok);
+                strarray_release(&arr);
                 return -1;
             }
-            words = tmp;
-            words[c++] = next;
             continue;
         }
         if (**p == '\0') {
-            for (int i = 0; i < c; i++)
-                free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return -1;
         }
         q = 0; de = 1;
         char *w = read_token(p, &q, &de);
         if (!w) {
-            for (int i = 0; i < c; i++)
-                free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return -1;
         }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
@@ -142,37 +133,28 @@ static int parse_word_list(char **p, char ***out, int *count) {
             q = 0; de = 1;
             char *next = read_token(p, &q, &de);
             if (!next) {
-                for (int i = 0; i < c; i++)
-                    free(words[i]);
-                free(words);
+                strarray_release(&arr);
                 return -1;
             }
             if (!q && strcmp(next, "do") == 0) { free(next); break; }
-            char **tmp = realloc(words, sizeof(char *) * (c + 1));
-            if (!tmp) {
+            if (strarray_push(&arr, next) == -1) {
                 free(next);
-                for (int i = 0; i < c; i++)
-                    free(words[i]);
-                free(words);
+                strarray_release(&arr);
                 return -1;
             }
-            words = tmp;
-            words[c++] = next;
             continue;
         }
-        char **tmp = realloc(words, sizeof(char *) * (c + 1));
-        if (!tmp) {
+        if (strarray_push(&arr, w) == -1) {
             free(w);
-            for (int i = 0; i < c; i++)
-                free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return -1;
         }
-        words = tmp;
-        words[c++] = w;
     }
-    *out = words;
-    if (count) *count = c;
+    char **vals = strarray_finish(&arr);
+    if (!vals)
+        return -1;
+    *out = vals;
+    if (count) *count = arr.count ? arr.count - 1 : 0;
     return 0;
 }
 
@@ -354,7 +336,8 @@ static Command *parse_case_clause(char **p) {
         while (**p == ' ' || **p == '\t' || **p == '\n') (*p)++;
         if (strncmp(*p, "esac", 4) == 0) { *p += 4; break; }
 
-        char **patterns = NULL; int pc = 0;
+        StrArray patarr;
+        strarray_init(&patarr);
         int done = 0;
         while (!done) {
             while (**p == ' ' || **p == '\t') (*p)++;
@@ -364,18 +347,13 @@ static Command *parse_case_clause(char **p) {
             if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
             size_t len = strlen(ptok);
             if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
-            char **tmp = realloc(patterns, sizeof(char*) * (pc + 1));
-            if (!tmp) {
+            if (strarray_push(&patarr, ptok) == -1) {
                 free(ptok);
-                for (int i = 0; i < pc; i++)
-                    free(patterns[i]);
-                free(patterns);
+                strarray_release(&patarr);
                 free_case_items(head);
                 free(word);
                 return NULL;
             }
-            patterns = tmp;
-            patterns[pc++] = ptok;
             if (done) break;
         }
 
@@ -385,9 +363,7 @@ static Command *parse_case_clause(char **p) {
         if (!body) { free_case_items(head); free(word); return NULL; }
         if (idx == 1 && opt_posix) {
             fprintf(stderr, "syntax error: ';&' not allowed in posix mode\n");
-            for (int i = 0; i < pc; i++)
-                free(patterns[i]);
-            free(patterns);
+            strarray_release(&patarr);
             free_case_items(head);
             free(word);
             free(body);
@@ -396,16 +372,21 @@ static Command *parse_case_clause(char **p) {
         Command *body_cmd = parse_line(body); free(body);
         CaseItem *ci = xcalloc(1, sizeof(CaseItem));
         if (!ci) {
-            for (int i = 0; i < pc; i++)
-                free(patterns[i]);
-            free(patterns);
+            strarray_release(&patarr);
             free_case_items(head);
             free(word);
             free_commands(body_cmd);
             return NULL;
         }
-        ci->patterns = patterns;
-        ci->pattern_count = pc;
+        ci->patterns = strarray_finish(&patarr);
+        if (!ci->patterns) {
+            free_case_items(head);
+            free(word);
+            free_commands(body_cmd);
+            free(ci);
+            return NULL;
+        }
+        ci->pattern_count = patarr.count ? patarr.count - 1 : 0;
         ci->body = body_cmd;
         ci->fall_through = (idx == 1);
         if (!head) head = ci; else tail->next = ci; tail = ci;
@@ -542,8 +523,8 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     if (opt_posix)
         return NULL;
     *p += 2;
-    char **words = NULL;
-    int count = 0;
+    StrArray arr;
+    strarray_init(&arr);
     while (**p) {
         while (**p == ' ' || **p == '\t') (*p)++;
         if (!**p)
@@ -551,41 +532,34 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
         int q = 0; int de = 1;
         char *tok = read_token(p, &q, &de);
         if (!tok) {
-            for (int i=0;i<count;i++) free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return NULL;
         }
         if (!q && strcmp(tok, "]]") == 0) {
             free(tok);
             break;
         }
-        char **tmp = realloc(words, sizeof(char*) * (count + 1));
-        if (!tmp) {
+        if (strarray_push(&arr, tok) == -1) {
             free(tok);
-            for (int i = 0; i < count; i++)
-                free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return NULL;
         }
-        words = tmp;
-        words[count++] = tok;
     }
-    if (!words && count==0) {
+    if (!arr.items && arr.count==0) {
         /* ensure an empty argument list is well-formed */
-        words = xcalloc(1, sizeof(char*));
-        if (!words)
+        arr.items = xcalloc(1, sizeof(char*));
+        if (!arr.items)
             return NULL;
+        arr.capacity = 1;
     } else {
-        char **tmp = realloc(words, sizeof(char*) * (count + 1));
+        char **tmp = realloc(arr.items, sizeof(char*) * (arr.count + 1));
         if (!tmp) {
-            for (int i = 0; i < count; i++)
-                free(words[i]);
-            free(words);
+            strarray_release(&arr);
             return NULL;
         }
-        words = tmp;
+        arr.items = tmp;
     }
-    words[count] = NULL;
+    arr.items[arr.count] = NULL;
     while (**p == ' ' || **p == '\t') (*p)++;
     CmdOp op = OP_NONE;
     if (**p == ';') { op = OP_SEMI; (*p)++; }
@@ -593,14 +567,12 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     else if (**p == '|' && *(*p + 1) == '|') { op = OP_OR; (*p) += 2; }
     Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
-        for (int i = 0; i < count; i++)
-            free(words[i]);
-        free(words);
+        strarray_free(arr.items);
         return NULL;
     }
     cmd->type = CMD_COND;
-    cmd->words = words;
-    cmd->word_count = count;
+    cmd->words = arr.items;
+    cmd->word_count = arr.count;
     cmd->op = op;
     if (op_out) *op_out = op;
     return cmd;

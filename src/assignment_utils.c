@@ -6,6 +6,7 @@
 #include "assignment_utils.h"
 #include "vars.h"
 #include "util.h"
+#include "strarray.h"
 
 char **parse_array_values(const char *val, int *count) {
     *count = 0;
@@ -13,7 +14,8 @@ char **parse_array_values(const char *val, int *count) {
     if (!body)
         return NULL;
 
-    char **vals = NULL;
+    StrArray arr;
+    strarray_init(&arr);
     char *p = body;
     while (*p) {
         while (*p == ' ' || *p == '\t')
@@ -26,33 +28,24 @@ char **parse_array_values(const char *val, int *count) {
         if (*p)
             *p++ = '\0';
 
-        char **tmp = realloc(vals, sizeof(char *) * (*count + 1));
-        if (!tmp) {
+        char *dup = strdup(start);
+        if (!dup || strarray_push(&arr, dup) == -1) {
+            free(dup);
             free(body);
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
+            strarray_release(&arr);
             *count = 0;
             return NULL;
         }
-        vals = tmp;
-        vals[*count] = strdup(start);
-        if (!vals[*count]) {
-            for (int i = 0; i < *count; i++)
-                free(vals[i]);
-            free(vals);
-            free(body);
-            *count = 0;
-            return NULL;
-        }
-        (*count)++;
     }
     free(body);
 
+    char **vals = strarray_finish(&arr);
+    if (!vals)
+        return NULL;
+    *count = arr.count ? arr.count - 1 : 0;
     if (*count == 0) {
-        vals = xcalloc(1, sizeof(char *));
+        vals[0] = NULL;
     }
-
     return vals;
 }
 
