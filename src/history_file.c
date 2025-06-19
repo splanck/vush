@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
+#include "state_paths.h"
 #include "error.h"
 
 /* functions from history_list.c */
@@ -12,14 +13,10 @@ void history_add_entry(const char *cmd, int save_file);
 void history_list_iter(void (*cb)(const char *cmd, void *arg), void *arg);
 void history_renumber(void);
 
-/* Determine the path to the history file. */
-static char *histfile_path(void) {
-    return make_user_path("VUSH_HISTFILE", "HISTFILE", ".vush_history");
-}
 
 /* Append CMD to the history file. */
 void history_file_append(const char *cmd) {
-    char *path = histfile_path();
+    char *path = get_history_file();
     if (!path)
         return;
     FILE *f = fopen(path, "a");
@@ -38,7 +35,7 @@ static void rewrite_cb(const char *cmd, void *arg) {
 
 /* Rewrite the entire history file from the current list. */
 void history_file_rewrite(void) {
-    char *path = histfile_path();
+    char *path = get_history_file();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
@@ -52,7 +49,7 @@ void history_file_rewrite(void) {
 
 /* Truncate the history file. */
 void history_file_clear(void) {
-    char *path = histfile_path();
+    char *path = get_history_file();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
@@ -63,7 +60,7 @@ void history_file_clear(void) {
 
 /* Load history entries from the history file. */
 void load_history(void) {
-    char *path = histfile_path();
+    char *path = get_history_file();
     if (!path)
         return;
     FILE *f = fopen(path, "r");

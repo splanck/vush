@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "util.h"
+#include "state_paths.h"
 #include "error.h"
 #include "list.h"
 
@@ -32,16 +33,10 @@ static List aliases;
 static int set_alias(const char *name, const char *value);
 static void remove_all_aliases(const char *name);
 
-/* Return the path of the alias file or NULL if $HOME is not set. */
-static char *aliasfile_path(void)
-{
-    return make_user_path("VUSH_ALIASFILE", NULL, ".vush_aliases");
-}
-
-/* Write the current alias list to the file returned by aliasfile_path(). */
+/* Write the current alias list to the file returned by get_alias_file(). */
 static void save_aliases(void)
 {
-    char *path = aliasfile_path();
+    char *path = get_alias_file();
     if (!path)
         return;
     FILE *f = fopen(path, "w");
@@ -59,7 +54,7 @@ static void save_aliases(void)
 void load_aliases(void)
 {
     list_init(&aliases);
-    char *path = aliasfile_path();
+    char *path = get_alias_file();
     if (!path)
         return;
     FILE *f = fopen(path, "r");
