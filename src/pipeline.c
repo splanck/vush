@@ -26,6 +26,7 @@
 #include "options.h"
 #include "hash.h"
 #include "redir.h"
+#include "error.h"
 
 
 /*
@@ -64,10 +65,8 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
     }
 
     int pipefd[2];
-    if (seg->next && pipe(pipefd) < 0) {
-        perror("pipe");
-        return -1;
-    }
+    if (seg->next)
+        RETURN_IF_ERR(pipe(pipefd) < 0, "pipe");
 
     pid_t pid = fork();
     if (pid == 0) {

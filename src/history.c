@@ -22,6 +22,7 @@
 #include <ctype.h>
 #include "common.h"
 #include "util.h"
+#include "error.h"
 
 typedef struct HistEntry {
     int id;
@@ -109,7 +110,7 @@ static void history_init(void) {
 static void add_history_entry(const char *cmd, int save_file) {
     history_init();
     HistEntry *e = malloc(sizeof(HistEntry));
-    if (!e) return;
+    RETURN_IF_ERR_RET(!e, "malloc", );
     e->id = next_id++;
     strncpy(e->cmd, cmd, MAX_LINE - 1);
     e->cmd[MAX_LINE - 1] = '\0';
@@ -432,8 +433,7 @@ static char *dup_last_word(const char *cmd) {
         start--;
     size_t len = (size_t)(end - start);
     char *res = malloc(len + 1);
-    if (!res)
-        return NULL;
+    CHECK_ALLOC_RET(res, NULL);
     memcpy(res, start, len);
     res[len] = '\0';
     return res;

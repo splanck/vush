@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "util.h"
+#include "error.h"
 
 struct alias_entry {
     char *name;
@@ -98,20 +99,17 @@ static int set_alias(const char *name, const char *value)
     remove_all_aliases(name);
 
     struct alias_entry *new_alias = malloc(sizeof(struct alias_entry));
-    if (!new_alias) {
-        perror("malloc");
-        return -1;
-    }
+    CHECK_ALLOC(new_alias);
     new_alias->name = strdup(name);
     if (!new_alias->name) {
         free(new_alias);
-        return -1;
+        RETURN_IF_ERR_RET(1, "strdup", -1);
     }
     new_alias->value = strdup(value);
     if (!new_alias->value) {
         free(new_alias->name);
         free(new_alias);
-        return -1;
+        RETURN_IF_ERR_RET(1, "strdup", -1);
     }
     new_alias->next = NULL;
     if (!aliases) {
