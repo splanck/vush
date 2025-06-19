@@ -21,6 +21,24 @@ void *xcalloc(size_t nmemb, size_t size) {
     }
     return ptr;
 }
+
+void *xmalloc(size_t size) {
+    void *ptr = malloc(size);
+    if (!ptr) {
+        perror("malloc");
+        exit(1);
+    }
+    return ptr;
+}
+
+char *xstrdup(const char *s) {
+    char *ptr = strdup(s);
+    if (!ptr) {
+        perror("strdup");
+        exit(1);
+    }
+    return ptr;
+}
 /*
  * Read a line continuing backslash escapes across multiple physical lines.
  */
