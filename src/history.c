@@ -1,8 +1,8 @@
 /*
  * Command history management routines.
  *
- * History is kept in a doubly linked list of ``HistEntry`` nodes.  New
- * commands are appended to ``tail`` and each entry is assigned an incrementing
+ * History is kept in a list of ``HistEntry`` nodes.  New
+ * commands are appended to the end and each entry is assigned an incrementing
  * identifier.  When the number of stored entries exceeds ``max_history`` the
  * oldest entry at ``head`` is discarded.  The history is optionally persisted
  * to ``$VUSH_HISTFILE`` (or ``$HOME/.vush_history`` if unset) so entries can be
@@ -23,16 +23,31 @@
 #include "common.h"
 #include "util.h"
 #include "error.h"
+#include "list.h"
 
 typedef struct HistEntry {
     int id;
     char cmd[MAX_LINE];
-    struct HistEntry *next;
-    struct HistEntry *prev;
+    ListNode node;
 } HistEntry;
 
-static HistEntry *head = NULL;
-static HistEntry *tail = NULL;
+static List history;
+
+static inline HistEntry *entry_next(HistEntry *e) {
+    return e->node.next ? LIST_ENTRY(e->node.next, HistEntry, node) : NULL;
+}
+
+static inline HistEntry *entry_prev(HistEntry *e) {
+    return e->node.prev ? LIST_ENTRY(e->node.prev, HistEntry, node) : NULL;
+}
+
+static inline HistEntry *history_head(void) {
+    return history.head ? LIST_ENTRY(history.head, HistEntry, node) : NULL;
+}
+
+static inline HistEntry *history_tail(void) {
+    return history.tail ? LIST_ENTRY(history.tail, HistEntry, node) : NULL;
+}
 static HistEntry *cursor = NULL;
 static HistEntry *search_cursor = NULL;
 static int next_id = 1;
@@ -45,8 +60,10 @@ static int max_file_history = MAX_HISTORY;
 static void renumber_history(void)
 {
     int id = 1;
-    for (HistEntry *e = head; e; e = e->next)
+    for (ListNode *n = history.head; n; n = n->next) {
+        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
         e->id = id++;
+    }
     next_id = id;
 }
 
@@ -69,8 +86,10 @@ static void rewrite_history_file(void)
     free(path);
     if (!f)
         return;
-    for (HistEntry *e = head; e; e = e->next)
+    for (ListNode *n = history.head; n; n = n->next) {
+        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
         fprintf(f, "%s\n", e->cmd);
+    }
     fclose(f);
 }
 
@@ -82,6 +101,7 @@ static void history_init(void) {
     static int inited = 0;
     if (inited)
         return;
+    list_init(&history);
     const char *env = getenv("VUSH_HISTSIZE");
     if (!env)
         env = getenv("HISTSIZE");
@@ -114,24 +134,13 @@ static void add_history_entry(const char *cmd, int save_file) {
     e->id = next_id++;
     strncpy(e->cmd, cmd, MAX_LINE - 1);
     e->cmd[MAX_LINE - 1] = '\0';
-    e->next = NULL;
-    if (!head) {
-        e->prev = NULL;
-        head = tail = e;
-    } else {
-        tail->next = e;
-        e->prev = tail;
-        tail = e;
-    }
+    e->node.next = NULL;
+    list_append(&history, &e->node);
     history_size++;
 
     if (history_size > max_history) {
-        HistEntry *old = head;
-        head = head->next;
-        if (head)
-            head->prev = NULL;
-        else
-            tail = NULL;
+        HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
+        list_remove(&history, &old->node);
         free(old);
         history_size--;
     }
@@ -148,12 +157,8 @@ static void add_history_entry(const char *cmd, int save_file) {
         }
 
         while (history_size > max_file_history) {
-            HistEntry *old = head;
-            head = head->next;
-            if (head)
-                head->prev = NULL;
-            else
-                tail = NULL;
+            HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
+            list_remove(&history, &old->node);
             free(old);
             history_size--;
         }
@@ -182,7 +187,8 @@ void add_history(const char *cmd) {
  */
 void print_history(void) {
     renumber_history();
-    for (HistEntry *e = head; e; e = e->next) {
+    LIST_FOR_EACH(n, &history) {
+        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
         printf("%d %s\n", e->id, e->cmd);
     }
 }
@@ -210,12 +216,8 @@ void load_history(void) {
     fclose(f);
 
     while (history_size > max_file_history) {
-        HistEntry *old = head;
-        head = head->next;
-        if (head)
-            head->prev = NULL;
-        else
-            tail = NULL;
+        HistEntry *old = LIST_ENTRY(history.head, HistEntry, node);
+        list_remove(&history, &old->node);
         free(old);
         history_size--;
     }
@@ -235,12 +237,13 @@ void load_history(void) {
  * Returns NULL when there is no earlier entry.
  */
 const char *history_prev(void) {
-    if (!tail)
+    HistEntry *tail_e = history_tail();
+    if (!tail_e)
         return NULL;
     if (!cursor)
-        cursor = tail;
-    else if (cursor->prev)
-        cursor = cursor->prev;
+        cursor = tail_e;
+    else if (entry_prev(cursor))
+        cursor = entry_prev(cursor);
     return cursor ? cursor->cmd : NULL;
 }
 
@@ -251,8 +254,8 @@ const char *history_prev(void) {
 const char *history_next(void) {
     if (!cursor)
         return NULL;
-    if (cursor->next)
-        cursor = cursor->next;
+    if (entry_next(cursor))
+        cursor = entry_next(cursor);
     else
         cursor = NULL;
     return cursor ? cursor->cmd : NULL;
@@ -272,10 +275,10 @@ void history_reset_cursor(void) {
  * continue searching from the previous match.
  */
 const char *history_search_prev(const char *term) {
-    if (!term || !*term || !tail)
+    if (!term || !*term || !history_tail())
         return NULL;
-    HistEntry *start = search_cursor ? search_cursor->prev : tail;
-    for (HistEntry *e = start; e; e = e->prev) {
+    HistEntry *start = search_cursor ? entry_prev(search_cursor) : history_tail();
+    for (HistEntry *e = start; e; e = entry_prev(e)) {
         if (strstr(e->cmd, term)) {
             search_cursor = e;
             return e->cmd;
@@ -289,10 +292,10 @@ const char *history_search_prev(const char *term) {
  * if one exists.  Returns the matched command or NULL if none is found.
  */
 const char *history_search_next(const char *term) {
-    if (!term || !*term || !head)
+    if (!term || !*term || !history_head())
         return NULL;
-    HistEntry *start = search_cursor ? search_cursor->next : head;
-    for (HistEntry *e = start; e; e = e->next) {
+    HistEntry *start = search_cursor ? entry_next(search_cursor) : history_head();
+    for (HistEntry *e = start; e; e = entry_next(e)) {
         if (strstr(e->cmd, term)) {
             search_cursor = e;
             return e->cmd;
@@ -314,13 +317,15 @@ void history_reset_search(void) {
  * Returns nothing.
  */
 void clear_history(void) {
-    HistEntry *e = head;
-    while (e) {
-        HistEntry *next = e->next;
+    ListNode *n = history.head;
+    while (n) {
+        ListNode *next = n->next;
+        HistEntry *e = LIST_ENTRY(n, HistEntry, node);
         free(e);
-        e = next;
+        n = next;
     }
-    head = tail = cursor = search_cursor = NULL;
+    list_init(&history);
+    cursor = search_cursor = NULL;
     next_id = 1;
     history_size = 0;
 
@@ -339,26 +344,18 @@ void clear_history(void) {
  */
 void delete_history_entry(int id) {
     history_init();
-    HistEntry *e = head;
+    HistEntry *e = history_head();
     while (e && e->id != id)
-        e = e->next;
+        e = entry_next(e);
     if (!e)
         return;
 
-    if (e->prev)
-        e->prev->next = e->next;
-    else
-        head = e->next;
-
-    if (e->next)
-        e->next->prev = e->prev;
-    else
-        tail = e->prev;
+    list_remove(&history, &e->node);
 
     if (cursor == e)
-        cursor = e->next;
+        cursor = entry_next(e);
     if (search_cursor == e)
-        search_cursor = e->next;
+        search_cursor = entry_next(e);
 
     free(e);
     history_size--;
@@ -372,15 +369,17 @@ void delete_history_entry(int id) {
  * file.  Has no effect when history is empty.
  */
 void delete_last_history_entry(void) {
-    if (tail)
-        delete_history_entry(tail->id);
+    HistEntry *t = history_tail();
+    if (t)
+        delete_history_entry(t->id);
 }
 
 /*
  * Return the most recently added command or NULL if history is empty.
  */
 const char *history_last(void) {
-    return tail ? tail->cmd : NULL;
+    HistEntry *t = history_tail();
+    return t ? t->cmd : NULL;
 }
 
 /*
@@ -391,7 +390,7 @@ const char *history_find_prefix(const char *prefix) {
     if (!prefix || !*prefix)
         return NULL;
     size_t len = strlen(prefix);
-    for (HistEntry *e = tail; e; e = e->prev) {
+    for (HistEntry *e = history_tail(); e; e = entry_prev(e)) {
         if (strncmp(e->cmd, prefix, len) == 0)
             return e->cmd;
     }
@@ -402,7 +401,7 @@ const char *history_find_prefix(const char *prefix) {
  * Retrieve the command with identifier ID or NULL if no such entry exists.
  */
 const char *history_get_by_id(int id) {
-    for (HistEntry *e = head; e; e = e->next) {
+    for (HistEntry *e = history_head(); e; e = entry_next(e)) {
         if (e->id == id)
             return e->cmd;
     }
@@ -417,9 +416,9 @@ const char *history_get_by_id(int id) {
 const char *history_get_relative(int offset) {
     if (offset <= 0)
         return NULL;
-    HistEntry *e = tail;
+    HistEntry *e = history_tail();
     while (e && --offset > 0)
-        e = e->prev;
+        e = entry_prev(e);
     return e ? e->cmd : NULL;
 }
 

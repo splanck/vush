@@ -1,7 +1,7 @@
 /*
  * Shell function support
  *
- * Function definitions are kept in a linked list of FuncEntry
+ * Function definitions are kept in a list of FuncEntry
  * records. Each entry stores the function name, the parsed command body
  * and the original source text so it can be written back verbatim.
  *
@@ -22,13 +22,15 @@
 #include <limits.h>
 #include "util.h"
 #include "shell_state.h"
+#include "list.h"
 
 
-static FuncEntry *functions = NULL;
+static List functions;
 
 FuncEntry *find_function(const char *name)
 {
-    for (FuncEntry *f = functions; f; f = f->next) {
+    LIST_FOR_EACH(n, &functions) {
+        FuncEntry *f = LIST_ENTRY(n, FuncEntry, node);
         if (strcmp(f->name, name) == 0)
             return f;
     }
@@ -59,8 +61,10 @@ static void save_functions(void)
     free(path);
     if (!f)
         return;
-    for (FuncEntry *fn = functions; fn; fn = fn->next)
+    LIST_FOR_EACH(n, &functions) {
+        FuncEntry *fn = LIST_ENTRY(n, FuncEntry, node);
         fprintf(f, "%s() { %s }\n", fn->name, fn->text);
+    }
     fclose(f);
 }
 
@@ -70,6 +74,7 @@ static void save_functions(void)
  */
 void load_functions(void)
 {
+    list_init(&functions);
     char *path = funcfile_path();
     if (!path)
         return;
@@ -101,7 +106,8 @@ void load_functions(void)
  */
 void define_function(const char *name, Command *body, const char *text)
 {
-    for (FuncEntry *f = functions; f; f = f->next) {
+    LIST_FOR_EACH(n, &functions) {
+        FuncEntry *f = LIST_ENTRY(n, FuncEntry, node);
         if (strcmp(f->name, name) == 0) {
             char *new_name = strdup(name);
             char *new_text = strdup(text);
@@ -142,8 +148,7 @@ void define_function(const char *name, Command *body, const char *text)
     fn->text = text_copy;
     fn->body = NULL;
     free_commands(body);
-    fn->next = functions;
-    functions = fn;
+    list_append(&functions, &fn->node);
 }
 
 /* Look up the parsed body of a function by name. */
@@ -155,20 +160,19 @@ Command *get_function(const char *name)
 
 void print_functions(void)
 {
-    for (FuncEntry *fn = functions; fn; fn = fn->next)
+    LIST_FOR_EACH(n, &functions) {
+        FuncEntry *fn = LIST_ENTRY(n, FuncEntry, node);
         printf("%s() { %s }\n", fn->name, fn->text);
+    }
 }
 
 /* Remove NAME from the function list if present. */
 void remove_function(const char *name)
 {
-    FuncEntry *prev = NULL;
-    for (FuncEntry *f = functions; f; prev = f, f = f->next) {
+    LIST_FOR_EACH(n, &functions) {
+        FuncEntry *f = LIST_ENTRY(n, FuncEntry, node);
         if (strcmp(f->name, name) == 0) {
-            if (prev)
-                prev->next = f->next;
-            else
-                functions = f->next;
+            list_remove(&functions, &f->node);
             free(f->name);
             free(f->text);
             free_commands(f->body);
@@ -181,16 +185,17 @@ void remove_function(const char *name)
 /* Free all function entries without saving them. */
 static void free_function_entries(void)
 {
-    FuncEntry *f = functions;
-    while (f) {
-        FuncEntry *next = f->next;
+    ListNode *n = functions.head;
+    while (n) {
+        ListNode *next = n->next;
+        FuncEntry *f = LIST_ENTRY(n, FuncEntry, node);
         free(f->name);
         free(f->text);
         free_commands(f->body);
         free(f);
-        f = next;
+        n = next;
     }
-    functions = NULL;
+    list_init(&functions);
 }
 
 /* Save functions and free memory at shell shutdown. */
