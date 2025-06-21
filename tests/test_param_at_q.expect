@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "FOO='a b'\r"
+expect {
+    "vush> " {}
+    timeout { send_user "assign failed\n"; exit 1 }
+}
+send "echo \${FOO@Q}\r"
+expect {
+    -re "\[\r\n\]+'a b'\[\r\n\]+vush> " {}
+    timeout { send_user "quote op failed\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

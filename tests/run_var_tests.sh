@@ -49,6 +49,7 @@ test_set_list.expect
 test_field_split_module.expect
 test_param_expand_module.expect
 test_quote_utils_module.expect
+test_param_at_q.expect
 "
 for test in $tests; do
     echo "Running $test"

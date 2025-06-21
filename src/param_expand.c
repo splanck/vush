@@ -25,6 +25,7 @@ static char *expand_array_element(const char *name, const char *idxstr);
 static int find_glob_substring(const char *text, const char *pat,
                                size_t *start, size_t *len);
 static char *apply_modifier(const char *name, const char *val, const char *p);
+static char *quote_value(const char *val);
 static char *expand_length(const char *name);
 static char *expand_braced(const char *inner);
 static char *expand_special(const char *token);
@@ -123,8 +124,32 @@ static char *expand_array_element(const char *name, const char *idxstr) {
         }
         const char *val = getenv(name);
         if (!val) val = "";
+
         return strdup(val);
     }
+}
+
+/* Return VAL quoted in single quotes with embedded quotes escaped. */
+static char *quote_value(const char *val) {
+    if (!val)
+        val = "";
+    size_t len = strlen(val);
+    char *res = malloc(len * 4 + 3);
+    if (!res)
+        return NULL;
+    char *p = res;
+    *p++ = '\'';
+    for (const char *s = val; *s; s++) {
+        if (*s == '\'') {
+            strcpy(p, "'\\''");
+            p += 4;
+        } else {
+            *p++ = *s;
+        }
+    }
+    *p++ = '\'';
+    *p = '\0';
+    return res;
 }
 
 static int find_glob_substring(const char *text, const char *pat,
@@ -365,7 +390,7 @@ static char *expand_braced(const char *inner) {
         char var[MAX_LINE];
         int vn = 0;
         const char *p = inner + 1;
-        while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && vn < MAX_LINE - 1)
+        while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && *p != '@' && vn < MAX_LINE - 1)
             var[vn++] = *p++;
         var[vn] = '\0';
 
@@ -386,6 +411,20 @@ static char *expand_braced(const char *inner) {
             if (!val) val = getenv(name);
         }
 
+        if (*p == '@' && p[1]) {
+            if (p[1] == 'Q' && p[2] == '\0') {
+                if (!val) {
+                    if (opt_nounset) {
+                        fprintf(stderr, "%s: unbound variable\n", name);
+                        last_status = 1;
+                        param_error = 1;
+                    }
+                    val = "";
+                }
+                return quote_value(val);
+            }
+            /* unknown operation falls through to regular modifiers */
+        }
         if (*p)
             return apply_modifier(name, val, p);
 
@@ -402,7 +441,7 @@ static char *expand_braced(const char *inner) {
     char name[MAX_LINE];
     int n = 0;
     const char *p = inner;
-    while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && n < MAX_LINE - 1)
+    while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && *p != '@' && n < MAX_LINE - 1)
         name[n++] = *p++;
     name[n] = '\0';
 
@@ -418,6 +457,20 @@ static char *expand_braced(const char *inner) {
         if (!val) val = getenv(name);
     }
 
+    if (*p == '@' && p[1]) {
+        if (p[1] == 'Q' && p[2] == '\0') {
+            if (!val) {
+                if (opt_nounset) {
+                    fprintf(stderr, "%s: unbound variable\n", name);
+                    last_status = 1;
+                    param_error = 1;
+                }
+                val = "";
+            }
+            return quote_value(val);
+        }
+        /* unknown operation falls through to regular modifiers */
+    }
     if (*p)
         return apply_modifier(name, val, p);
 
