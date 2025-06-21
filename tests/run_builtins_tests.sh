@@ -132,6 +132,8 @@ test_negate.expect
 test_negate_multi.expect
 test_jobs_l.expect
 test_jobs_p.expect
+test_jobs_r.expect
+test_jobs_s.expect
 test_kill_s.expect
 test_command_pv.expect
 test_command_pV.expect

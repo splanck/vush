@@ -37,17 +37,22 @@ void list_signals(void)
     printf("\n");
 }
 
-/* builtin_jobs - usage: jobs [-l|-p] [ID...] */
+/* builtin_jobs - usage: jobs [-l|-p] [-r|-s] [ID...] */
 int builtin_jobs(char **args) {
-    int mode = 0; /* 0=normal, 1=long, 2=pids */
+    int mode = 0;   /* 0=normal, 1=long, 2=pids */
+    int filter = 0; /* 0=all, 1=running, 2=stopped */
     int idx = 1;
     for (; args[idx] && args[idx][0] == '-' && args[idx][1]; idx++) {
         if (strcmp(args[idx], "-l") == 0) {
             mode = 1;
         } else if (strcmp(args[idx], "-p") == 0) {
             mode = 2;
+        } else if (strcmp(args[idx], "-r") == 0) {
+            filter = 1;
+        } else if (strcmp(args[idx], "-s") == 0) {
+            filter = 2;
         } else {
-            fprintf(stderr, "usage: jobs [-l|-p] [ID...]\n");
+            fprintf(stderr, "usage: jobs [-l|-p] [-r|-s] [ID...]\n");
             return 1;
         }
     }
@@ -58,7 +63,7 @@ int builtin_jobs(char **args) {
         ids[count++] = atoi(args[idx]);
     }
 
-    print_jobs(mode, count, ids);
+    print_jobs(mode, filter, count, ids);
     return 1;
 }
 
