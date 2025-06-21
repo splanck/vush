@@ -20,21 +20,49 @@
 int builtin_hash(char **args) {
     int i = 1;
     int status = 0;
+
     if (args[i] && strcmp(args[i], "-r") == 0) {
         hash_clear();
         i++;
     }
+
     if (!args[i]) {
         hash_print();
         last_status = 0;
         return 1;
     }
-    for (; args[i]; i++) {
+
+    for (; args[i]; ) {
+        if (strcmp(args[i], "-p") == 0) {
+            if (!args[i+1] || !args[i+2]) {
+                fprintf(stderr, "usage: hash [-r] [-d name] [-p path name] [name...]\n");
+                last_status = 1;
+                return 1;
+            }
+            if (hash_add_path(args[i+2], args[i+1]) < 0) {
+                fprintf(stderr, "%s: not found\n", args[i+2]);
+                status = 1;
+            }
+            i += 3;
+            continue;
+        }
+        if (strcmp(args[i], "-d") == 0) {
+            if (!args[i+1]) {
+                fprintf(stderr, "usage: hash [-r] [-d name] [-p path name] [name...]\n");
+                last_status = 1;
+                return 1;
+            }
+            hash_remove(args[i+1]);
+            i += 2;
+            continue;
+        }
         if (hash_add(args[i]) < 0) {
             fprintf(stderr, "%s: not found\n", args[i]);
             status = 1;
         }
+        i++;
     }
+
     last_status = status;
     return 1;
 }
@@ -65,7 +93,7 @@ int builtin_help(char **args) {
     printf("  readonly [-p] NAME[=VALUE]  Mark variable as read-only or list them\n");
     printf("  unset [-f|-v] NAME  Remove functions with -f or variables with -v\n");
     printf("  history [-c|-d NUM]   Show or modify command history\n");
-    printf("  hash [-r] [name...]   Manage cached command paths\n");
+    printf("  hash [-r] [-d NAME] [-p PATH NAME] [NAME...]   Manage cached command paths\n");
     printf("  alias [-p] [NAME[=VALUE]]  Set or list aliases\n");
     printf("  unalias [-a] NAME   Remove alias(es)\n");
     printf("  read [-r] VAR...    Read a line into variables\n");
