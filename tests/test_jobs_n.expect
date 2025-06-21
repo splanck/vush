@@ -1,0 +1,38 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "sleep 5 &\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "kill -SIGSTOP 1\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "jobs -n\r"
+expect {
+    -re {\[1\] [0-9]+ sleep 5 \&\r\nvush> } {}
+    timeout { send_user "jobs -n output mismatch\n"; exit 1 }
+}
+send "jobs -n\r"
+expect {
+    "vush> " {}
+    -re {\[} { send_user "jobs -n repeated output\n"; exit 1 }
+    timeout { send_user "jobs -n second timeout\n"; exit 1 }
+}
+send "kill 1\r"
+expect {
+    -re {.*\[vush\] job [0-9]+ \(sleep 5 \&\) finished[\r\n]+vush> } {}
+    timeout { send_user "kill output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

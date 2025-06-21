@@ -320,7 +320,7 @@ hi
 - `exec command [args...]` - replace the shell with `command`.
 - `pwd [-L|-P]` - print the current working directory. `-P` displays the
   physical directory from `getcwd()` while `-L` (the default) prints `$PWD`.
-- `jobs [-l|-p] [-r|-s] [ID]` - list background jobs. `-l` prints the PID and status, `-p` prints only the PID, `-r` shows running jobs only and `-s` lists only stopped jobs. With IDs only those jobs are shown.
+- `jobs [-l|-p] [-r|-s] [-n] [ID]` - list background jobs. `-l` prints the PID and status, `-p` prints only the PID, `-r` shows running jobs only, `-s` lists only stopped jobs and `-n` shows only jobs whose status changed since the last query. With IDs only those jobs are shown.
 - `fg [ID]` - wait for background job `ID` or the most recent job when omitted.
 - `bg [ID]` - resume the specified job or the last started job if no ID is given.
   Job IDs may also be written as `%N`, `%%`/`%+` for the current job, `%-` for
