@@ -135,7 +135,7 @@ to a string of the current option letters such as `eu` when `set -e` and
 `set -u` are enabled. `$LINENO` holds the current input line number.
 
 Additional parameter expansion forms (doubling `#` or `%` removes the
-longest matching prefix or suffix):
+longest matching prefix or suffix).  The `@Q` operator quotes the value:
 
 ```
 vush> unset TEMP
@@ -152,6 +152,9 @@ vush> echo ${TEMP%ings}
 end
 vush> echo ${#TEMP}
 7
+vush> FOO='a b'
+vush> echo ${FOO@Q}
+'a b'
 ```
 
 Using `?` reports an error when a variable is unset or empty:
