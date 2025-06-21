@@ -344,8 +344,11 @@ hi
 - `hash [-r] [name...]` - manage cached command paths.
 - `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
 - `unalias [-a] NAME` - remove aliases. With `-a` all aliases are cleared.
-- `read [-r] VAR...` - read a line of input into variables using the first
-  character of `$IFS` to split fields.
+- `read [-r] [-a NAME] [-p prompt] [-n nchars] [-s] [-t timeout] [-u fd] [VAR...]` -
+  read a line from input. `-a` stores fields in array `NAME`, `-p` displays a
+  prompt, `-n` reads up to `nchars` characters, `-s` disables echo, `-t` sets a
+  timeout in seconds, and `-u` reads from the specified file descriptor. The
+  input is split using the first character of `$IFS`.
 - `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).
 - `break [N]` - exit `N` levels of loops (default 1).

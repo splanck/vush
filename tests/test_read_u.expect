@@ -1,0 +1,11 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush -c {exec 3<<<"hello"; read -u 3 var; echo $var}
+expect {
+    -re "hello\r?\n" {}
+    timeout { send_user "read -u failed\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}

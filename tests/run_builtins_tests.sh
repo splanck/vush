@@ -72,6 +72,11 @@ test_function.expect
 test_read.expect
 test_read_eof.expect
 test_read_signal.expect
+test_read_p.expect
+test_read_n.expect
+test_read_s.expect
+test_read_t.expect
+test_read_u.expect
 test_case.expect
 test_case_posix.expect
 test_trap.expect
