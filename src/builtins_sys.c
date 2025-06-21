@@ -146,7 +146,13 @@ int builtin_ulimit(char **args)
     } const map[] = {
         {'c', RLIMIT_CORE},
         {'d', RLIMIT_DATA},
+#ifdef RLIMIT_RSS
+        {'m', RLIMIT_RSS},
+#endif
         {'f', RLIMIT_FSIZE},
+#ifdef RLIMIT_NPROC
+        {'u', RLIMIT_NPROC},
+#endif
         {'n', RLIMIT_NOFILE},
         {'s', RLIMIT_STACK},
         {'t', RLIMIT_CPU},
@@ -175,18 +181,18 @@ int builtin_ulimit(char **args)
                 }
             }
             if (!found) {
-                fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+                fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v] [limit]\n");
                 return 1;
             }
         } else {
-            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v] [limit]\n");
             return 1;
         }
     }
 
     if (show_all) {
         if (args[i]) {
-            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+            fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v] [limit]\n");
             return 1;
         }
         struct rlimit rl;
@@ -222,7 +228,7 @@ int builtin_ulimit(char **args)
     }
 
     if (args[i+1]) {
-        fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v] [limit]\n");
+        fprintf(stderr, "usage: ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v] [limit]\n");
         return 1;
     }
 

@@ -9,7 +9,7 @@ expect {
 }
 send "ulimit -a\r"
 expect {
-    -re "\r\n-c (?:unlimited|\[0-9\]+)\r?\n-d (?:unlimited|\[0-9\]+)\r?\n-f (?:unlimited|\[0-9\]+)\r?\n-n (?:unlimited|\[0-9\]+)\r?\n-s (?:unlimited|\[0-9\]+)\r?\n-t (?:unlimited|\[0-9\]+)\r?\n-v (?:unlimited|\[0-9\]+)\r?\nvush> " {}
+    -re "\r\n-c (?:unlimited|\[0-9\]+)\r?\n-d (?:unlimited|\[0-9\]+)\r?\n-m (?:unlimited|\[0-9\]+)\r?\n-f (?:unlimited|\[0-9\]+)\r?\n-u (?:unlimited|\[0-9\]+)\r?\n-n (?:unlimited|\[0-9\]+)\r?\n-s (?:unlimited|\[0-9\]+)\r?\n-t (?:unlimited|\[0-9\]+)\r?\n-v (?:unlimited|\[0-9\]+)\r?\nvush> " {}
     timeout { send_user "ulimit -a output mismatch\n"; exit 1 }
 }
 send "ulimit -f 1234\r"
@@ -46,6 +46,16 @@ send "ulimit -H -f\r"
 expect {
     -re "\r\n1234\r?\nvush> " {}
     timeout { send_user "ulimit hard query failed\n"; exit 1 }
+}
+send "ulimit -m\r"
+expect {
+    -re "\r\n(?:unlimited|[0-9]+)\r?\nvush> " {}
+    timeout { send_user "ulimit -m query failed\n"; exit 1 }
+}
+send "ulimit -u\r"
+expect {
+    -re "\r\n(?:unlimited|[0-9]+)\r?\nvush> " {}
+    timeout { send_user "ulimit -u query failed\n"; exit 1 }
 }
 send "exit\r"
 expect {
