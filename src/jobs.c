@@ -184,11 +184,19 @@ static void print_job(Job *j, int mode) {
     }
 }
 
-void print_jobs(int mode, int count, int *ids) {
+static int match_filter(Job *j, int filter) {
+    if (filter == 1)
+        return j->state == JOB_RUNNING;
+    if (filter == 2)
+        return j->state == JOB_STOPPED;
+    return 1;
+}
+
+void print_jobs(int mode, int filter, int count, int *ids) {
     if (count > 0) {
         for (int i = 0; i < count; i++) {
             Job *j = find_job(ids[i]);
-            if (j)
+            if (j && match_filter(j, filter))
                 print_job(j, mode);
             else
                 fprintf(stderr, "jobs: %d: no such job\n", ids[i]);
@@ -197,7 +205,8 @@ void print_jobs(int mode, int count, int *ids) {
     }
     Job *j = jobs;
     while (j) {
-        print_job(j, mode);
+        if (match_filter(j, filter))
+            print_job(j, mode);
         j = j->next;
     }
 }
