@@ -73,7 +73,11 @@ int builtin_fg(char **args) {
             return 1;
         }
     } else {
-        id = atoi(args[1]);
+        id = parse_job_spec(args[1]);
+        if (id < 0) {
+            fprintf(stderr, "fg: %s: no such job\n", args[1]);
+            return 1;
+        }
     }
     wait_job(id);
     return 1;
@@ -90,7 +94,11 @@ int builtin_bg(char **args) {
             return 1;
         }
     } else {
-        id = atoi(args[1]);
+        id = parse_job_spec(args[1]);
+        if (id < 0) {
+            fprintf(stderr, "bg: %s: no such job\n", args[1]);
+            return 1;
+        }
     }
     bg_job(id);
     return 1;

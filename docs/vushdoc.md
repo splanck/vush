@@ -320,6 +320,8 @@ hi
 - `jobs [-l|-p] [ID]` - list background jobs. `-l` prints the PID and status and `-p` prints only the PID. With IDs only those jobs are shown.
 - `fg [ID]` - wait for background job `ID` or the most recent job when omitted.
 - `bg [ID]` - resume the specified job or the last started job if no ID is given.
+  Job IDs may also be written as `%N`, `%%`/`%+` for the current job, `%-` for
+  the previous job and `%?text` to match a command containing `text`.
 - `kill [-s SIGNAL|-SIGNAL] [-l] ID|PID` - send a signal to the given job or
   process. Use `-l` to list signals or `-l NUM` to print the signal name for
   `NUM`.
