@@ -100,6 +100,7 @@ test_array.expect
 test_brace_expand.expect
 test_printf.expect
 test_printf_escapes.expect
+test_printf_v.expect
 test_select.expect
 test_pipefail.expect
 test_noclobber.expect

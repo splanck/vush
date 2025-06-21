@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "shell_state.h"
+#include "vars.h"
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -156,17 +157,45 @@ static char *unescape_string(const char *src)
 /* Formatted printing similar to printf(1); stores result in last_status. */
 int builtin_printf(char **args)
 {
-    const char *srcfmt = args[1] ? args[1] : "";
+    const char *varname = NULL;
+    int i = 1;
+    if (args[i] && strcmp(args[i], "-v") == 0) {
+        if (!args[i+1]) {
+            fprintf(stderr, "usage: printf [-v VAR] format [args...]\n");
+            last_status = 1;
+            return 1;
+        }
+        varname = args[i+1];
+        i += 2;
+    }
+    if (!args[i]) {
+        fprintf(stderr, "usage: printf [-v VAR] format [args...]\n");
+        last_status = 1;
+        return 1;
+    }
+    const char *srcfmt = args[i];
     char *fmt = unescape_string(srcfmt);
     if (!fmt) {
         perror("printf");
         last_status = 1;
         return 1;
     }
-    int ai = 2;
+    FILE *out = stdout;
+    char *outbuf = NULL;
+    size_t outsize = 0;
+    if (varname) {
+        out = open_memstream(&outbuf, &outsize);
+        if (!out) {
+            perror("printf");
+            free(fmt);
+            last_status = 1;
+            return 1;
+        }
+    }
+    int ai = i + 1;
     for (const char *p = fmt; *p; ) {
         if (*p != '%') {
-            putchar(*p++);
+            fputc(*p++, out);
             continue;
         }
         char spec[32];
@@ -175,30 +204,30 @@ int builtin_printf(char **args)
         if (!conv)
             break;
         if (conv == '%') {
-            putchar('%');
+            fputc('%', out);
             continue;
         }
 
         char *arg = args[ai] ? args[ai] : "";
         switch (conv) {
         case 'd': case 'i':
-            printf(spec, (long long)strtoll(arg, NULL, 0));
+            fprintf(out, spec, (long long)strtoll(arg, NULL, 0));
             if (args[ai]) ai++;
             break;
         case 'u': case 'o': case 'x': case 'X':
-            printf(spec, (unsigned long long)strtoull(arg, NULL, 0));
+            fprintf(out, spec, (unsigned long long)strtoull(arg, NULL, 0));
             if (args[ai]) ai++;
             break;
         case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
-            printf(spec, strtod(arg, NULL));
+            fprintf(out, spec, strtod(arg, NULL));
             if (args[ai]) ai++;
             break;
         case 'c':
-            printf(spec, arg[0]);
+            fprintf(out, spec, arg[0]);
             if (args[ai]) ai++;
             break;
         case 's':
-            printf(spec, arg);
+            fprintf(out, spec, arg);
             if (args[ai]) ai++;
             break;
         case 'b': {
@@ -231,21 +260,28 @@ int builtin_printf(char **args)
             }
             *bp = '\0';
             spec[strlen(spec) - 1] = 's';
-            printf(spec, buf);
+            fprintf(out, spec, buf);
             free(buf);
             if (args[ai]) ai++;
             break;
         }
         case 'p':
-            printf(spec, (void *)(uintptr_t)strtoull(arg, NULL, 0));
+            fprintf(out, spec, (void *)(uintptr_t)strtoull(arg, NULL, 0));
             if (args[ai]) ai++;
             break;
         default:
-            fputs(spec, stdout);
+            fputs(spec, out);
             break;
         }
     }
-    fflush(stdout);
+    fflush(out);
+    if (varname) {
+        fclose(out);
+        set_shell_var(varname, outbuf ? outbuf : "");
+        free(outbuf);
+    } else {
+        fflush(stdout);
+    }
     free(fmt);
     last_status = 0;
     return 1;

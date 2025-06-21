@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "printf -v res \"%s %04d\\n\" foo 5\r"
+expect {
+    "vush> " {}
+    timeout { send_user "printf -v failed\n"; exit 1 }
+}
+send "echo $res\r"
+expect {
+    -re "\[\r\n\]+foo 0005\r\nvush> " {}
+    timeout { send_user "variable output mismatch\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
