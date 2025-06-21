@@ -50,7 +50,7 @@ int builtin_help(char **args) {
     printf("  cd [dir]   Change the current directory ('cd -' toggles)\n");
     printf("  pushd DIR  Push current directory and switch to DIR\n");
     printf("  popd       Switch to directory from stack\n");
-    printf("  printf FORMAT [ARGS]  Print formatted text\n");
+    printf("  printf [-v VAR] FORMAT [ARGS]  Print formatted text\n");
     printf("  dirs       Display the directory stack\n");
     printf("  exit [status]  Exit the shell with optional status\n");
     printf("  :          Do nothing and return success\n");
