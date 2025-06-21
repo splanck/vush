@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+set env(OPTERR) 0
+set script [exec mktemp]
+set f [open $script "w"]
+puts $f {while getopts "ab:" o; do echo "$o:$OPTARG"; done; echo index:$OPTIND}
+close $f
+spawn [file dirname [info script]]/../build/vush $script -z
+expect {
+    -re "\?:\r\nindex:2\r\n" {}
+    timeout { send_user "silent invalid option failed\n"; exec rm $script; exit 1 }
+    "getopts:" { send_user "unexpected error output\n"; exec rm $script; exit 1 }
+}
+set code [lindex [wait] 3]
+spawn [file dirname [info script]]/../build/vush $script -b
+expect {
+    -re ":\r\nindex:2\r\n" {}
+    timeout { send_user "silent missing argument failed\n"; exec rm $script; exit 1 }
+    "getopts:" { send_user "unexpected error output\n"; exec rm $script; exit 1 }
+}
+set code [lindex [wait] 3]
+exec rm $script

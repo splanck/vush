@@ -86,6 +86,7 @@ test_exit_trap.expect
 test_eval.expect
 test_exec_builtin.expect
 test_getopts.expect
+test_getopts_opterr.expect
 test_subshell.expect
 test_brace_group.expect
 test_break.expect

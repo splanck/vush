@@ -357,7 +357,8 @@ hi
 - `continue [N]` - start the next iteration of the `N`th enclosing loop (default 1).
 - `getopts OPTSTRING VAR` - parse positional parameters, storing the
   current option letter in `VAR`, any argument in `OPTARG`, and advancing
-  `OPTIND`.
+  `OPTIND`. When `OPTERR` is set to `0` the call behaves as if
+  `OPTSTRING` began with `:` and no error messages are printed.
 - `let EXPR` - evaluate an arithmetic expression.
 - `(( EXPR ))` - evaluate an arithmetic expression. The exit status is 0 when
   the value is non-zero and 1 otherwise.
@@ -605,6 +606,8 @@ vush> echo $((16#ff + 2#10))
 - `MAILPATH` is a `:` separated list of mailbox files also checked. Each path
   prints `New mail in <file>` when updated. Memory used to track mailbox
   modification times is freed when the shell exits.
+- `OPTERR` set to `0` disables `getopts` error messages and treats missing
+  arguments as if the option string started with `:`.
 - `VUSH_HISTFILE` names the history file; `VUSH_HISTSIZE` limits retained entries (defaults `~/.vush_history` and `1000`).
 - `VUSH_ALIASFILE` and `VUSH_FUNCFILE` store persistent aliases and functions (defaults `~/.vush_aliases` and `~/.vush_funcs`).
 - `CDPATH` lists directories searched by `cd` for relative paths.
