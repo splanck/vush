@@ -58,8 +58,8 @@ Replace the shell with \fIcommand\fP.
 .B "pwd [-L|-P]"
 Print the current working directory. \-P displays the physical directory from \fBgetcwd()\fP while \-L (the default) prints \$PWD.
 .TP
-.B "jobs [-l|-p] [-r|-s] [ID]"
-List background jobs. \-l prints the PID and status, \-p prints only the PID, \-r lists only running jobs and \-s shows only stopped ones. With IDs only those jobs are shown.
+.B "jobs [-l|-p] [-r|-s] [-n] [ID]"
+List background jobs. \-l prints the PID and status, \-p prints only the PID, \-r lists only running jobs and \-s shows only stopped ones. \-n outputs only jobs whose status changed since the last query. With IDs only those jobs are shown.
 .TP
 .B "fg [ID]"
 Wait for background job \fIID\fP or the most recent job when omitted.

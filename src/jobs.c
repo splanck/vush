@@ -31,6 +31,7 @@ typedef struct Job {
     int id;
     pid_t pid;
     JobState state;
+    int changed;
     char cmd[MAX_LINE];
     struct Job *next;
 } Job;
@@ -63,6 +64,7 @@ void add_job(pid_t pid, const char *cmd) {
     job->id = id;
     job->pid = pid;
     job->state = JOB_RUNNING;
+    job->changed = 0;
     strncpy(job->cmd, cmd, MAX_LINE - 1);
     job->cmd[MAX_LINE - 1] = '\0';
     job->next = jobs;
@@ -127,11 +129,15 @@ int check_jobs_internal(int prefix) {
             }
             remove_job(pid);
         } else if (WIFSTOPPED(status)) {
-            if (curr)
+            if (curr) {
                 curr->state = JOB_STOPPED;
+                curr->changed = 1;
+            }
         } else if (WIFCONTINUED(status)) {
-            if (curr)
+            if (curr) {
                 curr->state = JOB_RUNNING;
+                curr->changed = 1;
+            }
         }
     }
     return printed;
@@ -192,21 +198,25 @@ static int match_filter(Job *j, int filter) {
     return 1;
 }
 
-void print_jobs(int mode, int filter, int count, int *ids) {
+void print_jobs(int mode, int filter, int changed_only, int count, int *ids) {
     if (count > 0) {
         for (int i = 0; i < count; i++) {
             Job *j = find_job(ids[i]);
-            if (j && match_filter(j, filter))
+            if (j && match_filter(j, filter) && (!changed_only || j->changed)) {
                 print_job(j, mode);
-            else
+                j->changed = 0;
+            } else if (!j) {
                 fprintf(stderr, "jobs: %d: no such job\n", ids[i]);
+            }
         }
         return;
     }
     Job *j = jobs;
     while (j) {
-        if (match_filter(j, filter))
+        if (match_filter(j, filter) && (!changed_only || j->changed)) {
             print_job(j, mode);
+            j->changed = 0;
+        }
         j = j->next;
     }
 }
@@ -255,10 +265,13 @@ int kill_job(int id, int sig) {
                 perror("kill");
                 return -1;
             }
-            if (sig == SIGSTOP)
+            if (sig == SIGSTOP) {
                 curr->state = JOB_STOPPED;
-            else if (sig == SIGCONT)
+                curr->changed = 1;
+            } else if (sig == SIGCONT) {
                 curr->state = JOB_RUNNING;
+                curr->changed = 1;
+            }
             return 0;
         }
         curr = curr->next;
@@ -286,6 +299,7 @@ int bg_job(int id) {
                 return -1;
             }
             curr->state = JOB_RUNNING;
+            curr->changed = 1;
 
             /*
              * If the process exits immediately after being continued we
