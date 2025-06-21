@@ -36,6 +36,7 @@ test_for_shellvar.expect
 test_assign.expect
 test_param_replace.expect
 test_param_substring.expect
+test_param_indirect.expect
 test_param_error.expect
 test_readonly.expect
 test_pid_params.expect
