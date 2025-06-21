@@ -77,7 +77,7 @@ int builtin_help(char **args) {
     printf("  let EXPR  Evaluate arithmetic expression\n");
     printf("  set [-e|-u|-x] Toggle shell options\n");
     printf("  test EXPR ([ EXPR ])  Evaluate a test expression (!, -a, -o)\n");
-    printf("  ulimit [-HS] [-a|-f|-n] [limit]  Display or set resource limits\n");
+    printf("  ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v] [limit]  Display or set resource limits\n");
     printf("  eval WORDS  Concatenate arguments and execute the result\n");
     printf("  exec CMD [ARGS]  Replace the shell with CMD\n");
     printf("  source FILE [ARGS...] (. FILE [ARGS...])\n");

@@ -386,7 +386,7 @@ hi
 time ls | wc
 ```
 - `times` - print cumulative user/system CPU times.
-- `ulimit [-HS] [-a|-c|-d|-f|-n|-s|-t|-v [limit]]` - display or set resource limits.
+- `ulimit [-HS] [-a|-c|-d|-f|-m|-n|-s|-t|-u|-v [limit]]` - display or set resource limits.
 - `umask [-S] [mask]` - set or display the file creation mask. `mask` may be an octal number or a symbolic string like `u=rwx,g=rx,o=rx`. With `-S`, the mask is shown in symbolic form.
 
 ## Redirection Examples
@@ -442,6 +442,10 @@ vush> ulimit -S -s
 8192
 vush> ulimit -S -s 1024
 vush> ulimit -H -n 4096
+vush> ulimit -S -m
+unlimited
+vush> ulimit -S -u
+unlimited
 vush> ulimit -a | head -n 3
 -c 0
 -d unlimited
