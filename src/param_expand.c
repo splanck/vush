@@ -361,6 +361,44 @@ static char *expand_braced(const char *inner) {
     if (inner[0] == '#')
         return expand_length(inner + 1);
 
+    if (inner[0] == '!') {
+        char var[MAX_LINE];
+        int vn = 0;
+        const char *p = inner + 1;
+        while (*p && *p != ':' && *p != '#' && *p != '%' && *p != '/' && *p != '?' && vn < MAX_LINE - 1)
+            var[vn++] = *p++;
+        var[vn] = '\0';
+
+        const char *name = get_shell_var(var);
+        if (!name) name = getenv(var);
+        if (!name) {
+            if (opt_nounset) {
+                fprintf(stderr, "%s: unbound variable\n", var);
+                last_status = 1;
+                param_error = 1;
+            }
+            name = "";
+        }
+
+        const char *val = NULL;
+        if (*name) {
+            val = get_shell_var(name);
+            if (!val) val = getenv(name);
+        }
+
+        if (*p)
+            return apply_modifier(name, val, p);
+
+        if (!val) {
+            if (opt_nounset) {
+                fprintf(stderr, "%s: unbound variable\n", name);
+                last_status = 1;
+            }
+            val = "";
+        }
+        return strdup(val);
+    }
+
     char name[MAX_LINE];
     int n = 0;
     const char *p = inner;
