@@ -149,6 +149,10 @@ int builtin_getopts(char **args) {
         optstr++;
     }
 
+    const char *opterr = get_shell_var("OPTERR");
+    if (opterr && atoi(opterr) == 0)
+        silent = 1;
+
     char opt = '\0';
     int res = getopts_next_option(optstr, silent, &ind, &opt);
 
