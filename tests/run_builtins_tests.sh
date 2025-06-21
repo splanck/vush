@@ -36,7 +36,9 @@ test_pipe.expect
 test_redir.expect
 test_source.expect
 test_fg.expect
+test_fg_percent.expect
 test_bg.expect
+test_bg_percent.expect
 test_kill.expect
 test_sequence.expect
 test_andor.expect

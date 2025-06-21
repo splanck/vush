@@ -313,3 +313,46 @@ int get_last_job_id(void) {
     return last_bg_id;
 }
 
+/*
+ * Parse a job specification string and return the job ID. Supports
+ * forms like "%1", "%+", "%-" and "%?text" in addition to plain
+ * numbers. Returns -1 on failure or when the job cannot be found.
+ */
+int parse_job_spec(const char *spec) {
+    if (!spec || !*spec)
+        return -1;
+
+    const char *s = spec;
+    if (s[0] == '%')
+        s++;
+
+    if (*s == '\0' || strcmp(s, "+") == 0) {
+        int id = get_last_job_id();
+        return id ? id : -1;
+    }
+
+    if (strcmp(s, "-") == 0) {
+        if (jobs && jobs->next)
+            return jobs->next->id;
+        return -1;
+    }
+
+    if (s[0] == '?') {
+        const char *needle = s + 1;
+        for (Job *j = jobs; j; j = j->next) {
+            if (strstr(j->cmd, needle))
+                return j->id;
+        }
+        return -1;
+    }
+
+    if (isdigit((unsigned char)s[0])) {
+        char *end;
+        long val = strtol(s, &end, 10);
+        if (*end == '\0')
+            return (int)val;
+    }
+
+    return -1;
+}
+

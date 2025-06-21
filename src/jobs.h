@@ -19,6 +19,7 @@ int wait_job(int id);
 int kill_job(int id, int sig);
 int bg_job(int id);
 int get_last_job_id(void);
+int parse_job_spec(const char *spec);
 void jobs_sigchld_handler(int sig);
 
 /* True while the shell is waiting for input at the prompt */
