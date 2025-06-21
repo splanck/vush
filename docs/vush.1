@@ -94,8 +94,8 @@ Show command history, clear it with \-c, or delete a specific entry with \-d. En
 .B "fc [-lnr] [-e editor] [first [last]]"
 List or edit previous commands. Use \-s [old=new] [command] to immediately run a command with optional text replacement.
 .TP
-.B "hash [-r] [name...]"
-Manage cached command paths.
+.B "hash [-r] [-d name] [-p path name] [name...]"
+Manage cached command paths. Use \-p to manually set a command path and \-d to remove an entry.
 .TP
 .B "alias [-p] [NAME[=VALUE]]"
 Set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. \-p lists using `alias NAME='value'` format.

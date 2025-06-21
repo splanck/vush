@@ -1,0 +1,30 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [exec mktemp -d]
+set f [open "$dir/bar" "w"]
+puts $f "#!/bin/sh"
+puts $f "echo manualhash"
+close $f
+exec chmod +x "$dir/bar"
+set env(PATH) "/bin"
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "hash -p $dir/bar foo\r"
+expect {
+    "vush> " {}
+    timeout { send_user "hash -p failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "foo\r"
+expect {
+    -re "\[\r\n\]+manualhash\[\r\n\]+vush> " {}
+    timeout { send_user "manual entry failed\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+exec rm -rf $dir

@@ -10,6 +10,12 @@ const char *hash_lookup(const char *name, int *fd);
 /* Add NAME to the cache by searching PATH.  Returns 0 on success. */
 int hash_add(const char *name);
 
+/* Manually add NAME with PATH to the cache. Returns 0 on success. */
+int hash_add_path(const char *name, const char *path);
+
+/* Remove cached entry for NAME if it exists. */
+void hash_remove(const char *name);
+
 /* Remove all cached entries. */
 void hash_clear(void);
 

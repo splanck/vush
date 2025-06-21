@@ -117,6 +117,8 @@ test_true_builtin.expect
 test_false_builtin.expect
 test_colon.expect
 test_hash.expect
+test_hash_p.expect
+test_hash_d.expect
 test_heredoc_dash.expect
 test_heredoc_tabs.expect
 test_heredoc_expand.expect

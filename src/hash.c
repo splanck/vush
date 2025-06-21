@@ -115,3 +115,56 @@ void hash_print(void) {
     for (struct hash_entry *e = hash_list; e; e = e->next)
         printf("%s %s\n", e->name, e->path);
 }
+
+int hash_add_path(const char *name, const char *path) {
+    if (!name || !path)
+        return -1;
+    if (strchr(name, '/'))
+        return -1;
+    if (hash_lookup(name, NULL))
+        return 0;
+    char *real = realpath(path, NULL);
+    char *p = real ? real : strdup(path);
+    if (!p)
+        return -1;
+    int fd = open(p, O_RDONLY);
+    if (fd < 0) {
+        free(p);
+        return -1;
+    }
+    struct hash_entry *e = malloc(sizeof(struct hash_entry));
+    if (!e) {
+        free(p);
+        close(fd);
+        return -1;
+    }
+    e->name = strdup(name);
+    if (!e->name) {
+        free(p);
+        close(fd);
+        free(e);
+        return -1;
+    }
+    e->path = p;
+    e->fd = fd;
+    e->next = hash_list;
+    hash_list = e;
+    return 0;
+}
+
+void hash_remove(const char *name) {
+    struct hash_entry **pp = &hash_list;
+    while (*pp) {
+        struct hash_entry *e = *pp;
+        if (strcmp(e->name, name) == 0) {
+            *pp = e->next;
+            free(e->name);
+            free(e->path);
+            if (e->fd >= 0)
+                close(e->fd);
+            free(e);
+            return;
+        }
+        pp = &(*pp)->next;
+    }
+}

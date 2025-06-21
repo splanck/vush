@@ -346,7 +346,7 @@ hi
 - `fc [-lnr] [-e editor] [first [last]]` - list or edit previous commands.
   Use `-s [old=new] [command]` to immediately run a command with optional
   text replacement.
-- `hash [-r] [name...]` - manage cached command paths.
+- `hash [-r] [-d name] [-p path name] [name...]` - manage cached command paths. Use `-p` to manually set a command path and `-d` to remove an entry.
 - `alias [-p] [NAME[=VALUE]]` - set or display aliases. With no arguments all aliases are listed. A single NAME prints that alias. `-p` lists using `alias NAME='value'` format.
 - `unalias [-a] NAME` - remove aliases. With `-a` all aliases are cleared.
 - `read [-r] [-a NAME] [-p prompt] [-n nchars] [-s] [-t timeout] [-u fd] [VAR...]` -
