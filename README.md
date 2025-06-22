@@ -45,6 +45,9 @@ Use the provided `Makefile` to build the shell:
 make
 ```
 
+The default `CFLAGS` include `-Wa,--noexecstack` so the resulting objects
+contain a note marking the stack as non‑executable.
+
 The resulting binary will be `build/vush`. Remove the directory with:
 
 ```sh
