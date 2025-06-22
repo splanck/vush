@@ -67,6 +67,7 @@ static void canonicalize_logical(const char *path, char *out)
  */
 int builtin_cd(char **args) {
     char prev[PATH_MAX];
+    char buf[PATH_MAX];
     if (!getcwd(prev, sizeof(prev))) {
         perror("getcwd");
         return 1;
@@ -87,7 +88,6 @@ int builtin_cd(char **args) {
     if (!args[idx]) {
         target = getenv("HOME");
     } else if (strcmp(args[idx], "-") == 0) {
-        char buf[PATH_MAX];
         target = getenv("OLDPWD");
         if (!target) {
             if (!getcwd(buf, sizeof(buf))) {
