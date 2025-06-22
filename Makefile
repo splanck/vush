@@ -1,5 +1,5 @@
 CC ?= cc
-CFLAGS ?= -Wall -Wextra -std=c99
+CFLAGS ?= -Wall -Wextra -std=c99 -Wa,--noexecstack
 PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
 BUILDDIR := build

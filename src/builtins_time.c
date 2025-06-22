@@ -10,6 +10,9 @@
 #include <sys/times.h>
 #include <unistd.h>
 
+struct run_data { char **argv; };
+
+static int exec_cmd(void *d);
 
 static int do_time(int posix, int (*func)(void *), void *data)
 {
@@ -44,6 +47,32 @@ int builtin_time_callback(int (*func)(void *), void *data, int posix)
     return do_time(posix, func, data);
 }
 
+static int exec_cmd(void *d)
+{
+    char **av = ((struct run_data *)d)->argv;
+    pid_t pid = fork();
+    if (pid == 0) {
+        execvp(av[0], av);
+        perror(av[0]);
+        _exit(127);
+    } else if (pid > 0) {
+        int status;
+        if (waitpid(pid, &status, 0) == -1) {
+            perror("waitpid");
+            return 1;
+        }
+        if (WIFEXITED(status))
+            return WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            return 128 + WTERMSIG(status);
+        else
+            return status;
+    } else {
+        perror("fork");
+        return 1;
+    }
+}
+
 /* Run a command and report the elapsed real time. */
 int builtin_time(char **args)
 {
@@ -60,33 +89,7 @@ int builtin_time(char **args)
         return 1;
     }
 
-    struct run_data { char **argv; } rd = { &args[idx] };
-    int exec_cmd(void *d)
-    {
-        char **av = ((struct run_data *)d)->argv;
-        pid_t pid = fork();
-        if (pid == 0) {
-            execvp(av[0], av);
-            perror(av[0]);
-            _exit(127);
-        } else if (pid > 0) {
-            int status;
-            if (waitpid(pid, &status, 0) == -1) {
-                perror("waitpid");
-                return 1;
-            }
-            if (WIFEXITED(status))
-                return WEXITSTATUS(status);
-            else if (WIFSIGNALED(status))
-                return 128 + WTERMSIG(status);
-            else
-                return status;
-        } else {
-            perror("fork");
-            return 1;
-        }
-    }
-
+    struct run_data rd = { &args[idx] };
     int status = do_time(posix, exec_cmd, &rd);
     last_status = status;
     return 1;
