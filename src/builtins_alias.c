@@ -92,6 +92,10 @@ const char *get_alias(const char *name)
 /* Create or update an alias. */
 static int set_alias(const char *name, const char *value)
 {
+    if (strchr(value, '\n') || strchr(value, '=')) {
+        fprintf(stderr, "alias: invalid value for %s\n", name);
+        return -1;
+    }
     /* If an alias with this NAME already exists make sure it is fully
      * removed so the new definition completely replaces it.  This avoids
      * duplicate entries which could cause the old value to be printed when
