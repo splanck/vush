@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
                 free(script_argv);
                 script_argv = NULL;
                 script_argc = 0;
+                fclose(input);
                 return 1;
             }
             for (int i = 0; i < script_argc; i++) {
@@ -103,6 +104,7 @@ int main(int argc, char **argv) {
                     free(script_argv);
                     script_argv = NULL;
                     script_argc = 0;
+                    fclose(input);
                     return 1;
                 }
             }
