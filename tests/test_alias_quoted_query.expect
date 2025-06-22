@@ -1,5 +1,5 @@
 #!/usr/bin/env expect
-set dir [exec mktemp -d]
+set dir [exec sh [file dirname [info script]]/mktempd.sh]
 set env(HOME) $dir
 set timeout 5
 spawn [file dirname [info script]]/../build/vush
