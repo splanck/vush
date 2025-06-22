@@ -350,10 +350,18 @@ static void list_exports(void)
     extern char **environ;
     for (char **e = environ; *e; e++) {
         char *eq = strchr(*e, '=');
-        if (eq)
-            printf("export %.*s='%s'\n", (int)(eq - *e), *e, eq + 1);
-        else
+        if (eq) {
+            printf("export %.*s='", (int)(eq - *e), *e);
+            for (const char *p = eq + 1; *p; p++) {
+                if (*p == '\'')
+                    fputs("'\\''", stdout);
+                else
+                    fputc(*p, stdout);
+            }
+            printf("'\n");
+        } else {
             printf("export %s\n", *e);
+        }
     }
 }
 
