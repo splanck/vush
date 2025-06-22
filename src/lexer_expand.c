@@ -180,7 +180,7 @@ char *expand_var(const char *token) {
         return ansi_unescape(inner);
     }
     if (tlen >= 2 && token[0] == '\'' && token[tlen - 1] == '\'') {
-        return strndup(token + 1, tlen - 2);
+        return xstrndup(token + 1, tlen - 2);
     }
     if (tlen >= 2 && token[0] == '"' && token[tlen - 1] == '"') {
         size_t innerlen = tlen - 2;

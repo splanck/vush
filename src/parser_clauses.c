@@ -244,17 +244,8 @@ static char *parse_for_arith_exprs(char **p, char **init, char **cond, char **in
         return NULL;
     }
 
-    *init = strndup(exprs, s1 - exprs);
-    if (!*init) {
-        free(exprs);
-        return NULL;
-    }
-    *cond = strndup(s1 + 1, s2 - (s1 + 1));
-    if (!*cond) {
-        free(exprs);
-        free(*init);
-        return NULL;
-    }
+    *init = xstrndup(exprs, s1 - exprs);
+    *cond = xstrndup(s1 + 1, s2 - (s1 + 1));
     *incr = strdup(s2 + 1);
     if (!*incr) {
         free(exprs);

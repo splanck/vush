@@ -6,6 +6,7 @@
 #include "lexer.h"
 #include "execute.h"
 #include "shell_state.h"
+#include "util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -192,7 +193,7 @@ char *gather_braced(char **p) {
                 depth--;
                 if (depth == 0) {
                     size_t len = (size_t)(*p - start);
-                    char *res = strndup(start, len);
+                    char *res = xstrndup(start, len);
                     (*p)++; /* skip closing brace */
                     return res;
                 }
@@ -226,7 +227,7 @@ char *gather_parens(char **p) {
                 depth--;
                 if (depth == 0) {
                     size_t len = (size_t)(*p - start);
-                    char *res = strndup(start, len);
+                    char *res = xstrndup(start, len);
                     (*p)++; /* skip closing paren */
                     return res;
                 }
@@ -241,7 +242,7 @@ char *trim_ws(const char *s) {
     while (*s && isspace((unsigned char)*s)) s++;
     const char *end = s + strlen(s);
     while (end > s && isspace((unsigned char)*(end-1))) end--;
-    return strndup(s, end - s);
+    return xstrndup(s, end - s);
 }
 
 char *gather_dbl_parens(char **p) {
@@ -266,7 +267,7 @@ char *gather_dbl_parens(char **p) {
                 depth++;
             } else if (c == ')') {
                 if (depth == 0 && *(*p + 1) == ')') {
-                    char *res = strndup(start, *p - start);
+                    char *res = xstrndup(start, *p - start);
                     *p += 2;
                     return res;
                 }

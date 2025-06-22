@@ -39,6 +39,27 @@ char *xstrdup(const char *s) {
     }
     return ptr;
 }
+
+/* Duplicate up to N bytes of S, exiting on allocation failure. */
+char *xstrndup(const char *s, size_t n) {
+#if defined(__GLIBC__) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L)
+    char *ptr = strndup(s, n);
+#else
+    size_t len = 0;
+    while (len < n && s[len])
+        len++;
+    char *ptr = malloc(len + 1);
+    if (ptr) {
+        memcpy(ptr, s, len);
+        ptr[len] = '\0';
+    }
+#endif
+    if (!ptr) {
+        perror("strndup");
+        exit(1);
+    }
+    return ptr;
+}
 /*
  * Read a line continuing backslash escapes across multiple physical lines.
  */

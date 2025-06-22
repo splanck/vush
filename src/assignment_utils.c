@@ -10,9 +10,7 @@
 
 char **parse_array_values(const char *val, int *count) {
     *count = 0;
-    char *body = strndup(val + 1, strlen(val) - 2);
-    if (!body)
-        return NULL;
+    char *body = xstrndup(val + 1, strlen(val) - 2);
 
     StrArray arr;
     strarray_init(&arr);
@@ -91,12 +89,7 @@ struct assign_backup *backup_assignments(PipelineSegment *pipeline) {
             backs[i].name = NULL;
             continue;
         }
-        backs[i].name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-        if (!backs[i].name) {
-            backs[i].env = backs[i].var = NULL;
-            backs[i].had_env = backs[i].had_var = 0;
-            continue;
-        }
+        backs[i].name = xstrndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
         const char *oe = getenv(backs[i].name);
         backs[i].had_env = oe != NULL;
         backs[i].env = oe ? strdup(oe) : NULL;

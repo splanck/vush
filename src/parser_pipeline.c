@@ -251,8 +251,9 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
             return -1;
         }
         if (eq) {
-            char *name = strndup(tok, eq - tok);
-            if (name) { set_temp_var(name, eq + 1); free(name); }
+            char *name = xstrndup(tok, eq - tok);
+            set_temp_var(name, eq + 1);
+            free(name);
         }
         *tok_ptr = NULL;
         return 1;

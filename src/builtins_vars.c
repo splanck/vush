@@ -452,7 +452,7 @@ int builtin_local(char **args) {
     for (int i = 1; args[i]; i++) {
         char *arg = args[i];
         char *eq = strchr(arg, '=');
-        char *name = eq ? strndup(arg, eq - arg) : strdup(arg);
+        char *name = eq ? xstrndup(arg, eq - arg) : strdup(arg);
         if (!name)
             continue;
         record_local_var(name);

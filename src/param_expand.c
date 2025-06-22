@@ -40,7 +40,7 @@ static char *expand_tilde(const char *token) {
     } else {
         const char *slash = strchr(rest, '/');
         size_t len = slash ? (size_t)(slash - rest) : strlen(rest);
-        char *user = strndup(rest, len);
+        char *user = xstrndup(rest, len);
         if (user) {
             setpwent();
             struct passwd *pw = getpwnam(user);
@@ -74,8 +74,7 @@ static char *expand_arith(const char *token) {
     if (!(tlen > 4 && strncmp(token, "$((", 3) == 0 &&
           token[tlen-2] == ')' && token[tlen-1] == ')'))
         return NULL;
-    char *expr = strndup(token + 3, tlen - 5);
-    if (!expr) return strdup("");
+    char *expr = xstrndup(token + 3, tlen - 5);
     int err = 0;
     char *msg = NULL;
     long val = eval_arith(expr, &err, &msg);
@@ -231,9 +230,8 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             if (!val) val = "";
             return strdup(val);
         }
-        char *pattern = strndup(pat, sep - pat);
+        char *pattern = xstrndup(pat, sep - pat);
         const char *repl = sep + 1;
-        if (!pattern) return strdup(val ? val : "");
         if (!val) val = "";
         size_t vlen = strlen(val);
         size_t rlen = strlen(repl);
@@ -291,8 +289,8 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         if ((size_t)off > vlen) off = vlen;
         size_t avail = vlen - off;
         size_t count = (len < 0 || (size_t)len > avail) ? avail : (size_t)len;
-        char *res = strndup(val + off, count);
-        return res ? res : strdup("");
+        char *res = xstrndup(val + off, count);
+        return res;
     } else if (*p == '#' || *p == '%') {
         char op = *p;
         int longest = 0;
@@ -306,8 +304,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
         if (op == '#') {
             if (!longest) {
                 for (size_t i = 0; i <= vlen; i++) {
-                    char *pref = strndup(val, i);
-                    if (!pref) break;
+                    char *pref = xstrndup(val, i);
                     int m = fnmatch(pattern, pref, 0);
                     free(pref);
                     if (m == 0)
@@ -315,8 +312,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
                 }
             } else {
                 for (size_t i = vlen;; i--) {
-                    char *pref = strndup(val, i);
-                    if (!pref) break;
+                    char *pref = xstrndup(val, i);
                     int m = fnmatch(pattern, pref, 0);
                     free(pref);
                     if (m == 0)
@@ -334,8 +330,8 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
                     int m = fnmatch(pattern, suf, 0);
                     free(suf);
                     if (m == 0) {
-                        char *res = strndup(val, vlen - i);
-                        return res ? res : strdup("");
+                        char *res = xstrndup(val, vlen - i);
+                        return res;
                     }
                 }
             } else {
@@ -345,8 +341,8 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
                     int m = fnmatch(pattern, suf, 0);
                     free(suf);
                     if (m == 0) {
-                        char *res = strndup(val, vlen - i);
-                        return res ? res : strdup("");
+                        char *res = xstrndup(val, vlen - i);
+                        return res;
                     }
                     if (i == 0)
                         break;

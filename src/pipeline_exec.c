@@ -64,14 +64,14 @@ static void expand_temp_assignments(PipelineSegment *seg) {
     for (int i = 0; i < seg->assign_count; i++) {
         char *eq = strchr(seg->assigns[i], '=');
         if (eq) {
-            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
+            char *name = xstrndup(seg->assigns[i], eq - seg->assigns[i]);
             char *val = expand_var(eq + 1);
             if (val) {
                 size_t len = strlen(val);
                 if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
                                  (val[0] == '"' && val[len - 1] == '"'))) {
-                    char *trim = strndup(val + 1, len - 2);
-                    if (trim) { free(val); val = trim; }
+                    char *trim = xstrndup(val + 1, len - 2);
+                    free(val); val = trim;
                 }
             }
             char *tmp = NULL;
@@ -184,14 +184,14 @@ static void expand_segment(PipelineSegment *seg) {
     for (int i = 0; i < seg->assign_count; i++) {
         char *eq = strchr(seg->assigns[i], '=');
         if (eq) {
-            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
+            char *name = xstrndup(seg->assigns[i], eq - seg->assigns[i]);
             char *val = expand_var(eq + 1);
             if (val) {
                 size_t len = strlen(val);
                 if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
                                  (val[0] == '"' && val[len - 1] == '"'))) {
-                    char *trim = strndup(val + 1, len - 2);
-                    if (trim) { free(val); val = trim; }
+                    char *trim = xstrndup(val + 1, len - 2);
+                    free(val); val = trim;
                 }
             }
             char *tmp = NULL;
@@ -321,9 +321,7 @@ static struct assign_backup *set_temp_environment(PipelineSegment *pipeline) {
             char *eq = strchr(pipeline->assigns[i], '=');
             if (!eq)
                 continue;
-            char *name = strndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
-            if (!name)
-                continue;
+            char *name = xstrndup(pipeline->assigns[i], eq - pipeline->assigns[i]);
             char *val = eq + 1;
             size_t vlen = strlen(val);
             if (vlen > 1 && val[0] == '(' && val[vlen - 1] == ')') {

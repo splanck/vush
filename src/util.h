@@ -26,4 +26,5 @@ int parse_positive_int(const char *s, int *out);
 void *xcalloc(size_t nmemb, size_t size);
 void *xmalloc(size_t size);
 char *xstrdup(const char *s);
+char *xstrndup(const char *s, size_t n);
 #endif /* VUSH_UTIL_H */

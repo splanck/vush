@@ -24,6 +24,7 @@
 #include "pipeline.h"
 #include "jobs.h"
 #include "options.h"
+#include "util.h"
 #include "hash.h"
 #include "redir.h"
 #include "error.h"
@@ -78,11 +79,9 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
             char *eq = strchr(seg->assigns[ai], '=');
             if (eq) {
                 size_t len = (size_t)(eq - seg->assigns[ai]);
-                char *name = strndup(seg->assigns[ai], len);
-                if (name) {
-                    setenv(name, eq + 1, 1);
-                    free(name);
-                }
+                char *name = xstrndup(seg->assigns[ai], len);
+                setenv(name, eq + 1, 1);
+                free(name);
             }
         }
 

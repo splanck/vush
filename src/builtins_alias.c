@@ -223,12 +223,7 @@ int builtin_alias(char **args)
                 if (len >= 2 &&
                     ((newval[0] == '\'' && newval[len - 1] == '\'') ||
                      (newval[0] == '"' && newval[len - 1] == '"'))) {
-                    buf = strndup(newval + 1, len - 2);
-                    if (!buf) {
-                        *eq = '=';
-                        perror("strndup");
-                        return 1;
-                    }
+                    buf = xstrndup(newval + 1, len - 2);
                     newval = buf;
                 }
             }
