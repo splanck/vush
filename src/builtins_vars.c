@@ -372,6 +372,7 @@ static void list_exports(void)
  * value.  A usage message is printed on error and the function always returns 1.
  */
 int builtin_export(char **args) {
+    int status = 0;
     if (!args[1]) {
         fprintf(stderr, "usage: export [-p|-n NAME] NAME[=VALUE]...\n");
         return 1;
@@ -393,12 +394,16 @@ int builtin_export(char **args) {
         if (eq) {
             *eq = '\0';
             char *valdup = strdup(eq + 1);
-            if (valdup) {
-                if (setenv(arg, valdup, 1) != 0)
-                    perror("export");
-                set_shell_var(arg, valdup);
-                free(valdup);
+            if (!valdup) {
+                perror("export");
+                status = 1;
+                *eq = '=';
+                continue;
             }
+            if (setenv(arg, valdup, 1) != 0)
+                perror("export");
+            set_shell_var(arg, valdup);
+            free(valdup);
             *eq = '=';
         } else {
             const char *val = get_shell_var(arg);
@@ -410,6 +415,7 @@ int builtin_export(char **args) {
                 perror("export");
         }
     }
+    last_status = status;
     return 1;
 }
 
