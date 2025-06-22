@@ -1,0 +1,59 @@
+#!/usr/bin/env expect
+set dir [exec sh [file dirname [info script]]/mktempd.sh]
+set env(HOME) $dir
+set timeout 5
+spawn [file dirname [info script]]/../build/vush
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "alias good='echo ok'\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "alias bad='bad=value'\r"
+expect {
+    -re "alias: invalid value" {}
+    timeout { send_user "missing invalid error\n"; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+set f [open "$dir/.vush_aliases" r]
+set data [read $f]
+close $f
+if {![string match {*good=echo ok*} $data]} {
+    send_user "valid alias missing in file\n"
+    exec rm -rf $dir
+    exit 1
+}
+if {[string match {*bad=*} $data]} {
+    send_user "invalid alias saved\n"
+    exec rm -rf $dir
+    exit 1
+}
+spawn [file dirname [info script]]/../build/vush
+set env(HOME) $dir
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "good test\r"
+expect {
+    -re "\r\nok test\r\nvush> " {}
+    timeout { send_user "valid alias not loaded\n"; exec rm -rf $dir; exit 1 }
+}
+send "alias bad\r"
+expect {
+    -re "alias: bad: not found\r\nvush> " {}
+    timeout { send_user "invalid alias persisted\n"; exec rm -rf $dir; exit 1 }
+}
+send "exit\r"
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+exec rm -rf $dir
