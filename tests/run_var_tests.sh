@@ -43,6 +43,7 @@ test_pid_params.expect
 test_export_p.expect
 test_export_n.expect
 test_export_p_listing.expect
+test_export_quote.expect
 test_export_n_unexport.expect
 test_readonly_p.expect
 test_set_list.expect
