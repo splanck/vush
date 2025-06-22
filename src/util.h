@@ -26,4 +26,6 @@ int parse_positive_int(const char *s, int *out);
 void *xcalloc(size_t nmemb, size_t size);
 void *xmalloc(size_t size);
 char *xstrdup(const char *s);
+/* asprintf wrapper using system implementation when available */
+int xasprintf(char **strp, const char *fmt, ...);
 #endif /* VUSH_UTIL_H */

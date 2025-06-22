@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -38,6 +39,46 @@ char *xstrdup(const char *s) {
         exit(1);
     }
     return ptr;
+}
+
+/*
+ * Portable wrapper around asprintf.
+ * Uses system vasprintf when available, otherwise falls back
+ * to calculating the required size with vsnprintf and manual allocation.
+ */
+int xasprintf(char **strp, const char *fmt, ...) {
+    if (!strp)
+        return -1;
+
+    va_list ap;
+    va_start(ap, fmt);
+#if defined(__GLIBC__) || defined(__APPLE__) || \
+    defined(__FreeBSD__) || defined(__NetBSD__) || \
+    defined(__OpenBSD__) || defined(__ANDROID__)
+    int ret = vasprintf(strp, fmt, ap);
+    va_end(ap);
+    return ret;
+#else
+    va_list aq;
+    va_copy(aq, ap);
+    int len = vsnprintf(NULL, 0, fmt, aq);
+    va_end(aq);
+    if (len < 0) {
+        va_end(ap);
+        *strp = NULL;
+        return -1;
+    }
+    char *buf = malloc((size_t)len + 1);
+    if (!buf) {
+        va_end(ap);
+        *strp = NULL;
+        return -1;
+    }
+    vsnprintf(buf, (size_t)len + 1, fmt, ap);
+    va_end(ap);
+    *strp = buf;
+    return len;
+#endif
 }
 /*
  * Read a line continuing backslash escapes across multiple physical lines.

@@ -352,7 +352,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
                 char *op = read_token(p, &q2, &de2);
                 if (!op) { free(tok); return -1; }
                 char *nt = NULL;
-                int ret = asprintf(&nt, "%s%s", tok, op);
+                int ret = xasprintf(&nt, "%s%s", tok, op);
                 if (ret < 0 || !nt) {
                     free(op);
                     free(tok);
