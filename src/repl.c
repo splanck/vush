@@ -49,8 +49,7 @@ void repl_loop(FILE *input)
             free(prompt);
             if (!line) {
                 if (any_pending_traps()) {
-                    if (interactive)
-                        printf("\n");
+                    printf("\n");
                     process_pending_traps();
                     continue;
                 }
