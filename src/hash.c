@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <fcntl.h>
+#include "util.h"
 
 struct hash_entry {
     char *name;
@@ -33,7 +34,7 @@ static char *search_path(const char *name) {
     while (dir) {
         const char *d = *dir ? dir : ".";
         char *full = NULL;
-        if (asprintf(&full, "%s/%s", d, name) < 0) {
+        if (xasprintf(&full, "%s/%s", d, name) < 0) {
             result = NULL;
             break;
         }

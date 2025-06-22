@@ -16,6 +16,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include "util.h"
 
 
 /* Temporary variable tracking for process substitutions */
@@ -98,7 +99,7 @@ char *gather_until(char **p, const char **stops, int nstops, int *idx) {
         }
         if (res) {
             char *tmp;
-            int ret = asprintf(&tmp, "%s %s", res, tok);
+            int ret = xasprintf(&tmp, "%s %s", res, tok);
             if (ret == -1 || tmp == NULL) {
                 free(res);
                 free(tok);
@@ -150,7 +151,7 @@ char *gather_until_done(char **p) {
         }
         if (res) {
             char *tmp;
-            if (asprintf(&tmp, "%s %s", res, tok) == -1 || !tmp) {
+            if (xasprintf(&tmp, "%s %s", res, tok) == -1 || !tmp) {
                 free(res);
                 free(tok);
                 return NULL;

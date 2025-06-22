@@ -76,7 +76,7 @@ static void expand_temp_assignments(PipelineSegment *seg) {
             }
             char *tmp = NULL;
             if (name && val)
-                asprintf(&tmp, "%s=%s", name, val);
+                xasprintf(&tmp, "%s=%s", name, val);
             if (tmp) {
                 free(seg->assigns[i]);
                 seg->assigns[i] = tmp;
@@ -196,7 +196,7 @@ static void expand_segment(PipelineSegment *seg) {
             }
             char *tmp = NULL;
             if (name && val)
-                asprintf(&tmp, "%s=%s", name, val);
+                xasprintf(&tmp, "%s=%s", name, val);
             if (tmp) {
                 free(seg->assigns[i]);
                 seg->assigns[i] = tmp;
