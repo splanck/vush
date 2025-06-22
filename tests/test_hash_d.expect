@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set dir [exec mktemp -d]
+set dir [exec sh [file dirname [info script]]/mktempd.sh]
 set f [open "$dir/foo" "w"]
 puts $f "#!/bin/sh"
 puts $f "echo hashed1"

@@ -11,7 +11,7 @@ if [ ! -x ../build/vush ]; then
     exit 1
 fi
 
-TMP_HOME=$(mktemp -d)
+TMP_HOME=$(./mktempd.sh)
 export HOME="$TMP_HOME"
 export VUSH_FUNCFILE=/dev/null
 trap 'rm -rf "$TMP_HOME"' EXIT
@@ -54,7 +54,7 @@ test_param_at_q.expect
 for test in $tests; do
     echo "Running $test"
     if [ "$test" = "test_glob.expect" ]; then
-        tmpdir=$(mktemp -d)
+        tmpdir=$(./mktempd.sh)
         curdir=$(pwd)
         cd "$tmpdir"
         if [ -x "$curdir/$test" ]; then

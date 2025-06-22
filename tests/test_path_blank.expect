@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set dir [exec mktemp -d]
+set dir [exec sh [file dirname [info script]]/mktempd.sh]
 set scriptdir [file normalize [file dirname [info script]]]
 set f [open "$dir/foo" "w"]
 puts $f "#!/bin/sh"

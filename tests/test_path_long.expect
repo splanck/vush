@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set base [exec mktemp -d]
+set base [exec sh [file dirname [info script]]/mktempd.sh]
 set long $base
 for {set i 0} {$i < 350} {incr i} {
     append long "/abcdefghij"

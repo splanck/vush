@@ -1,6 +1,6 @@
 #!/usr/bin/env expect
 set timeout 5
-set tmp [exec mktemp -d]
+set tmp [exec sh [file dirname [info script]]/mktempd.sh]
 set env(PATH) $tmp
 spawn [file dirname [info script]]/../build/vush
 expect {

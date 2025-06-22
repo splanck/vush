@@ -7,7 +7,7 @@ set lib "$dir/fork_fail.so"
 exec cc -shared -fPIC $src -o $lib
 set env(LD_PRELOAD) $lib
 set env(FORK_FAIL_AT) 1
-set tmpdir [exec mktemp -d]
+set tmpdir [exec sh [file dirname [info script]]/mktempd.sh]
 set env(TMPDIR) $tmpdir
 spawn $dir/../build/vush
 expect {

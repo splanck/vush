@@ -1,7 +1,7 @@
 #!/usr/bin/env expect
 set timeout 5
 set user "tempuser"
-set home [exec mktemp -d]
+set home [exec sh [file dirname [info script]]/mktempd.sh]
 exec sh -c "echo \"$user:x:12345:12345::$home:/bin/false\" >> /etc/passwd"
 spawn [file dirname [info script]]/../build/vush
 expect {
