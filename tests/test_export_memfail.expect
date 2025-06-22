@@ -1,0 +1,22 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [file dirname [info script]]
+set src "$dir/strdup_fail.c"
+set lib "$dir/strdup_fail.so"
+exec cc -shared -fPIC $src -o $lib
+set env(LD_PRELOAD) $lib
+set env(STRDUP_FAIL_AT) 1
+spawn $dir/../build/vush -c {export FOO=bar}
+expect {
+    -re "export:.*Cannot allocate memory\r?\n" {}
+    timeout { send_user "missing strdup error\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+set code [lindex [wait] 3]
+if { $code == 0 } {
+    send_user "exit status mismatch\n"
+    exit 1
+}

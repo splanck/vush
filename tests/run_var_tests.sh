@@ -45,6 +45,7 @@ test_export_n.expect
 test_export_p_listing.expect
 test_export_quote.expect
 test_export_n_unexport.expect
+test_export_memfail.expect
 test_readonly_p.expect
 test_set_list.expect
 test_field_split_module.expect
