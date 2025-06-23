@@ -2,8 +2,8 @@
 set -e
 
 if ! command -v expect >/dev/null; then
-    echo "Error: the 'expect' program is required to run the test suite." >&2
-    echo "Please install 'expect' and try again." >&2
+    echo "Error: the 'expect' command is not available." >&2
+    echo "Install the expect package (e.g. 'sudo apt-get install expect') and try again." >&2
     exit 1
 fi
 
