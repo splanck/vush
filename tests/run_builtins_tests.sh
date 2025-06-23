@@ -61,6 +61,7 @@ test_type.expect
 test_type_t.expect
 test_dash_c.expect
 test_dash_c_quotes.expect
+test_dash_c_echo.expect
 test_echo_options.expect
 test_heredoc.expect
 test_herestring.expect
