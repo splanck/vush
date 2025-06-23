@@ -12,20 +12,30 @@
 #include <signal.h>
 #include "signal_map.h"
 #include "util.h"
+#include <unistd.h>
 
 void list_signals(void);
 
 /* Map signal names to numbers for trap builtin is now defined in signal_map.h */
-
-char *trap_cmds[NSIG];
+char **trap_cmds;
 char *exit_trap_cmd;
+static int trap_count;
+
+void init_signal_handling(void)
+{
+    trap_count = NSIG;
+    trap_cmds = xcalloc((size_t)trap_count, sizeof(char *));
+    init_pending_traps(trap_count);
+}
 
 /* Assign commands to run when specified signals are received. */
 static void print_traps(void)
 {
+    if (!trap_cmds)
+        init_signal_handling();
     if (exit_trap_cmd)
         printf("trap '%s' EXIT\n", exit_trap_cmd);
-    for (int s = 1; s < NSIG; s++) {
+    for (int s = 1; s < trap_count; s++) {
         if (trap_cmds[s]) {
             const char *name = name_from_sig(s);
             if (name)
@@ -39,6 +49,8 @@ static void print_traps(void)
 /* Assign commands to run when specified signals are received. */
 int builtin_trap(char **args)
 {
+    if (!trap_cmds)
+        init_signal_handling();
     if (!args[1]) {
         print_traps();
         last_status = 0;
@@ -58,7 +70,7 @@ int builtin_trap(char **args)
                 continue;
             }
             int sig = sig_from_name(args[i]);
-            if (sig <= 0 || sig >= NSIG) {
+            if (sig <= 0 || sig >= trap_count) {
                 fprintf(stderr, "trap: invalid signal %s\n", args[i]);
                 continue;
             }
@@ -98,7 +110,7 @@ int builtin_trap(char **args)
             continue;
         }
         int sig = sig_from_name(args[i]);
-        if (sig <= 0 || sig >= NSIG) {
+        if (sig <= 0 || sig >= trap_count) {
             fprintf(stderr, "trap: invalid signal %s\n", args[i]);
             continue;
         }
@@ -154,11 +166,17 @@ int builtin_continue(char **args)
 /* Free all registered trap command strings. */
 void free_trap_cmds(void)
 {
-    for (int i = 0; i < NSIG; i++) {
+    if (!trap_cmds)
+        return;
+    for (int i = 0; i < trap_count; i++) {
         if (trap_cmds[i]) {
             free(trap_cmds[i]);
             trap_cmds[i] = NULL;
         }
     }
+    free(trap_cmds);
+    trap_cmds = NULL;
+    trap_count = 0;
+    free_pending_traps();
 }
 

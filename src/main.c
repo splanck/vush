@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
     signal(SIGINT, SIG_IGN);
     /* Reap background jobs asynchronously */
     signal(SIGCHLD, jobs_sigchld_handler);
+    init_signal_handling();
 
     load_history();
     load_aliases();

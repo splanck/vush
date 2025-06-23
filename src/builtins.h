@@ -10,7 +10,13 @@
 #include "list.h"
 #include <signal.h>
 #ifndef NSIG
-#define NSIG _NSIG
+# ifdef _NSIG
+#  define NSIG _NSIG
+# else
+#  include <unistd.h>
+int get_nsig(void);
+#  define NSIG (get_nsig())
+# endif
 #endif
 
 struct builtin {
@@ -58,7 +64,8 @@ void free_functions(void);
 void print_functions(void);
 void list_signals(void);
 
-extern char *trap_cmds[NSIG];
+extern char **trap_cmds;
+void init_signal_handling(void);
 /* Maintains state across getopts calls. Must be cleared when script_argv
  * changes so it never points into freed memory. */
 extern char *getopts_pos;
