@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <pwd.h>
 #include "options.h"
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
@@ -169,8 +170,17 @@ char *make_user_path(const char *env_var, const char *secondary,
             return strdup(val);
     }
     const char *home = getenv("HOME");
-    if (!home || !*home)
-        return NULL;
+    if (!home || !*home) {
+        struct passwd *pw = getpwuid(getuid());
+        if (pw && pw->pw_dir && *pw->pw_dir)
+            home = pw->pw_dir;
+        else {
+            fprintf(stderr,
+                    "warning: HOME not set and no passwd entry, cannot determine path for %s\n",
+                    default_name);
+            return NULL;
+        }
+    }
     size_t len = strlen(home) + 1 + strlen(default_name) + 1;
     char *res = malloc(len);
     if (!res)

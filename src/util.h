@@ -15,8 +15,10 @@ char *read_logical_line(FILE *f, char *buf, size_t size);
  * Returns a file descriptor or -1 on failure. */
 int open_redirect(const char *path, int append, int force);
 /* Construct a path using ENV_VAR if set, otherwise SECONDARY if set,
- * falling back to "$HOME/DEFAULT_NAME". NULL is returned when HOME is not
- * set. The returned string must be freed by the caller. */
+ * falling back to "$HOME/DEFAULT_NAME". If HOME is unset try the passwd
+ * database via getpwuid(getuid()). When no directory can be determined a
+ * warning is printed and NULL is returned. Caller must free the returned
+ * string. */
 char *make_user_path(const char *env_var, const char *secondary,
                      const char *default_name);
 /* Parse S as a non-negative integer.  Return 0 on success, -1 on error or

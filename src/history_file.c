@@ -17,8 +17,10 @@ void history_renumber(void);
 /* Append CMD to the history file. */
 void history_file_append(const char *cmd) {
     char *path = get_history_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine history file location\n");
         return;
+    }
     FILE *f = fopen(path, "a");
     free(path);
     if (!f)
@@ -36,8 +38,10 @@ static void rewrite_cb(const char *cmd, void *arg) {
 /* Rewrite the entire history file from the current list. */
 void history_file_rewrite(void) {
     char *path = get_history_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine history file location\n");
         return;
+    }
     FILE *f = fopen(path, "w");
     free(path);
     if (!f)
@@ -50,8 +54,10 @@ void history_file_rewrite(void) {
 /* Truncate the history file. */
 void history_file_clear(void) {
     char *path = get_history_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine history file location\n");
         return;
+    }
     FILE *f = fopen(path, "w");
     free(path);
     if (f)
@@ -61,8 +67,10 @@ void history_file_clear(void) {
 /* Load history entries from the history file. */
 void load_history(void) {
     char *path = get_history_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine history file location\n");
         return;
+    }
     FILE *f = fopen(path, "r");
     free(path);
     if (!f)
