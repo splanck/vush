@@ -67,48 +67,100 @@ int builtin_echo(char **args)
 }
 
 /* Helper parsing the next printf format specification. */
-static const char *next_format_spec(const char *p, char spec[32], char *conv)
+static const char *next_format_spec(const char *p, char spec[32], char *conv,
+                                    int *err)
 {
+    const int max = 32;
     int si = 0;
+    int overflow = 0;
     if (*p != '%') {
         spec[0] = '\0';
         *conv = '\0';
+        if (err) *err = 0;
         return p;
     }
 
-    spec[si++] = *p++;
+    if (si < max - 1)
+        spec[si++] = *p;
+    else
+        overflow = 1;
+    p++;
 
     if (*p == '%') {
-        spec[si++] = *p++;
-        spec[si] = '\0';
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
+        if (si < max)
+            spec[si] = '\0';
+        else
+            spec[max - 1] = '\0';
         *conv = '%';
+        if (err) *err = overflow;
         return p;
     }
 
-    while (*p && strchr("-+ #0", *p))
-        spec[si++] = *p++;
-    while (*p && isdigit((unsigned char)*p))
-        spec[si++] = *p++;
+    while (*p && strchr("-+ #0", *p)) {
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
+    }
+    while (*p && isdigit((unsigned char)*p)) {
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
+    }
     if (*p == '.') {
-        spec[si++] = *p++;
-        while (*p && isdigit((unsigned char)*p))
-            spec[si++] = *p++;
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
+        while (*p && isdigit((unsigned char)*p)) {
+            if (si < max - 1)
+                spec[si++] = *p;
+            else
+                overflow = 1;
+            p++;
+        }
     }
     if (strchr("hlLjzt", *p)) {
-        spec[si++] = *p++;
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
         if ((*p == 'h' && spec[si-1] == 'h') ||
-            (*p == 'l' && spec[si-1] == 'l'))
-            spec[si++] = *p++;
+            (*p == 'l' && spec[si-1] == 'l')) {
+            if (si < max - 1)
+                spec[si++] = *p;
+            else
+                overflow = 1;
+            p++;
+        }
     }
 
     if (*p) {
         *conv = *p;
-        spec[si++] = *p++;
+        if (si < max - 1)
+            spec[si++] = *p;
+        else
+            overflow = 1;
+        p++;
     } else {
         *conv = '\0';
     }
 
-    spec[si] = '\0';
+    if (si < max)
+        spec[si] = '\0';
+    else
+        spec[max - 1] = '\0';
+    if (err) *err = overflow;
     return p;
 }
 
@@ -200,7 +252,18 @@ int builtin_printf(char **args)
         }
         char spec[32];
         char conv;
-        p = next_format_spec(p, spec, &conv);
+        int err = 0;
+        p = next_format_spec(p, spec, &conv, &err);
+        if (err) {
+            fprintf(stderr, "printf: format specifier too long\n");
+            if (varname) {
+                fclose(out);
+                free(outbuf);
+            }
+            free(fmt);
+            last_status = 1;
+            return 1;
+        }
         if (!conv)
             break;
         if (conv == '%') {
