@@ -153,7 +153,7 @@ int open_redirect(const char *path, int append, int force) {
     int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
     if (opt_noclobber && !append && !force)
         flags |= O_EXCL;
-    return open(path, flags, 0644);
+    return open(path, flags, 0666);
 }
 
 char *make_user_path(const char *env_var, const char *secondary,
