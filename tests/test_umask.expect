@@ -15,6 +15,26 @@ expect {
     -re "\r\nu=\[rwx\]*,g=\[rwx\]*,o=\[rwx\]*\r?\nvush> " {}
     timeout { send_user "umask -S output mismatch\n"; exit 1 }
 }
+send "umask 000\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "echo hi >umask.tmp\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "stat -c %a umask.tmp\r"
+expect {
+    -re "\r\n0666\r?\nvush> " {}
+    timeout { send_user "umask file mode mismatch (000)\n"; exit 1 }
+}
+send "rm umask.tmp\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
 send "umask 077\r"
 expect {
     "vush> " {}
@@ -24,6 +44,21 @@ send "umask -S 077\r"
 expect {
     -re "\r\nu=rwx,g=,o=\r?\nvush> " {}
     timeout { send_user "umask -S set failed\n"; exit 1 }
+}
+send "echo hi >umask.tmp\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
+}
+send "stat -c %a umask.tmp\r"
+expect {
+    -re "\r\n0600\r?\nvush> " {}
+    timeout { send_user "umask file mode mismatch (077)\n"; exit 1 }
+}
+send "rm umask.tmp\r"
+expect {
+    "vush> " {}
+    timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "umask\r"
 expect {
