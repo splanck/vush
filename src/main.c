@@ -115,7 +115,11 @@ int main(int argc, char **argv) {
     /* Ignore Ctrl-C in the shell itself */
     signal(SIGINT, SIG_IGN);
     /* Reap background jobs asynchronously */
-    signal(SIGCHLD, jobs_sigchld_handler);
+    struct sigaction sa_chld;
+    sigemptyset(&sa_chld.sa_mask);
+    sa_chld.sa_flags = 0;
+    sa_chld.sa_handler = jobs_sigchld_handler;
+    sigaction(SIGCHLD, &sa_chld, NULL);
     init_signal_handling();
 
     load_history();

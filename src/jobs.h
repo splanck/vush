@@ -24,6 +24,7 @@ void jobs_sigchld_handler(int sig);
 
 /* True while the shell is waiting for input at the prompt */
 extern volatile sig_atomic_t jobs_at_prompt;
+extern volatile sig_atomic_t jobs_changed;
 
 /* PID of the most recently started background job */
 extern pid_t last_bg_pid;
