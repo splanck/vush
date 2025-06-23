@@ -45,8 +45,11 @@ Use the provided `Makefile` to build the shell:
 make
 ```
 
-The default `CFLAGS` include `-Wa,--noexecstack` so the resulting objects
-contain a note marking the stack as non‑executable.
+The Makefile defines `NOEXECSTACK_FLAG` by probing the assembler for support of
+`--noexecstack`. When available, this variable expands to `-Wa,--noexecstack` so
+object files contain a note marking the stack as non‑executable. If your toolchain
+does not support the flag or you wish to disable it, invoke make with
+`NOEXECSTACK_FLAG=`.
 
 The resulting binary will be `build/vush`. Remove the directory with:
 
