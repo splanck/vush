@@ -20,6 +20,7 @@ failed=0
 
 tests="
 test_basic_cmd.expect
+test_basic_cmd_regress.expect
 test_env.expect
 test_ps1.expect
 test_ps1_cmdsub.expect

@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include "pipeline_exec.h"
 #include "pipeline.h"
@@ -103,9 +104,9 @@ static void expand_segment(PipelineSegment *seg) {
         char *word = seg->argv[i];
         if (seg->expand[i]) {
             char *exp = expand_var(word);
-            free(word);
-            seg->argv[i] = NULL;
             if (!exp) exp = strdup("");
+
+            size_t start = (size_t)ai;
             if (!seg->quoted[i]) {
                 int count = 0;
                 char **fields = split_fields(exp, &count);
@@ -118,12 +119,12 @@ static void expand_segment(PipelineSegment *seg) {
                             glob_t g;
                             int r = glob(fld, 0, NULL, &g);
                             if (r == 0 && g.gl_pathc > 0) {
-                                size_t start = (size_t)ai;
+                                size_t gstart = (size_t)ai;
                                 for (size_t gi = 0; gi < g.gl_pathc &&
                                                  ai < MAX_TOKENS - 1; gi++) {
                                     char *dup = strdup(g.gl_pathv[gi]);
                                     if (!dup) {
-                                        while ((size_t)ai > start) {
+                                        while ((size_t)ai > gstart) {
                                             free(newargv[--ai]);
                                             newargv[ai] = NULL;
                                         }
@@ -149,15 +150,31 @@ static void expand_segment(PipelineSegment *seg) {
                     skip_field: ;
                     }
                     free(fields);
-                    continue;
                 } else {
                     exp = strdup("");
+                    newargv[ai] = exp;
+                    seg->expand[ai] = 0;
+                    seg->quoted[ai] = 0;
+                    ai++;
                 }
+            } else {
+                newargv[ai] = exp;
+                seg->expand[ai] = 0;
+                seg->quoted[ai] = 0;
+                ai++;
             }
-            newargv[ai] = exp;
-            seg->expand[ai] = 0;
-            seg->quoted[ai] = 0;
-            ai++;
+
+            int changed = 1;
+            if ((size_t)ai == start + 1 && strcmp(newargv[start], word) == 0)
+                changed = 0;
+            if (!changed) {
+                free(newargv[start]);
+                newargv[start] = word;
+                seg->quoted[start] = seg->quoted[i];
+            } else {
+                free(word);
+                seg->argv[i] = NULL;
+            }
         } else {
             newargv[ai] = word;
             seg->expand[ai] = 0;

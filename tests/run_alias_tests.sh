@@ -20,6 +20,7 @@ failed=0
 
 tests="
 test_alias.expect
+test_alias_argv0.expect
 test_alias_crash.expect
 test_alias_flags.expect
 test_alias_update.expect
