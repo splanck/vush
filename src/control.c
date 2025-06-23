@@ -90,9 +90,10 @@ int exec_until(Command *cmd, const char *line) {
 
 int exec_for(Command *cmd, const char *line) {
     loop_depth++;
+    char *last = NULL;
     for (int i = 0; i < cmd->word_count; i++) {
         char *exp = expand_var(cmd->words[i]);
-        if (!exp) { loop_depth--; return last_status; }
+        if (!exp) { loop_depth--; free(last); return last_status; }
         int count = 0;
         char **fields = split_fields(exp, &count);
         free(exp);
@@ -101,6 +102,10 @@ int exec_for(Command *cmd, const char *line) {
             if (cmd->var) {
                 set_shell_var(cmd->var, w);
                 setenv(cmd->var, w, 1);
+                free(last);
+                last = strdup(w);
+                if (!last)
+                    perror("strdup");
             }
             run_command_list(cmd->body, line);
             if (loop_break) break;
@@ -109,6 +114,11 @@ int exec_for(Command *cmd, const char *line) {
                     for (int fj = fi; fj < count; fj++)
                         free(fields[fj]);
                     free(fields);
+                    if (cmd->var && last) {
+                        set_shell_var(cmd->var, last);
+                        setenv(cmd->var, last, 1);
+                    }
+                    free(last);
                     loop_depth--;
                     return last_status;
                 }
@@ -120,6 +130,11 @@ int exec_for(Command *cmd, const char *line) {
         free(fields);
         if (loop_break) { loop_break--; break; }
     }
+    if (cmd->var && last) {
+        set_shell_var(cmd->var, last);
+        setenv(cmd->var, last, 1);
+    }
+    free(last);
     loop_depth--;
     return last_status;
 }
