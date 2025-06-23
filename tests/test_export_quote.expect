@@ -5,7 +5,7 @@ expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
-send "export FOO=bar'baz\r"
+send "export FOO=bar'baz'\r"
 expect {
     "vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }

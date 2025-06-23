@@ -178,6 +178,7 @@ static int is_end_dquote(int c) {
 static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                              int *len, int *do_expand, int disable_first) {
     int first = 1;
+    int in_assign = 0;
 
     /* Fast path for arithmetic expansion starting a token so that the
      * expression is returned as a single unit. */
@@ -202,6 +203,14 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
     }
 
     while (**p && !is_end((unsigned char)**p)) {
+        if (!in_assign && **p == '=') {
+            if (*len < MAX_LINE - 1)
+                buf[(*len)++] = **p;
+            (*p)++;
+            in_assign = 1;
+            first = 0;
+            continue;
+        }
         if (**p == '$' && *(*p + 1) == '(' && *(*p + 2) == '(') {
             if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '$' */
             char *dp = *p; /* points at "((" */
@@ -234,10 +243,15 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
             continue;
         }
         if (**p == '\'' || **p == '"') {
+            char quote = **p;
             int q = 0; int de = 1;
             char *part = parse_quoted_word(p, &q, &de);
             if (!part)
                 return -1;
+            if (quote == '\'' && in_assign && *len > 0 && buf[*len - 1] != '=') {
+                if (*len < MAX_LINE - 1)
+                    buf[(*len)++] = '\'';
+            }
             for (int ci = 0; part[ci] && *len < MAX_LINE - 1; ci++)
                 buf[(*len)++] = part[ci];
             free(part);
