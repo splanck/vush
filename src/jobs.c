@@ -97,7 +97,11 @@ int check_jobs_internal(int prefix) {
     int printed = 0;
     int status;
     pid_t pid;
+#ifdef WCONTINUED
     while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED)) > 0) {
+#else
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+#endif
         Job *curr = jobs;
         while (curr && curr->pid != pid)
             curr = curr->next;
