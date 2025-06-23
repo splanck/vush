@@ -7,6 +7,12 @@ OBJDIR := $(BUILDDIR)
 
 .PHONY: clean test install uninstall
 
+# Feature checks
+HAVE_FEXECVE := $(shell printf '#define _GNU_SOURCE\n#include <unistd.h>\nint main(){fexecve(0,(char*[]){0},(char*[]){0});return 0;}' | $(CC) $(CFLAGS) -x c - -o /dev/null >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(HAVE_FEXECVE),1)
+CFLAGS += -DHAVE_FEXECVE
+endif
+
 SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c \
        src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
        src/builtins_read.c src/builtins_getopts.c src/builtins_exec.c src/vars.c \
