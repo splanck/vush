@@ -7,14 +7,30 @@
 #include "execute.h"
 #include "shell_state.h"
 #include "builtins.h"
+#include "util.h"
+#include <unistd.h>
 
 
-static volatile sig_atomic_t pending_traps[NSIG];
+static volatile sig_atomic_t *pending_traps;
+static int trap_count;
+
+void init_pending_traps(int count)
+{
+    trap_count = count;
+    pending_traps = xcalloc((size_t)count, sizeof(sig_atomic_t));
+}
+
+void free_pending_traps(void)
+{
+    free((void *)pending_traps);
+    pending_traps = NULL;
+    trap_count = 0;
+}
 
 /* Record that a trapped signal was received. */
 void trap_handler(int sig)
 {
-    if (sig > 0 && sig < NSIG)
+    if (sig > 0 && sig < trap_count)
         pending_traps[sig] = 1;
 }
 
@@ -22,7 +38,7 @@ void trap_handler(int sig)
 int process_pending_traps(void)
 {
     int ran = 0;
-    for (int s = 1; s < NSIG; s++) {
+    for (int s = 1; s < trap_count; s++) {
         if (pending_traps[s]) {
             pending_traps[s] = 0;
             char *cmd = trap_cmds[s];
@@ -57,7 +73,7 @@ int process_pending_traps(void)
 /* Check if any traps are waiting to be executed. */
 int any_pending_traps(void)
 {
-    for (int s = 1; s < NSIG; s++)
+    for (int s = 1; s < trap_count; s++)
         if (pending_traps[s])
             return 1;
     return 0;
