@@ -9,12 +9,12 @@ expect {
 }
 send "alias hi='echo first'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+hi='echo first'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "alias hi='echo second'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+hi='echo second'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "alias hi\r"

@@ -9,7 +9,7 @@ expect {
 }
 send "alias ll='echo hi'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+ll='echo hi'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "type -t ll cd ls nosuch\r"

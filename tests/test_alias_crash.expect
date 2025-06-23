@@ -9,7 +9,7 @@ expect {
 }
 send "alias foo=bar\r"
 expect {
-    -re "foo=bar='bar'\r?\nvush> " {}
+    -re "\[\r\n\]+foo='bar'\[\r\n\]+vush> " {}
     timeout { send_user "alias output missing\n"; exit 1 }
 }
 send "exit\r"

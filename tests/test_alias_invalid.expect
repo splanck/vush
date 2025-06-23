@@ -9,7 +9,7 @@ expect {
 }
 send "alias good='echo ok'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+good='echo ok'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "alias bad='bad=value'\r"

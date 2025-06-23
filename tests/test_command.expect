@@ -9,7 +9,7 @@ expect {
 }
 send "alias echo=echo_alias\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+echo='echo_alias'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "command echo hi\r"

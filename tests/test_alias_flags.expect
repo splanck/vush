@@ -9,7 +9,7 @@ expect {
 }
 send "alias hi='echo hello'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+hi='echo hello'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 # print single alias
@@ -27,7 +27,7 @@ expect {
 # change alias normally
 send "alias hi='echo bye'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+hi='echo bye'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 # verify change
