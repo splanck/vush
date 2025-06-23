@@ -7,6 +7,7 @@
 #include "vars.h"
 #include "util.h"
 #include "strarray.h"
+#include "shell_state.h"
 
 char **parse_array_values(const char *val, int *count) {
     *count = 0;
@@ -62,7 +63,12 @@ void apply_array_assignment(const char *name, const char *val, int export_env) {
         for (int j = 0; j < count; j++)
             joinlen += strlen(vals[j]) + 1;
         char *joined = malloc(joinlen + 1);
-        if (joined) {
+        if (!joined) {
+            /* Report allocation failure but still continue after setting
+             * last_status to indicate the error. */
+            perror("malloc");
+            last_status = 1;
+        } else {
             joined[0] = '\0';
             for (int j = 0; j < count; j++) {
                 strcat(joined, vals[j]);

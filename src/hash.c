@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include "util.h"
+#include "shell_state.h"
 
 struct hash_entry {
     char *name;
@@ -80,12 +81,17 @@ int hash_add(const char *name) {
     }
     struct hash_entry *e = malloc(sizeof(struct hash_entry));
     if (!e) {
+        /* report failure when allocating the hash entry */
+        perror("malloc");
+        last_status = 1;
         free(path);
         close(fd);
         return -1;
     }
     e->name = strdup(name);
     if (!e->name) {
+        perror("strdup");
+        last_status = 1;
         free(path);
         close(fd);
         free(e);
@@ -141,6 +147,8 @@ int hash_add_path(const char *name, const char *path) {
     }
     e->name = strdup(name);
     if (!e->name) {
+        perror("strdup");
+        last_status = 1;
         free(p);
         close(fd);
         free(e);

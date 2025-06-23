@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include "shell_state.h"
 
 extern char *process_substitution(char **p, int read_from);
 extern char *gather_dbl_parens(char **p); /* for arithmetic for loops */
@@ -41,7 +42,12 @@ static void set_temp_var(const char *name, const char *value) {
         }
     }
     struct temp_var *v = malloc(sizeof(struct temp_var));
-    if (!v) return;
+    if (!v) {
+        /* malloc failed - signal the error and leave temp_vars unchanged */
+        perror("malloc");
+        last_status = 1;
+        return;
+    }
     v->name = strdup(name);
     v->value = strdup(value);
     v->next = temp_vars;
@@ -214,7 +220,13 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
         if (eq && eq[1] == '(' && tok[strlen(tok) - 1] != ')') {
             size_t alloc = strlen(tok) + 1;
             char *assign = malloc(alloc);
-            if (!assign) { free(tok); return -1; }
+            if (!assign) {
+                /* allocation failed while building multi-token assignment */
+                perror("malloc");
+                last_status = 1;
+                free(tok);
+                return -1;
+            }
             strcpy(assign, tok);
             int parens = 1;
             char *tmp;

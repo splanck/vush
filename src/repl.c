@@ -15,6 +15,7 @@
 #include "trap.h"
 #include "mail.h"
 #include "util.h"
+#include "shell_state.h"
 #include "options.h"
 #include "vars.h"
 
@@ -133,7 +134,9 @@ void repl_loop(FILE *input)
                 size_t len2 = strlen(more);
                 char *tmp = malloc(len1 + len2 + 2);
                 if (!tmp) {
+                    /* handle allocation failure when extending the line */
                     perror("malloc");
+                    last_status = 1;
                     free(cmdline);
                     free(more);
                     cmdline = NULL;

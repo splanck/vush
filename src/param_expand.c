@@ -17,6 +17,7 @@
 #include "parser.h" /* for MAX_LINE */
 #include "execute.h"
 #include "util.h"
+#include "shell_state.h"
 #include "cmd_subst.h"
 
 static char *expand_tilde(const char *token);
@@ -60,7 +61,11 @@ static char *expand_tilde(const char *token) {
     if (!home) home = getenv("HOME");
     if (!home) home = "";
     char *ret = malloc(strlen(home) + strlen(rest) + 1);
-    if (!ret) return NULL;
+    if (!ret) {
+        perror("malloc");
+        last_status = 1;
+        return NULL;
+    }
     strcpy(ret, home);
     strcat(ret, rest);
     return ret;
@@ -101,15 +106,18 @@ static char *expand_array_element(const char *name, const char *idxstr) {
             for (int ai = 0; ai < alen; ai++)
                 tlen += strlen(arr[ai]) + 1;
             char *joined = malloc(tlen + 1);
-            if (joined) {
-                joined[0] = '\0';
-                for (int ai = 0; ai < alen; ai++) {
-                    strcat(joined, arr[ai]);
-                    if (ai < alen - 1)
-                        strcat(joined, " ");
-                }
+            if (!joined) {
+                perror("malloc");
+                last_status = 1;
+                return strdup("");
             }
-            return joined ? joined : strdup("");
+            joined[0] = '\0';
+            for (int ai = 0; ai < alen; ai++) {
+                strcat(joined, arr[ai]);
+                if (ai < alen - 1)
+                    strcat(joined, " ");
+            }
+            return joined;
         }
         const char *val = getenv(name);
         if (!val) val = "";
