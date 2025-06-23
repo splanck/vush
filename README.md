@@ -191,6 +191,18 @@ cd tests
 
 The test scripts under `tests/` will launch `build/vush` with predefined commands and verify the output.
 
+## NetBSD
+
+NetBSD ships with BSD `make` as the default. The Makefile for vush uses GNU
+extensions, so you need the `gmake` package from pkgsrc (`devel/gmake`) to build
+the project. Install `expect` from pkgsrc (`lang/expect`) if you plan to run the
+test suite. After installing these packages, build and test with:
+
+```sh
+gmake           # build vush
+gmake test      # run the expect based tests
+```
+
 ## Debugging
 
 Compile with debugging information so that stack traces are produced:
