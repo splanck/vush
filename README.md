@@ -167,8 +167,9 @@ See [docs/vush.1](docs/vush.1) for the manual page.
 
 ## Tests
 
-The test suite relies on the `expect` command. Install the `expect` package
-before running the tests, then execute:
+The test suite relies on the `expect` command. If `expect` is not installed the
+scripts will print a warning and skip the tests. Install the `expect` package to
+run them, then execute:
 
 ```sh
 make test
