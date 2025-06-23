@@ -18,6 +18,10 @@ HAVE_FEXECVE := $(shell printf '#define _GNU_SOURCE\n#include <unistd.h>\nint ma
 ifeq ($(HAVE_FEXECVE),1)
 CFLAGS += -DHAVE_FEXECVE
 endif
+HAVE_OPEN_MEMSTREAM := $(shell printf '#define _GNU_SOURCE\n#include <stdio.h>\nint main(){char *b; size_t s; FILE *f=open_memstream(&b,&s); if(!f) return 1; return 0;}' | $(CC) $(CFLAGS) -x c - -o /dev/null >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(HAVE_OPEN_MEMSTREAM),1)
+CFLAGS += -DHAVE_OPEN_MEMSTREAM
+endif
 
 SRCS := src/builtins.c src/builtins_core.c src/builtins_fs.c src/builtins_jobs.c \
        src/builtins_alias.c src/builtins_func.c src/builtins_vars.c \
