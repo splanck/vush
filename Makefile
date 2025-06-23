@@ -1,5 +1,11 @@
 CC ?= cc
-CFLAGS ?= -Wall -Wextra -std=c99 -Wa,--noexecstack
+CFLAGS ?= -Wall -Wextra -std=c99
+
+ifndef NOEXECSTACK_FLAG
+NOEXECSTACK_FLAG := $(shell printf 'int main(){}' | $(CC) -Wa,--noexecstack -c -x c -o /dev/null - >/dev/null 2>&1 && echo -Wa,--noexecstack)
+endif
+
+CFLAGS += $(NOEXECSTACK_FLAG)
 PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)/share/man
 BUILDDIR := build
