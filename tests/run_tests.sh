@@ -2,8 +2,9 @@
 set -e
 
 if ! command -v expect >/dev/null; then
-    echo "'expect' not found; skipping tests." >&2
-    exit 0
+    echo "Error: the 'expect' program is required to run the test suite." >&2
+    echo "Please install 'expect' and try again." >&2
+    exit 1
 fi
 
 failed=0
