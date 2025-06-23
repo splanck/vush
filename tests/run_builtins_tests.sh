@@ -46,6 +46,7 @@ test_glob.expect
 test_status.expect
 test_badcmd.expect
 test_badcmd_noninteractive.expect
+test_empty_cmd.expect
 test_cmdsub.expect
 test_cmdsub_regress.expect
 test_completion.expect
