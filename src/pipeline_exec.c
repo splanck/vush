@@ -245,10 +245,24 @@ static void expand_pipeline(PipelineSegment *pipeline) {
 
 /* Expand all parts of SEG except for temporary assignments. */
 static void expand_segment_no_assign(PipelineSegment *seg) {
+    if (getenv("VUSH_DEBUG")) {
+        fprintf(stderr, "expand_segment_no_assign before:");
+        for (int i = 0; seg->argv[i]; i++)
+            fprintf(stderr, " '%s'", seg->argv[i]);
+        fprintf(stderr, "\n");
+    }
+
     int save = seg->assign_count;
     seg->assign_count = 0;
     expand_segment(seg);
     seg->assign_count = save;
+
+    if (getenv("VUSH_DEBUG")) {
+        fprintf(stderr, "expand_segment_no_assign after:");
+        for (int i = 0; seg->argv[i]; i++)
+            fprintf(stderr, " '%s'", seg->argv[i]);
+        fprintf(stderr, "\n");
+    }
 }
 
 /* Create a deep copy of a pipeline so that expansions can be performed
@@ -364,8 +378,13 @@ static struct assign_backup *set_temp_environment(PipelineSegment *pipeline) {
 static int run_temp_command(PipelineSegment *pipeline, int background,
                             const char *line) {
     expand_segment_no_assign(pipeline);
-    if (!pipeline->argv[0])
-        return 0;        /* nothing to execute after expansion */
+    if (!pipeline->argv[0] || pipeline->argv[0][0] == '\0') {
+        if (pipeline->argv[0]) {
+            free(pipeline->argv[0]);
+            pipeline->argv[0] = NULL;
+        }
+        return -1;        /* nothing to execute after expansion */
+    }
 
     int has_redir =
         pipeline->in_file || pipeline->out_file || pipeline->err_file ||
@@ -422,6 +441,12 @@ static int apply_temp_assignments(PipelineSegment *pipeline, int background,
         return 1;
 
     int handled = run_temp_command(pipeline, background, line);
+    if (handled == -1) {
+        restore_temp_environment(pipeline, backs);
+        set_temp_environment(pipeline);
+        return 1;
+    }
+
     restore_temp_environment(pipeline, backs);
 
     if (handled && opt_errexit && last_status != 0)
