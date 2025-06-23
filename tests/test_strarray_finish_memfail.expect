@@ -1,0 +1,28 @@
+#!/usr/bin/env expect
+set timeout 5
+set dir [file dirname [info script]]
+set src "$dir/realloc_fail.c"
+set lib "$dir/realloc_fail.so"
+set testsrc "$dir/test_strarray_finish.c"
+set testbin "$dir/test_strarray_finish"
+# compile failing realloc library
+exec cc -shared -fPIC $src -o $lib
+# compile test program
+exec cc -std=c99 -Wall -Wextra -I$dir/../src $testsrc $dir/../src/strarray.c -o $testbin
+set env(LD_PRELOAD) $lib
+set env(REALLOC_FAIL_AT) 2
+spawn $testbin
+expect {
+    -re "realloc: Cannot allocate memory\r?\n" {}
+    timeout { send_user "missing realloc error\n"; exit 1 }
+}
+expect {
+    eof {}
+    timeout { send_user "eof timeout\n"; exit 1 }
+}
+set code [lindex [wait] 3]
+if { $code != 0 } {
+    send_user "exit status mismatch\n"
+    exit 1
+}
+exec rm -f $lib $testbin
