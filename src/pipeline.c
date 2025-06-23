@@ -91,7 +91,7 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
         if (!strchr(seg->argv[0], '/'))
             hpath = hash_lookup(seg->argv[0], &hfd);
         if (hpath) {
-#ifdef __linux__
+#ifdef HAVE_FEXECVE
             extern char **environ;
             if (hfd >= 0)
                 fexecve(hfd, seg->argv, environ);
