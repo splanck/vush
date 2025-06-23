@@ -139,7 +139,7 @@ void pop_local_scope(void) {
             if (v->array)
                 set_shell_array(v->name, v->array, v->array_len);
             else
-                set_shell_var(v->name, v->value ? v->value : "");
+                set_shell_var(v->name, v->value);
         } else {
             unset_shell_var(v->name);
         }
@@ -248,7 +248,7 @@ void set_shell_var(const char *name, const char *value) {
                 v->array = NULL;
                 v->array_len = 0;
             }
-            char *dup = strdup(value);
+            char *dup = strdup(value ? value : "");
             if (!dup) {
                 perror("strdup");
                 return;
@@ -256,7 +256,7 @@ void set_shell_var(const char *name, const char *value) {
             free(v->value);
             v->value = dup;
             if (opt_allexport)
-                setenv(name, v->value ? v->value : "", 1);
+                setenv(name, v->value, 1);
             return;
         }
     }
@@ -268,7 +268,7 @@ void set_shell_var(const char *name, const char *value) {
         free(v);
         return;
     }
-    v->value = strdup(value);
+    v->value = strdup(value ? value : "");
     if (!v->value) {
         perror("strdup");
         free(v->name);
@@ -280,7 +280,7 @@ void set_shell_var(const char *name, const char *value) {
     v->next = shell_vars;
     shell_vars = v;
     if (opt_allexport)
-        setenv(name, value ? value : "", 1);
+        setenv(name, v->value, 1);
 }
 
 void set_shell_array(const char *name, char **values, int count) {
