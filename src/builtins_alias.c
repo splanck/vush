@@ -37,8 +37,10 @@ static void remove_all_aliases(const char *name);
 static void save_aliases(void)
 {
     char *path = get_alias_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine alias file location\n");
         return;
+    }
     FILE *f = fopen(path, "w");
     free(path);
     if (!f)
@@ -55,8 +57,10 @@ void load_aliases(void)
 {
     list_init(&aliases);
     char *path = get_alias_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine alias file location\n");
         return;
+    }
     FILE *f = fopen(path, "r");
     free(path);
     if (!f)

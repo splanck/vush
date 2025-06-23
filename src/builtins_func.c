@@ -52,8 +52,10 @@ FuncEntry *find_function(const char *name)
 static void save_functions(void)
 {
     char *path = get_func_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine function file location\n");
         return;
+    }
     FILE *f = fopen(path, "w");
     free(path);
     if (!f)
@@ -73,8 +75,10 @@ void load_functions(void)
 {
     list_init(&functions);
     char *path = get_func_file();
-    if (!path)
+    if (!path) {
+        fprintf(stderr, "warning: unable to determine function file location\n");
         return;
+    }
     FILE *f = fopen(path, "r");
     free(path);
     if (!f)
