@@ -8,8 +8,10 @@
 #include "shell_state.h"
 #include "vars.h"
 #include <string.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <stdint.h>
+#include "util.h"
 
 
 /* Print arguments separated by spaces. Supports -n to suppress the
@@ -206,6 +208,21 @@ static char *unescape_string(const char *src)
     return out;
 }
 
+#ifndef HAVE_OPEN_MEMSTREAM
+/* Append STR to OUT reallocating as needed. Returns 0 on allocation failure. */
+static int append_str(char **out, size_t *len, const char *str) {
+    size_t slen = strlen(str);
+    char *tmp = realloc(*out, *len + slen + 1);
+    if (!tmp)
+        return 0;
+    *out = tmp;
+    memcpy(*out + *len, str, slen);
+    *len += slen;
+    (*out)[*len] = '\0';
+    return 1;
+}
+#endif
+
 /* Formatted printing similar to printf(1); stores result in last_status. */
 int builtin_printf(char **args)
 {
@@ -235,6 +252,7 @@ int builtin_printf(char **args)
     FILE *out = stdout;
     char *outbuf = NULL;
     size_t outsize = 0;
+#ifdef HAVE_OPEN_MEMSTREAM
     if (varname) {
         out = open_memstream(&outbuf, &outsize);
         if (!out) {
@@ -244,7 +262,141 @@ int builtin_printf(char **args)
             return 1;
         }
     }
+#else
+    (void)out;
+#endif
     int ai = i + 1;
+
+#ifndef HAVE_OPEN_MEMSTREAM
+    if (varname) {
+        for (const char *p = fmt; *p; ) {
+            if (*p != '%') {
+                char ch[2] = { *p++, '\0' };
+                if (!append_str(&outbuf, &outsize, ch)) {
+                    perror("printf");
+                    free(outbuf);
+                    free(fmt);
+                    last_status = 1;
+                    return 1;
+                }
+                continue;
+            }
+            char spec[32];
+            char conv;
+            int err = 0;
+            p = next_format_spec(p, spec, &conv, &err);
+            if (err) {
+                fprintf(stderr, "printf: format specifier too long\n");
+                free(outbuf);
+                free(fmt);
+                last_status = 1;
+                return 1;
+            }
+            if (!conv)
+                break;
+            if (conv == '%') {
+                if (!append_str(&outbuf, &outsize, "%")) {
+                    perror("printf");
+                    free(outbuf);
+                    free(fmt);
+                    last_status = 1;
+                    return 1;
+                }
+                continue;
+            }
+
+            char *arg = args[ai] ? args[ai] : "";
+            char *tmp = NULL;
+            switch (conv) {
+            case 'd': case 'i':
+                if (xasprintf(&tmp, spec, (long long)strtoll(arg, NULL, 0)) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            case 'u': case 'o': case 'x': case 'X':
+                if (xasprintf(&tmp, spec, (unsigned long long)strtoull(arg, NULL, 0)) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
+                if (xasprintf(&tmp, spec, strtod(arg, NULL)) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            case 'c':
+                if (xasprintf(&tmp, spec, arg[0]) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            case 's':
+                if (xasprintf(&tmp, spec, arg) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            case 'b': {
+                size_t len = strlen(arg);
+                char *buf = malloc(len + 1);
+                if (!buf) {
+                    perror("printf");
+                    free(outbuf);
+                    free(fmt);
+                    last_status = 1;
+                    return 1;
+                }
+                char *bp = buf;
+                for (const char *p2 = arg; *p2; p2++) {
+                    if (*p2 == '\\' && p2[1]) {
+                        p2++;
+                        switch (*p2) {
+                        case 'n': *bp++ = '\n'; break;
+                        case 't': *bp++ = '\t'; break;
+                        case 'r': *bp++ = '\r'; break;
+                        case 'b': *bp++ = '\b'; break;
+                        case 'a': *bp++ = '\a'; break;
+                        case 'f': *bp++ = '\f'; break;
+                        case 'v': *bp++ = '\v'; break;
+                        case '\\': *bp++ = '\\'; break;
+                        default: *bp++ = '\\'; *bp++ = *p2; break;
+                        }
+                    } else {
+                        *bp++ = *p2;
+                    }
+                }
+                *bp = '\0';
+                spec[strlen(spec) - 1] = 's';
+                if (xasprintf(&tmp, spec, buf) < 0)
+                    tmp = NULL;
+                free(buf);
+                if (args[ai]) ai++;
+                break;
+            }
+            case 'p':
+                if (xasprintf(&tmp, spec, (void *)(uintptr_t)strtoull(arg, NULL, 0)) < 0)
+                    tmp = NULL;
+                if (args[ai]) ai++;
+                break;
+            default:
+                tmp = strdup(spec);
+                break;
+            }
+            if (!tmp || !append_str(&outbuf, &outsize, tmp)) {
+                perror("printf");
+                free(tmp);
+                free(outbuf);
+                free(fmt);
+                last_status = 1;
+                return 1;
+            }
+            free(tmp);
+        }
+        set_shell_var(varname, outbuf ? outbuf : "");
+        free(outbuf);
+        free(fmt);
+        last_status = 0;
+        return 1;
+    }
+#endif /* HAVE_OPEN_MEMSTREAM */
+
     for (const char *p = fmt; *p; ) {
         if (*p != '%') {
             fputc(*p++, out);
