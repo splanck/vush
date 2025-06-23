@@ -257,12 +257,15 @@ int builtin_alias(char **args)
             continue;
         }
         *eq = '\0';
-        remove_all_aliases(args[i]);
-        if (set_alias(args[i], eq + 1) < 0) {
+        const char *name = args[i];
+        const char *value = eq + 1;
+        remove_all_aliases(name);
+        if (set_alias(name, value) < 0) {
             *eq = '=';
-            fprintf(stderr, "alias: failed to set %s\n", args[i]);
+            fprintf(stderr, "alias: failed to set %s\n", name);
             continue;
         }
+        printf("%s='%s'\n", name, value);
         *eq = '=';
     }
     save_aliases();

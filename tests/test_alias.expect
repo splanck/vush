@@ -9,7 +9,7 @@ expect {
 }
 send "alias ll='echo hi'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+ll='echo hi'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "alias\r"
@@ -36,12 +36,12 @@ expect {
 # Nested alias expansion
 send "alias first='echo nested'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+first='echo nested'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "alias second=first\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+second='first'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 send "second test\r"
@@ -59,7 +59,7 @@ expect {
 for {set i 0} {$i < 45} {incr i} {
     send "alias a$i='echo hi$i'\r"
     expect {
-        "vush> " {}
+        -re "\[\r\n\]+a$i='echo hi$i'\[\r\n\]+vush> " {}
         timeout { send_user "prompt timeout\n"; exit 1 }
     }
 }

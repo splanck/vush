@@ -9,7 +9,7 @@ expect {
 }
 send "alias hi='echo bye'\r"
 expect {
-    "vush> " {}
+    -re "\[\r\n\]+hi='echo bye'\[\r\n\]+vush> " {}
     timeout { send_user "prompt timeout\n"; exit 1 }
 }
 # simulate line-editor expansion
