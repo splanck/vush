@@ -93,8 +93,10 @@ pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
         if (hpath) {
 #ifdef HAVE_FEXECVE
             extern char **environ;
-            if (hfd >= 0)
+            if (hfd >= 0) {
+                fcntl(hfd, F_SETFD, 0);
                 fexecve(hfd, seg->argv, environ);
+            }
 #endif
             execv(hpath, seg->argv);
         }

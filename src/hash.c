@@ -74,7 +74,7 @@ int hash_add(const char *name) {
         free(path);
         path = resolved;
     }
-    int fd = open(path, O_RDONLY);
+    int fd = open(path, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         free(path);
         return -1;
@@ -98,7 +98,12 @@ int hash_add(const char *name) {
         return -1;
     }
     e->path = path;
+#ifdef HAVE_FEXECVE
     e->fd = fd;
+#else
+    close(fd);
+    e->fd = -1;
+#endif
     e->next = hash_list;
     hash_list = e;
     return 0;
@@ -134,7 +139,7 @@ int hash_add_path(const char *name, const char *path) {
     char *p = real ? real : strdup(path);
     if (!p)
         return -1;
-    int fd = open(p, O_RDONLY);
+    int fd = open(p, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         free(p);
         return -1;
@@ -155,7 +160,12 @@ int hash_add_path(const char *name, const char *path) {
         return -1;
     }
     e->path = p;
+#ifdef HAVE_FEXECVE
     e->fd = fd;
+#else
+    close(fd);
+    e->fd = -1;
+#endif
     e->next = hash_list;
     hash_list = e;
     return 0;
