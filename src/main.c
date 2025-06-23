@@ -60,9 +60,11 @@ int main(int argc, char **argv) {
     setenv("SHELL", argv[0], 1);
 
     if (!getenv("PWD")) {
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd)))
+        char *cwd = getcwd(NULL, 0);
+        if (cwd) {
             setenv("PWD", cwd, 1);
+            free(cwd);
+        }
     }
 
     parent_pid = getppid();
