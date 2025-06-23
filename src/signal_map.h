@@ -11,14 +11,53 @@ static const struct { const char *n; int v; } sig_map[] = {
 #ifdef SIGQUIT
     {"QUIT", SIGQUIT},
 #endif
+#ifdef SIGILL
+    {"ILL", SIGILL},
+#endif
+#ifdef SIGTRAP
+    {"TRAP", SIGTRAP},
+#endif
+#ifdef SIGABRT
+    {"ABRT", SIGABRT},
+#endif
+#ifdef SIGIOT
+    {"IOT", SIGIOT},
+#endif
+#ifdef SIGEMT
+    {"EMT", SIGEMT},
+#endif
+#ifdef SIGBUS
+    {"BUS", SIGBUS},
+#endif
+#ifdef SIGFPE
+    {"FPE", SIGFPE},
+#endif
+#ifdef SIGKILL
+    {"KILL", SIGKILL},
+#endif
 #ifdef SIGUSR1
     {"USR1", SIGUSR1},
+#endif
+#ifdef SIGSEGV
+    {"SEGV", SIGSEGV},
 #endif
 #ifdef SIGUSR2
     {"USR2", SIGUSR2},
 #endif
+#ifdef SIGPIPE
+    {"PIPE", SIGPIPE},
+#endif
+#ifdef SIGALRM
+    {"ALRM", SIGALRM},
+#endif
+#ifdef SIGSTKFLT
+    {"STKFLT", SIGSTKFLT},
+#endif
 #ifdef SIGCHLD
     {"CHLD", SIGCHLD},
+#endif
+#ifdef SIGCLD
+    {"CLD", SIGCLD},
 #endif
 #ifdef SIGCONT
     {"CONT", SIGCONT},
@@ -26,8 +65,53 @@ static const struct { const char *n; int v; } sig_map[] = {
 #ifdef SIGSTOP
     {"STOP", SIGSTOP},
 #endif
-#ifdef SIGALRM
-    {"ALRM", SIGALRM},
+#ifdef SIGTSTP
+    {"TSTP", SIGTSTP},
+#endif
+#ifdef SIGTTIN
+    {"TTIN", SIGTTIN},
+#endif
+#ifdef SIGTTOU
+    {"TTOU", SIGTTOU},
+#endif
+#ifdef SIGURG
+    {"URG", SIGURG},
+#endif
+#ifdef SIGXCPU
+    {"XCPU", SIGXCPU},
+#endif
+#ifdef SIGXFSZ
+    {"XFSZ", SIGXFSZ},
+#endif
+#ifdef SIGVTALRM
+    {"VTALRM", SIGVTALRM},
+#endif
+#ifdef SIGPROF
+    {"PROF", SIGPROF},
+#endif
+#ifdef SIGWINCH
+    {"WINCH", SIGWINCH},
+#endif
+#ifdef SIGPOLL
+    {"POLL", SIGPOLL},
+#endif
+#ifdef SIGIO
+    {"IO", SIGIO},
+#endif
+#ifdef SIGPWR
+    {"PWR", SIGPWR},
+#endif
+#ifdef SIGSYS
+    {"SYS", SIGSYS},
+#endif
+#ifdef SIGINFO
+    {"INFO", SIGINFO},
+#endif
+#ifdef SIGTHR
+    {"THR", SIGTHR},
+#endif
+#ifdef SIGLWP
+    {"LWP", SIGLWP},
 #endif
     {NULL, 0}
 };
