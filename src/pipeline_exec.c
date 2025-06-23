@@ -34,6 +34,8 @@ static int spawn_pipeline_segments(PipelineSegment *pipeline, int background,
 
 /* Determine if a command name corresponds to a builtin. */
 static int is_builtin_command(const char *name) {
+    if (!name)
+        return 0;
     for (int i = 0; i < BI_COUNT; i++) {
         if (strcmp(name, builtin_table[i].name) == 0)
             return 1;
