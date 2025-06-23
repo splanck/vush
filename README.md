@@ -170,9 +170,10 @@ See [docs/vush.1](docs/vush.1) for the manual page.
 
 ## Tests
 
-The test suite relies on the `expect` command. If `expect` is not installed the
-`tests/run_tests.sh` driver will terminate with an error. Install the `expect`
-package to run the tests, then execute:
+The test suite relies on the `expect` command. **You must install the `expect`
+package** before running the tests. If `expect` is not installed the
+`tests/run_tests.sh` driver will terminate with an error. Once installed,
+execute:
 
 ```sh
 make test
