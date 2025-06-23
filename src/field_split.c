@@ -95,11 +95,12 @@ char **split_fields(const char *text, int *count_out) {
 
     free(dup);
 
+    int cnt = arr.count;
     char **res = strarray_finish(&arr);
     if (!res)
         goto fail_alloc;
     if (count_out)
-        *count_out = arr.count ? arr.count - 1 : 0;
+        *count_out = cnt;
     return res;
 
 fail:

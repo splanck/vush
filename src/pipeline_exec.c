@@ -364,6 +364,8 @@ static struct assign_backup *set_temp_environment(PipelineSegment *pipeline) {
 static int run_temp_command(PipelineSegment *pipeline, int background,
                             const char *line) {
     expand_segment_no_assign(pipeline);
+    if (!pipeline->argv[0])
+        return 0;        /* nothing to execute after expansion */
 
     int has_redir =
         pipeline->in_file || pipeline->out_file || pipeline->err_file ||
