@@ -2,7 +2,17 @@
 set timeout 5
 set user "tempuser"
 set home [exec sh [file dirname [info script]]/mktempd.sh]
-exec sh -c "echo \"$user:x:12345:12345::$home:/bin/false\" >> /etc/passwd"
+set passfile [exec mktemp]
+set groupfile [exec mktemp]
+set f [open $passfile "w"]
+puts $f "$user:x:12345:12345::$home:/bin/false"
+close $f
+set g [open $groupfile "w"]
+puts $g "tempgroup:x:12345:"
+close $g
+set env(NSS_WRAPPER_PASSWD) $passfile
+set env(NSS_WRAPPER_GROUP) $groupfile
+set env(LD_PRELOAD) "/usr/lib/x86_64-linux-gnu/libnss_wrapper.so"
 spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
@@ -11,17 +21,17 @@ expect {
 send "cd ~$user\r"
 expect {
     "vush> " {}
-    timeout { send_user "prompt timeout\n"; exec sed -i \"/$user:x:12345/d\" /etc/passwd; exec rm -rf $home; exit 1 }
+    timeout { send_user "prompt timeout\n"; exec rm -f $passfile $groupfile; exec rm -rf $home; exit 1 }
 }
 send "pwd\r"
 expect {
     -re "\[\r\n\]+$home\[\r\n\]+vush> " {}
-    timeout { send_user "tilde expansion failed\n"; exec sed -i \"/$user:x:12345/d\" /etc/passwd; exec rm -rf $home; exit 1 }
+    timeout { send_user "tilde expansion failed\n"; exec rm -f $passfile $groupfile; exec rm -rf $home; exit 1 }
 }
 send "exit\r"
 expect {
     eof {}
-    timeout { send_user "eof timeout\n"; exec sed -i \"/$user:x:12345/d\" /etc/passwd; exec rm -rf $home; exit 1 }
+    timeout { send_user "eof timeout\n"; exec rm -f $passfile $groupfile; exec rm -rf $home; exit 1 }
 }
-exec sed -i "/$user:x:12345/d" /etc/passwd
+exec rm -f $passfile $groupfile
 exec rm -rf $home
