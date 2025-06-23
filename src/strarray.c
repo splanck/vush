@@ -21,8 +21,10 @@ int strarray_push(StrArray *arr, char *str) {
 }
 
 char **strarray_finish(StrArray *arr) {
-    if (strarray_push(arr, NULL) == -1)
+    if (strarray_push(arr, NULL) == -1) {
+        strarray_release(arr);
         return NULL;
+    }
     char **res = arr->items;
     arr->items = NULL;
     arr->count = 0;
