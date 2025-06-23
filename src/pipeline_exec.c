@@ -374,6 +374,8 @@ static int run_temp_command(PipelineSegment *pipeline, int background,
         pipeline->out_fd != STDOUT_FILENO || pipeline->in_fd != STDIN_FILENO;
 
     int handled = 0;
+    if (!pipeline->argv[0])
+        return 0;
     int is_blt = is_builtin_command(pipeline->argv[0]);
     FuncEntry *fn = NULL;
     if (!is_blt)
