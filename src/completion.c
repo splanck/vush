@@ -12,6 +12,7 @@
 #include "strarray.h"
 #include <unistd.h>
 #include <limits.h>
+#include "shell_state.h"
 
 static int cmpstr(const void *a, const void *b) {
     const char *aa = *(const char **)a;
@@ -37,6 +38,9 @@ static char **collect_builtin_matches(const char *prefix, int prefix_len,
     int count = 0; int cap = 16;
     arr.items = malloc(cap * sizeof(char *));
     if (!arr.items) {
+        /* allocation failure when initializing match array */
+        perror("malloc");
+        last_status = 1;
         if (countp) *countp = 0;
         return NULL;
     }
@@ -94,8 +98,11 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     int count = 0;
     int cap = 16;
     arr.items = malloc(cap * sizeof(char *));
-    if (!arr.items)
+    if (!arr.items) {
+        perror("malloc");
+        last_status = 1;
         arr.items = NULL;
+    }
 
     DIR *d = opendir(".");
     if (!arr.items) {
@@ -159,6 +166,8 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                         size_t len = strlen(d) + strlen(pe->d_name) + 2;
                         char *full = malloc(len);
                         if (!full) {
+                            perror("malloc");
+                            last_status = 1;
                             for (int j = 0; j < count; j++)
                                 free(arr.items[j]);
                             free(arr.items);
@@ -277,6 +286,8 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     int cap = bcount + pcount + 1;
     char **matches = malloc(cap * sizeof(char *));
     if (!matches) {
+        perror("malloc");
+        last_status = 1;
         for (int i = 0; i < bcount; i++)
             free(bmatches[i]);
         free(bmatches);

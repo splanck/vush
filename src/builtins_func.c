@@ -109,7 +109,12 @@ void define_function(const char *name, Command *body, const char *text)
             char *new_name = strdup(name);
             char *new_text = strdup(text);
             if (!new_name || !new_text) {
+                /*
+                 * strdup failed.  Print an error, set last_status to 1 and
+                 * return without modifying the function list.
+                 */
                 perror("strdup");
+                last_status = 1;
                 free(new_name);
                 free(new_text);
                 free_commands(body);
@@ -127,14 +132,21 @@ void define_function(const char *name, Command *body, const char *text)
     }
     FuncEntry *fn = malloc(sizeof(FuncEntry));
     if (!fn) {
+        /*
+         * Allocation failure.  Report the error and set last_status so the
+         * caller can detect the failure.
+         */
         perror("malloc");
+        last_status = 1;
         free_commands(body);
         return;
     }
     char *name_copy = strdup(name);
     char *text_copy = strdup(text);
     if (!name_copy || !text_copy) {
+        /* strdup failed.  Clean up and signal failure. */
         perror("strdup");
+        last_status = 1;
         free(name_copy);
         free(text_copy);
         free(fn);

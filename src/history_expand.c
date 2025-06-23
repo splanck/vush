@@ -92,6 +92,12 @@ char *expand_history(const char *line) {
     size_t rest_len = strlen(rest);
     char *res = malloc(pre_len + exp_len + rest_len + 1);
     if (!res) {
+        /*
+         * Allocation failure constructing the expanded line.
+         * Report the error and set last_status before returning NULL.
+         */
+        perror("malloc");
+        last_status = 1;
         free(expansion);
         return NULL;
     }
