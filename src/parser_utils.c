@@ -287,8 +287,14 @@ char *process_substitution(char **p, int read_from) {
     const char *tmpdir = getenv("TMPDIR");
     if (!tmpdir || !*tmpdir)
         tmpdir = "/tmp";
-    char template[PATH_MAX];
-    snprintf(template, sizeof(template), "%s/vushpsXXXXXX", tmpdir);
+    size_t len = strlen(tmpdir) + sizeof("/vushpsXXXXXX");
+    char *template = malloc(len);
+    if (!template) {
+        perror("malloc");
+        free(body);
+        return NULL;
+    }
+    snprintf(template, len, "%s/vushpsXXXXXX", tmpdir);
     int fd = mkstemp(template);
     if (fd < 0) {
         perror("mkstemp");
@@ -299,6 +305,7 @@ char *process_substitution(char **p, int read_from) {
     unlink(template);
     if (mkfifo(template, 0600) != 0) {
         perror("mkfifo");
+        free(template);
         free(body);
         return NULL;
     }
@@ -332,6 +339,7 @@ char *process_substitution(char **p, int read_from) {
             unlink(template);
             free_commands(cmd);
             free(body);
+            free(template);
             return NULL;
         }
         added = 1;
@@ -340,6 +348,7 @@ char *process_substitution(char **p, int read_from) {
         unlink(template);
         free_commands(cmd);
         free(body);
+        free(template);
         return NULL;
     }
     free_commands(cmd);
@@ -350,8 +359,10 @@ char *process_substitution(char **p, int read_from) {
             remove_proc_sub(template);
         else
             unlink(template);
+        free(template);
         return NULL;
     }
+    free(template);
     return res;
 }
 

@@ -19,14 +19,18 @@
 #include <limits.h>
 
 /* Remove '.' and '..' path segments without resolving symlinks. */
-static void canonicalize_logical(const char *path, char *out)
+static void canonicalize_logical(const char *path, char *out, size_t out_size)
 {
-    char tmp[PATH_MAX];
-    strncpy(tmp, path, sizeof(tmp));
-    tmp[PATH_MAX - 1] = '\0';
-    char *parts[PATH_MAX / 2];
+    char *tmp = strdup(path);
+    if (!tmp)
+        return;
+    size_t max_parts = strlen(tmp) / 2 + 2;
+    char **parts = malloc(max_parts * sizeof(char *));
+    if (!parts) {
+        free(tmp);
+        return;
+    }
     int sp = 0;
-    const int max_parts = sizeof(parts) / sizeof(parts[0]);
     char *save;
     for (char *t = strtok_r(tmp, "/", &save); t; t = strtok_r(NULL, "/", &save)) {
         if (strcmp(t, ".") == 0) {
@@ -35,7 +39,7 @@ static void canonicalize_logical(const char *path, char *out)
             if (sp > 0)
                 sp--;
         } else {
-            if (sp >= max_parts) {
+            if ((size_t)sp >= max_parts) {
                 fprintf(stderr,
                         "cd: path has too many components\n");
                 break;
@@ -48,7 +52,7 @@ static void canonicalize_logical(const char *path, char *out)
         *p++ = '/';
     for (int i = 0; i < sp; i++) {
         size_t len = strlen(parts[i]);
-        if (p - out + len + 1 >= PATH_MAX)
+        if ((size_t)(p - out) + len + 1 >= out_size)
             break;
         memcpy(p, parts[i], len);
         p += len;
@@ -58,6 +62,8 @@ static void canonicalize_logical(const char *path, char *out)
     if (p == out)
         *p++ = '/';
     *p = '\0';
+    free(parts);
+    free(tmp);
 }
 
 /*
@@ -66,9 +72,9 @@ static void canonicalize_logical(const char *path, char *out)
  * to stdout.
  */
 int builtin_cd(char **args) {
-    char prev[PATH_MAX];
-    char buf[PATH_MAX];
-    if (!getcwd(prev, sizeof(prev))) {
+    size_t pathmax = get_path_max();
+    char *prev = getcwd(NULL, 0);
+    if (!prev) {
         perror("getcwd");
         return 1;
     }
@@ -85,13 +91,16 @@ int builtin_cd(char **args) {
     }
 
     const char *target;
+    char *buf = NULL;
     if (!args[idx]) {
         target = getenv("HOME");
     } else if (strcmp(args[idx], "-") == 0) {
         target = getenv("OLDPWD");
         if (!target) {
-            if (!getcwd(buf, sizeof(buf))) {
+            buf = getcwd(NULL, 0);
+            if (!buf) {
                 perror("getcwd");
+                free(prev);
                 return 1;
             }
             target = buf;
@@ -101,7 +110,13 @@ int builtin_cd(char **args) {
         target = args[idx];
     }
 
-    char used[PATH_MAX];
+    char *used = malloc(pathmax);
+    if (!used) {
+        perror("malloc");
+        free(prev);
+        free(buf);
+        return 1;
+    }
     const char *dir = target ? target : "";
     int searched = 0;
 
@@ -113,8 +128,8 @@ int builtin_cd(char **args) {
             if (paths) {
                 for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
                     const char *base = *p ? p : ".";
-                    int n = snprintf(used, sizeof(used), "%s/%s", base, dir);
-                    if (n < 0 || n >= PATH_MAX) {
+                    int n = snprintf(used, pathmax, "%s/%s", base, dir);
+                    if (n < 0 || (size_t)n >= pathmax) {
                         fprintf(stderr, "cd: path too long\n");
                         continue;
                     }
@@ -146,14 +161,14 @@ int builtin_cd(char **args) {
         if (physical) {
             if (!unresolved) {
                 dir = path;
-            } else if (getcwd(used, sizeof(used))) {
+            } else if (getcwd(used, pathmax)) {
                 dir = used;
             }
         }
     } else if (physical) {
         if (realpath(".", used))
             dir = used;
-        else if (getcwd(used, sizeof(used)))
+        else if (getcwd(used, pathmax))
             dir = used;
     }
 
@@ -162,26 +177,37 @@ int builtin_cd(char **args) {
         oldpwd = prev;
     update_pwd_env(oldpwd);
 
-    char newpwd[PATH_MAX];
+    char *newpwd = malloc(pathmax);
+    if (!newpwd) {
+        perror("malloc");
+        free(prev);
+        free(buf);
+        free(used);
+        return 1;
+    }
     if (physical) {
         if (!realpath(".", newpwd)) {
-            if (!getcwd(newpwd, sizeof(newpwd))) {
-                strncpy(newpwd, dir, sizeof(newpwd) - 1);
-                newpwd[PATH_MAX - 1] = '\0';
+            if (!getcwd(newpwd, pathmax)) {
+                strncpy(newpwd, dir, pathmax - 1);
+                newpwd[pathmax - 1] = '\0';
             }
         }
     } else {
         if (dir[0] == '/') {
-            strncpy(newpwd, dir, sizeof(newpwd));
-            newpwd[PATH_MAX - 1] = '\0';
+            strncpy(newpwd, dir, pathmax);
+            newpwd[pathmax - 1] = '\0';
         } else {
-            int n = snprintf(newpwd, sizeof(newpwd), "%s/%s", oldpwd, dir);
-            if (n < 0 || n >= (int)sizeof(newpwd)) {
+            int n = snprintf(newpwd, pathmax, "%s/%s", oldpwd, dir);
+            if (n < 0 || (size_t)n >= pathmax) {
                 fprintf(stderr, "cd: path too long\n");
+                free(prev);
+                free(buf);
+                free(used);
+                free(newpwd);
                 return 1;
             }
         }
-        canonicalize_logical(newpwd, newpwd);
+        canonicalize_logical(newpwd, newpwd, pathmax);
     }
     setenv("PWD", newpwd, 1);
 
@@ -189,6 +215,10 @@ int builtin_cd(char **args) {
         printf("%s\n", dir);
     }
 
+    free(prev);
+    free(buf);
+    free(used);
+    free(newpwd);
     return 1;
 }
 
@@ -202,19 +232,21 @@ int builtin_pushd(char **args) {
         fprintf(stderr, "usage: pushd dir\n");
         return 1;
     }
-    char prev[PATH_MAX];
-    if (!getcwd(prev, sizeof(prev))) {
+    char *prev = getcwd(NULL, 0);
+    if (!prev) {
         perror("getcwd");
         return 1;
     }
     if (chdir(args[1]) != 0) {
         perror("pushd");
+        free(prev);
         return 1;
     }
     dirstack_push(prev);
     const char *pwd = getenv("PWD");
     if (!pwd) pwd = prev;
     update_pwd_env(pwd);
+    free(prev);
     dirstack_print();
     return 1;
 }
@@ -230,8 +262,8 @@ int builtin_popd(char **args) {
         fprintf(stderr, "popd: directory stack empty\n");
         return 1;
     }
-    char prev[PATH_MAX];
-    if (!getcwd(prev, sizeof(prev))) {
+    char *prev = getcwd(NULL, 0);
+    if (!prev) {
         perror("getcwd");
         free(dir);
         return 1;
@@ -239,9 +271,11 @@ int builtin_popd(char **args) {
     if (chdir(dir) != 0) {
         perror("popd");
         free(dir);
+        free(prev);
         return 1;
     }
     update_pwd_env(prev);
+    free(prev);
     free(dir);
     dirstack_print();
     return 1;
@@ -286,9 +320,10 @@ int builtin_pwd(char **args) {
     }
 
     if (physical || !getenv("PWD")) {
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd))) {
+        char *cwd = getcwd(NULL, 0);
+        if (cwd) {
             printf("%s\n", cwd);
+            free(cwd);
         } else {
             perror("pwd");
         }

@@ -205,8 +205,13 @@ static int fc_edit_commands(int start, int end, int step, const FcOptions *opts)
     const char *tmpdir = getenv("TMPDIR");
     if (!tmpdir || !*tmpdir)
         tmpdir = "/tmp";
-    char template[PATH_MAX];
-    snprintf(template, sizeof(template), "%s/vush_fcXXXXXX", tmpdir);
+    size_t len = strlen(tmpdir) + sizeof("/vush_fcXXXXXX");
+    char *template = malloc(len);
+    if (!template) {
+        perror("malloc");
+        return 1;
+    }
+    snprintf(template, len, "%s/vush_fcXXXXXX", tmpdir);
 
     int fd = mkstemp(template);
     if (fd < 0) {
@@ -263,6 +268,7 @@ static int fc_edit_commands(int start, int end, int step, const FcOptions *opts)
 
     fclose(f);
     unlink(template);
+    free(template);
     return 1;
 }
 

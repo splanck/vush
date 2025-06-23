@@ -197,3 +197,10 @@ int parse_positive_int(const char *s, int *out) {
         *out = (int)val;
     return 0;
 }
+
+size_t get_path_max(void) {
+    long pm = pathconf(".", _PC_PATH_MAX);
+    if (pm < 0)
+        pm = PATH_MAX;
+    return (size_t)pm + 1; /* include terminating null */
+}

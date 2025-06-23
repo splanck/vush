@@ -28,4 +28,7 @@ void *xmalloc(size_t size);
 char *xstrdup(const char *s);
 /* asprintf wrapper using system implementation when available */
 int xasprintf(char **strp, const char *fmt, ...);
+/* Return the system PATH_MAX using pathconf when available, falling back
+ * to the compile time PATH_MAX constant. */
+size_t get_path_max(void);
 #endif /* VUSH_UTIL_H */

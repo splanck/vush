@@ -63,8 +63,8 @@ char *dirstack_pop(void) {
  */
 void dirstack_print(void) {
     const char *pwd;
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd))) {
+    char *cwd = getcwd(NULL, 0);
+    if (cwd) {
         pwd = cwd;
     } else {
         pwd = getenv("PWD");
@@ -80,6 +80,7 @@ void dirstack_print(void) {
         n = n->next;
     }
     printf("\n");
+    free(cwd);
 }
 
 /* Free all directory stack entries. */
@@ -101,11 +102,12 @@ void dirstack_clear(void) {
  * assigned to PWD.  If getcwd fails the environment is left unchanged.
  */
 void update_pwd_env(const char *oldpwd) {
-    char cwd[PATH_MAX];
-    if (!getcwd(cwd, sizeof(cwd)))
+    char *cwd = getcwd(NULL, 0);
+    if (!cwd)
         return;
     if (!oldpwd)
         oldpwd = "";
     setenv("OLDPWD", oldpwd, 1);
     setenv("PWD", cwd, 1);
+    free(cwd);
 }
