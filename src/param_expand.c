@@ -367,6 +367,7 @@ static char *apply_modifier(const char *name, const char *val, const char *p) {
             if (opt_nounset) {
                 fprintf(stderr, "%s: unbound variable\n", name);
                 last_status = 1;
+                param_error = 1;
             }
             val = "";
         }
@@ -440,6 +441,7 @@ static char *expand_braced(const char *inner) {
             if (opt_nounset) {
                 fprintf(stderr, "%s: unbound variable\n", name);
                 last_status = 1;
+                param_error = 1;
             }
             val = "";
         }
