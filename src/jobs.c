@@ -44,6 +44,8 @@ pid_t last_bg_pid = 0;
 static int last_bg_id = 0;
 /* Flag used by the SIGCHLD handler to know when we are at the prompt */
 volatile sig_atomic_t jobs_at_prompt = 0;
+/* Set when SIGCHLD indicates a job status change */
+volatile sig_atomic_t jobs_changed = 0;
 
 /* Forward declaration for signal handler */
 void jobs_sigchld_handler(int sig);
@@ -86,6 +88,41 @@ void remove_job(pid_t pid) {
         }
         curr = &((*curr)->next);
     }
+}
+
+/* Reap finished children without printing notifications.
+ * Returns 1 if any job status changed. */
+static int reap_jobs_silently(void) {
+    int changed = 0;
+    int status;
+    pid_t pid;
+#ifdef WCONTINUED
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED)) > 0) {
+#else
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+#endif
+        Job *curr = jobs;
+        while (curr && curr->pid != pid)
+            curr = curr->next;
+
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            remove_job(pid);
+            changed = 1;
+        } else if (WIFSTOPPED(status)) {
+            if (curr) {
+                curr->state = JOB_STOPPED;
+                curr->changed = 1;
+                changed = 1;
+            }
+        } else if (WIFCONTINUED(status)) {
+            if (curr) {
+                curr->state = JOB_RUNNING;
+                curr->changed = 1;
+                changed = 1;
+            }
+        }
+    }
+    return changed;
 }
 /*
  * Reap finished background processes and print a message when they
@@ -152,18 +189,11 @@ int check_jobs(void) {
     return check_jobs_internal(prefix);
 }
 
-/* SIGCHLD handler to reap finished background jobs even when
- * waiting for input. Simply delegate to check_jobs(). */
+/* SIGCHLD handler just reaps children and notes that something changed. */
 void jobs_sigchld_handler(int sig) {
     (void)sig;
-    int prefix = jobs_at_prompt ? 1 : 0;
-    if (check_jobs_internal(prefix) && jobs_at_prompt) {
-        const char *ps = getenv("PS1");
-        printf("%s", ps ? ps : "vush> ");
-        fflush(stdout);
-        /* Prevent the prompt from being printed twice */
-        jobs_at_prompt = 0;
-    }
+    if (reap_jobs_silently())
+        jobs_changed = 1;
 }
 
 /*

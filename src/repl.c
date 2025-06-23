@@ -49,6 +49,19 @@ void repl_loop(FILE *input)
             jobs_at_prompt = 0;
             free(prompt);
             if (!line) {
+                if (jobs_changed) {
+                    jobs_at_prompt = 1;
+                    if (check_jobs_internal(1) && jobs_at_prompt) {
+                        const char *ps = getenv("PS1");
+                        printf("%s", ps ? ps : "vush> ");
+                        fflush(stdout);
+                        jobs_at_prompt = 0;
+                    } else {
+                        jobs_at_prompt = 0;
+                    }
+                    jobs_changed = 0;
+                    continue;
+                }
                 if (any_pending_traps()) {
                     printf("\n");
                     process_pending_traps();
@@ -108,6 +121,18 @@ void repl_loop(FILE *input)
                     jobs_at_prompt = 0;
                     free(p2);
                     if (!more) {
+                        if (jobs_changed) {
+                            jobs_at_prompt = 1;
+                            if (check_jobs_internal(1) && jobs_at_prompt) {
+                                const char *ps = getenv("PS1");
+                                printf("%s", ps ? ps : "vush> ");
+                                fflush(stdout);
+                                jobs_at_prompt = 0;
+                            } else {
+                                jobs_at_prompt = 0;
+                            }
+                            jobs_changed = 0;
+                        }
                         free(cmdline);
                         cmdline = NULL;
                         if (any_pending_traps()) {
