@@ -21,6 +21,7 @@
 #include "cmd_subst.h"
 
 static char *expand_tilde(const char *token);
+static char *lookup_passwd_home(const char *user);
 static char *expand_arith(const char *token);
 static char *expand_array_element(const char *name, const char *idxstr);
 static int find_glob_substring(const char *text, const char *pat,
@@ -32,10 +33,49 @@ static char *expand_braced(const char *inner);
 static char *expand_special(const char *token);
 static char *expand_plain_var(const char *name);
 
+/* Lookup a user's home directory by parsing the passwd file directly. */
+static char *lookup_passwd_home(const char *user) {
+    const char *passwd = getenv("NSS_WRAPPER_PASSWD");
+    if (!passwd || !*passwd)
+        passwd = "/etc/passwd";
+    FILE *fp = fopen(passwd, "r");
+    if (!fp)
+        return NULL;
+    char *line = NULL;
+    size_t cap = 0;
+    char *home = NULL;
+    while (getline(&line, &cap, fp) != -1) {
+        char *name = strtok(line, ":");
+        if (!name)
+            continue;
+        if (strcmp(name, user) != 0)
+            continue;
+        /* skip password, uid, gid, gecos */
+        for (int i = 0; i < 4; i++) {
+            if (!strtok(NULL, ":"))
+                break;
+        }
+        char *dir = strtok(NULL, ":");
+        if (dir) {
+            home = strdup(dir);
+            if (home) {
+                char *nl = strchr(home, '\n');
+                if (nl)
+                    *nl = '\0';
+            }
+        }
+        break;
+    }
+    free(line);
+    fclose(fp);
+    return home;
+}
+
 /* Expand ~ or ~user to the appropriate home directory path. */
 static char *expand_tilde(const char *token) {
     const char *rest = token + 1;
     const char *home = NULL;
+    char *home_alloc = NULL;
     if (*rest == '/' || *rest == '\0') {
         home = getenv("HOME");
     } else {
@@ -49,10 +89,15 @@ static char *expand_tilde(const char *token) {
             if (pw) {
                 home = pw->pw_dir;
             } else {
-                fprintf(stderr, "cd: %s: no such user\n", user);
-                last_status = 1;
-                free(user);
-                return NULL;
+                home_alloc = lookup_passwd_home(user);
+                if (home_alloc) {
+                    home = home_alloc;
+                } else {
+                    fprintf(stderr, "cd: %s: no such user\n", user);
+                    last_status = 1;
+                    free(user);
+                    return NULL;
+                }
             }
             free(user);
         }
@@ -64,10 +109,12 @@ static char *expand_tilde(const char *token) {
     if (!ret) {
         perror("malloc");
         last_status = 1;
+        free(home_alloc);
         return NULL;
     }
     strcpy(ret, home);
     strcat(ret, rest);
+    free(home_alloc);
     return ret;
 }
 

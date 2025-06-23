@@ -12,7 +12,6 @@ puts $g "tempgroup:x:12345:"
 close $g
 set env(NSS_WRAPPER_PASSWD) $passfile
 set env(NSS_WRAPPER_GROUP) $groupfile
-set env(LD_PRELOAD) "/usr/lib/x86_64-linux-gnu/libnss_wrapper.so"
 spawn [file dirname [info script]]/../build/vush
 expect {
     "vush> " {}
