@@ -109,6 +109,20 @@ int builtin_bg(char **args) {
         }
     }
     bg_job(id);
+
+    /*
+     * Poll briefly so a completion notice is printed when the resumed job
+     * exits almost immediately.  This mirrors the behaviour used after
+     * sending signals in builtin_kill and helps ensure the message appears
+     * before control returns to the user.
+     */
+    struct timespec ts = {0, 10000000}; /* 10 ms */
+    for (int i = 0; i < 100; i++) {
+        int printed = check_jobs_internal(1);
+        if (printed || get_job_pid(id) < 0)
+            break;
+        nanosleep(&ts, NULL);
+    }
     return 1;
 }
 
