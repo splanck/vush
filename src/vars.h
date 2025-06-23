@@ -3,6 +3,10 @@
 
 const char *get_shell_var(const char *name);
 char **get_shell_array(const char *name, int *len);
+/*
+ * Assign a value to a shell variable. If 'value' is NULL it is treated as an
+ * empty string.
+ */
 void set_shell_var(const char *name, const char *value);
 void set_shell_array(const char *name, char **values, int count);
 void unset_shell_var(const char *name);
