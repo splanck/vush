@@ -230,7 +230,7 @@ message if allocation fails, simplifying error handling.
 
 ## License
 
-This project is licensed under the terms of the GNU General Public License
-version 3. See [LICENSE](LICENSE) for the full license text.
+This code is released under the BSD 2-Clause Simplified license.
+See [LICENSE](LICENSE) for the full license text.
 
 Your feedback, bug reports, and contributions are welcome and appreciated. Please open issues or submit pull requests to help improve vush.
