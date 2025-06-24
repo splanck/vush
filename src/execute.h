@@ -21,8 +21,8 @@
 
 #include "parser.h"
 
-/* Run the command or control structure CMD using LINE for job messages and
- * return the resulting exit status. */
+/* Expand CMD, spawn its commands and use LINE for job messages.
+ * Returns the resulting exit status. */
 int run_pipeline(Command *cmd, const char *line);
 
 /* Execute the linked list CMDS forwarding LINE for tracing and return the
