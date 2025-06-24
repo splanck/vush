@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Executor entry points.
+ */
+
 #ifndef EXECUTE_H
 #define EXECUTE_H
 

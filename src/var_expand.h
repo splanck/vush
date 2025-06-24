@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Variable and field expansion.
+ */
+
 #ifndef VAR_EXPAND_H
 #define VAR_EXPAND_H
 

@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Incremental history search.
+ */
+
 #ifndef HISTORY_SEARCH_H
 #define HISTORY_SEARCH_H
 

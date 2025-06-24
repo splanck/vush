@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Command lookup caching.
+ */
+
 #ifndef HASH_H
 #define HASH_H
 

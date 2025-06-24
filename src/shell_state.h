@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Global shell state.
+ */
+
 #ifndef SHELL_STATE_H
 #define SHELL_STATE_H
 

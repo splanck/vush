@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Signal trapping utilities.
+ */
+
 #ifndef TRAP_H
 #define TRAP_H
 #include <signal.h>

@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Shell variable management.
+ */
+
 #ifndef VARS_H
 #define VARS_H
 

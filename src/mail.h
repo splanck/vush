@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Mail checking helpers.
+ */
+
 #ifndef MAIL_H
 #define MAIL_H
 #include <time.h>

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Line editor completion support.
+ */
+
+/*
  * Command completion helpers for the line editor.
  * Builtin names and files are searched to complete the word at the cursor.
  */

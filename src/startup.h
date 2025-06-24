@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Startup file processing.
+ */
+
 #ifndef STARTUP_H
 #define STARTUP_H
 #include <stdio.h>

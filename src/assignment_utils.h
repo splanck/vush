@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Variable assignment helpers.
+ */
+
 #ifndef ASSIGNMENT_UTILS_H
 #define ASSIGNMENT_UTILS_H
 

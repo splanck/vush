@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Builtin command list macro.
+ */
+
 /* List of builtin commands: enum id, string name, and function */
 /* id must be a valid identifier without prefix */
 /* This file is meant to be included multiple times with different

@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Doubly linked list implementation.
+ */
+
 #ifndef VUSH_LIST_H
 #define VUSH_LIST_H
 

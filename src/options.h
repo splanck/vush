@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Shell option access macros.
+ */
+
 #ifndef OPTIONS_H
 #define OPTIONS_H
 

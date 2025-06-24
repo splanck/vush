@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Script argument tracking.
+ */
+
 #ifndef SCRIPTARGS_H
 #define SCRIPTARGS_H
 
