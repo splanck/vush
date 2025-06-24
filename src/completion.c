@@ -256,6 +256,12 @@ static void apply_completion(const char *match, char *buf, int *lenp, int *posp,
     }
 }
 
+/*
+ * Attempt to complete the word preceding the cursor.  Builtin commands and
+ * executable names found on $PATH are scanned for matches.  When a single
+ * completion exists it is inserted directly, otherwise all candidates are
+ * printed and the line is redrawn.
+ */
 void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
                        int *disp_lenp) {
     int start = *posp;
