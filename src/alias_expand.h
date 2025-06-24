@@ -2,6 +2,8 @@
  * vush - a simple UNIX shell
  * Licensed under the BSD 2-Clause Simplified License.
  * Alias expansion helpers.
+ *
+ * Declarations for alias substitution routines.
  */
 
 #ifndef ALIAS_EXPAND_H

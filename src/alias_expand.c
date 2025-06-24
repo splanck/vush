@@ -2,6 +2,9 @@
  * vush - a simple UNIX shell
  * Licensed under the BSD 2-Clause Simplified License.
  * Alias expansion helpers for command tokens.
+ *
+ * This module implements the logic for substituting command
+ * aliases during parsing.
  */
 
 #define _GNU_SOURCE
@@ -12,6 +15,12 @@
 
 #define MAX_ALIAS_DEPTH 10
 
+/*
+ * Recursively collect the tokens produced by expanding the alias NAME.
+ * Results are appended to OUT and COUNT is updated. The VISITED array
+ * tracks aliases already expanded to avoid infinite recursion.
+ * Returns 0 on success or -1 on allocation failure.
+ */
 static int collect_alias_tokens(const char *name, char **out, int *count,
                                 char visited[][MAX_LINE], int depth) {
     if (*count >= MAX_TOKENS - 1)
@@ -86,6 +95,11 @@ error:
     return -1;
 }
 
+/*
+ * Expand TOK as an alias within SEG. The expanded words are inserted
+ * into SEG->argv and ARGC is updated. Returns 1 if an alias was
+ * expanded, 0 if TOK is not an alias, or -1 on memory failure.
+ */
 int expand_aliases_in_segment(PipelineSegment *seg, int *argc, char *tok) {
     const char *alias = get_alias(tok);
     if (!alias)
