@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Alias builtin commands and persistence.
+ */
+
+/*
  * Alias builtins and helpers.
  *
  * Aliases are stored in a simple list of `struct alias_entry`

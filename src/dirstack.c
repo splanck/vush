@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Directory stack for pushd/popd.
+ */
+
+/*
  * Directory stack implementation for pushd/popd.
  *
  * The shell maintains a simple stack of directory paths so that the

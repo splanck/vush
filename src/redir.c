@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Redirection helpers.
+ */
+
+/*
  * Redirection helpers for builtins and child processes.
  */
 #include <stdio.h>

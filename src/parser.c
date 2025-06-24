@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * High-level parser driver.
+ */
+
+/*
  * Main parser entry points linking the helper modules.
  */
 #include "parser.h"

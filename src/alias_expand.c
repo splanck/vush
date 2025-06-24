@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Alias expansion helpers for command tokens.
+ */
+
 #define _GNU_SOURCE
 #include "alias_expand.h"
 #include "builtins.h"

@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Utilities for quoting and unescaping.
+ */
+
 #define _GNU_SOURCE
 #include "var_expand.h"
 #include <stdlib.h>

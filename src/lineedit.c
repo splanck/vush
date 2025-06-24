@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Interactive line editor.
+ */
+
+/*
  * Interactive line editor for the shell prompt.
  * Input is read in raw terminal mode so keypresses are delivered
  * immediately, allowing the editor to interpret arrow keys, history

@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Arithmetic expression evaluator.
+ */
+
 #define _GNU_SOURCE
 /*
  * Simple arithmetic expression evaluator used by the shell.

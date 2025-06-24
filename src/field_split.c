@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Field splitting after expansions.
+ */
+
 #define _GNU_SOURCE
 #include "var_expand.h"
 #include "vars.h"

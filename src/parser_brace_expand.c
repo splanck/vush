@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Brace expansion support for parser tokens.
+ */
+
 #define _GNU_SOURCE
 #include "parser_brace_expand.h"
 #include "brace_expand.h"

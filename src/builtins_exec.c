@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Builtins that spawn or replace processes.
+ */
+
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "history.h"

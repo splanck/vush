@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Dynamic array of strings helpers.
+ */
+
 #include "strarray.h"
 #include <stdlib.h>
 

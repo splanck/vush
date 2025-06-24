@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Miscellaneous utility functions.
+ */
+
+/*
  * Utility helpers for reading lines and printing messages.
  */
 #define _GNU_SOURCE

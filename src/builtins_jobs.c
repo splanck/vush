@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Job control builtin commands.
+ */
+
+/*
  * Job control builtins
  *
  * This file exposes the shell commands used to manipulate background

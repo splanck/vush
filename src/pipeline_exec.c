@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * High-level pipeline execution helpers.
+ */
+
+/*
  * High-level pipeline execution helpers.
  *
  * This module wraps the low level primitives from pipeline.c with

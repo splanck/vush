@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Timing builtin for commands.
+ */
+
 #define _GNU_SOURCE
 #include "builtins.h"
 

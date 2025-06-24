@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Execution engine for parsed command lists.
+ */
+
+/*
  * Execution engine for running parsed command lists.
  *
  * This module drives pipelines, builtins, functions and handles all

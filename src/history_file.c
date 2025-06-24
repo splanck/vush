@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Loading and saving the history file.
+ */
+
 #define _GNU_SOURCE
 #include "history.h"
 #include "parser.h" /* for MAX_LINE */

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Miscellaneous builtin commands.
+ */
+
+/*
  * Miscellaneous builtin commands
  *
  * This file gathers builtins that don't fit the alias, variable,

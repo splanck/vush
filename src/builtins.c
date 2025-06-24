@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Builtin command table and dispatch helpers.
+ */
+
+/*
  * Builtin command table and dispatch helpers.
  *
  * The table below lists every builtin command by name along with the

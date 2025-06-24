@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Command path hashing cache.
+ */
+
+/*
  * Simple command hashing for faster lookups.
  */
 #define _GNU_SOURCE
