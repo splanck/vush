@@ -2,21 +2,12 @@
  * vush - a simple UNIX shell
  * Licensed under the BSD 2-Clause Simplified License.
  * Job control helpers and process list.
- */
-
-/*
- * vush - a simple UNIX shell
- * Licensed under the BSD 2-Clause Simplified License.
  *
- * Job control helpers
- * -------------------
- *
- * Background processes started by the shell are stored in a simple
- * singly linked list.  Each list entry keeps the job's process ID,
- * a unique job number and the command line that was executed.  This
- * allows builtins such as `jobs`, `fg`, `bg` and `kill` to keep track
- * of active tasks and to notify the user when a background job
- * completes.
+ * Background processes launched with '&' are tracked in a simple
+ * singly linked list.  Each entry records the child PID, a unique job
+ * number, the command line and the current state.  Builtins such as
+ * `jobs`, `fg`, `bg` and `kill` operate on this list to manage running
+ * tasks and to notify the user when they complete.
  */
 #define _GNU_SOURCE
 #include "jobs.h"
@@ -190,6 +181,11 @@ int check_jobs_internal(int prefix) {
     return printed;
 }
 
+/*
+ * Reap finished background jobs and print a completion notice.
+ * The prefix is chosen based on whether the shell is at the prompt
+ * so messages appear on a new line if necessary.
+ */
 int check_jobs(void) {
     int prefix = jobs_at_prompt ? 2 : 1;
     return check_jobs_internal(prefix);
