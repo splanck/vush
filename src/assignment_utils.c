@@ -40,11 +40,13 @@ char **parse_array_values(const char *val, int *count) {
     }
     free(body);
 
+    int arr_count = arr.count;
     char **vals = strarray_finish(&arr);
     if (!vals)
         return NULL;
-    *count = arr.count ? arr.count - 1 : 0;
+    *count = arr_count;
     if (*count == 0) {
+        /* ensure caller sees an empty array terminator */
         vals[0] = NULL;
     }
     return vals;
