@@ -278,6 +278,7 @@ static int fc_edit_commands(int start, int end, int step, const FcOptions *opts)
     return 1;
 }
 
+/* Replay or edit previous commands from the history list. */
 int builtin_fc(char **args)
 {
     FcOptions opts;
