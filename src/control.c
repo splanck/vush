@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Execution helpers for loops and conditionals.
+ */
+
+/*
  * Control flow execution helpers.
  *
  * Implements loops, conditionals and other shell control structures.

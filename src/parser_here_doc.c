@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Here-document processing.
+ */
+
 #define _GNU_SOURCE
 #include "parser_here_doc.h"
 #include "lexer.h"

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Conditional evaluation builtins.
+ */
+
+/*
  * Test and conditional builtin commands
  *
  * This file implements the POSIX test/[ builtin and the [[ conditional

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Low-level pipeline execution primitives.
+ */
+
+/*
  * Low-level pipeline execution primitives.
  *
  * Each pipeline is a linked list of PipelineSegment structures.  The

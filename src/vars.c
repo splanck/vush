@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Shell variable storage and lookup.
+ */
+
 #define _GNU_SOURCE
 #include "vars.h"
 #include "options.h"

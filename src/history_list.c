@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * In-memory command history list.
+ */
+
+/*
  * Command history management routines.
  *
  * History is kept in a list of ``HistEntry`` nodes.  New

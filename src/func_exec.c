@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Helpers for executing shell functions.
+ */
+
+/*
  * Helpers for executing shell functions.
  *
  * Shell functions are stored as parsed command lists and are executed when

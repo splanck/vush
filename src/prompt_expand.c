@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Expanding variables and escapes in prompts.
+ */
+
 #define _GNU_SOURCE
 #include "prompt_expand.h"
 #include "var_expand.h"

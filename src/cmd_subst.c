@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Command substitution implementation.
+ */
+
 #define _GNU_SOURCE
 #include "cmd_subst.h"
 #include "parser.h" /* for MAX_LINE and parse_line */

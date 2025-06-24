@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Shell function storage and loading.
+ */
+
+/*
  * Shell function support
  *
  * Function definitions are kept in a list of FuncEntry

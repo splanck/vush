@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Main lexer entry points.
+ */
+
 /* Public lexer entry points are implemented in separate modules. */
 #include "lexer.h"
 #include "history.h"

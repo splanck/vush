@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * History reference expansion.
+ */
+
+/*
  * History expansion helper.
  *
  * Provides expand_history() used to replace leading '!'

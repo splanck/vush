@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * System setting builtins like ulimit.
+ */
+
+/*
  * System builtins
  *
  * This module implements builtins that modify process limits or file

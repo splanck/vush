@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Parsing of shell clauses.
+ */
+
+/*
  * Parsing of shell control clauses extracted from parser.c
  */
 #define _GNU_SOURCE

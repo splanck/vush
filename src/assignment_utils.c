@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Utilities for parsing variable assignments.
+ */
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>

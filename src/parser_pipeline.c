@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Parsing of pipelines.
+ */
+
+/*
  * Pipeline parsing routines extracted from parser.c
  */
 #define _GNU_SOURCE

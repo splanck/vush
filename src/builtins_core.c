@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Core builtin commands like exit.
+ */
+
+/*
  * Core builtin commands
  *
  * This file holds basic builtins such as exit, :, true and false.

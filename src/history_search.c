@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Incremental history search routines.
+ */
+
+/*
  * Incremental history search used by the line editor.
  */
 #include "history_search.h"

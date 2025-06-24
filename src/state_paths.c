@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Paths used for persistent shell state.
+ */
+
 #define _GNU_SOURCE
 #include "state_paths.h"
 #include "util.h"

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Variable management builtins.
+ */
+
+/*
  * This module implements the builtins used to manipulate shell variables and
  * arrays.  A small linked list stores all shell variables so that both
  * builtins and expansion code share the same state.  Routines here are

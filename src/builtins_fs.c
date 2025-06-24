@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Directory and path related builtins.
+ */
+
+/*
  * Builtins that operate on the file system are implemented here.  This
  * includes commands such as cd, pushd, popd, dirs and pwd that change or
  * display the current working directory.  They are grouped together because

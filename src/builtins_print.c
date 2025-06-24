@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Builtins for echo and printf.
+ */
+
+/*
  * Printing related builtin commands: echo and printf
  */
 #define _GNU_SOURCE
