@@ -247,7 +247,8 @@ int exec_case(Command *cmd, const char *line) {
         }
 
         int matched = 0;
-        for (int i = 0; i < ci->pattern_count; i++) {
+        for (int i = 0; ci->patterns && ci->patterns[i]; i++) {
+            /* ci->patterns is NULL terminated */
             if (fnmatch(ci->patterns[i], cmd->var, 0) == 0) {
                 matched = 1;
                 break;

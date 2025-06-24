@@ -378,6 +378,7 @@ static Command *parse_case_clause(char **p) {
             free_commands(body_cmd);
             return NULL;
         }
+        int pat_count = patarr.count; /* save count before finish() resets it */
         ci->patterns = strarray_finish(&patarr);
         if (!ci->patterns) {
             free_case_items(head);
@@ -386,7 +387,9 @@ static Command *parse_case_clause(char **p) {
             free(ci);
             return NULL;
         }
-        ci->pattern_count = patarr.count ? patarr.count - 1 : 0;
+        /* pattern_count excludes the terminating NULL element added by
+         * strarray_finish(). */
+        ci->pattern_count = pat_count;
         ci->body = body_cmd;
         ci->fall_through = (idx == 1);
         if (!head) head = ci; else tail->next = ci; tail = ci;
