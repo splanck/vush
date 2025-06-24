@@ -4,6 +4,13 @@
  * Background job tracking.
  */
 
+/*
+ * Jobs are stored in a singly linked list.  Each node keeps the
+ * process ID, an incremental job number and the command that was run.
+ * The helpers declared here manipulate this list so builtins like
+ * `jobs`, `fg` and `bg` can inspect and control active processes.
+ */
+
 #ifndef JOBS_H
 #define JOBS_H
 
