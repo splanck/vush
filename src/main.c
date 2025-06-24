@@ -1,6 +1,6 @@
 /*
  * vush - a simple UNIX shell
- * Licensed under the GNU GPLv3.
+ * Licensed under the BSD 2-Clause Simplified License.
  * Main entry point and REPL loop.
  *
  * Command line arguments are parsed to either execute a single command

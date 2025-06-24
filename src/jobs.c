@@ -1,6 +1,6 @@
 /*
  * vush - a simple UNIX shell
- * Licensed under the GNU GPLv3.
+ * Licensed under the BSD 2-Clause Simplified License.
  *
  * Job control helpers
  * -------------------
