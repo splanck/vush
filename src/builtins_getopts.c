@@ -138,6 +138,7 @@ static int getopts_next_option(const char *optstr, int silent, int *ind, char *o
     return OPT_OK;
 }
 
+/* Parse shell arguments according to OPTSTRING and store results in VAR. */
 int builtin_getopts(char **args) {
     int ind = read_optind();
     if (!args[1] || !args[2]) {

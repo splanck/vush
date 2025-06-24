@@ -184,6 +184,7 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
 }
 
 
+/* Read a line from input and assign words to variables. */
 int builtin_read(char **args) {
     int raw = 0;
     int silent = 0;

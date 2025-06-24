@@ -48,6 +48,7 @@ static int do_time(int posix, int (*func)(void *), void *data)
     return status;
 }
 
+/* Helper for timing an arbitrary function used by the time builtin. */
 int builtin_time_callback(int (*func)(void *), void *data, int posix)
 {
     return do_time(posix, func, data);

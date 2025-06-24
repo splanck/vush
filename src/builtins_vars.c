@@ -425,6 +425,7 @@ int builtin_export(char **args) {
     return 1;
 }
 
+/* Mark variables as read-only so they cannot be modified. */
 int builtin_readonly(char **args) {
     int pflag = 0;
     int i = 1;
@@ -466,6 +467,7 @@ int builtin_readonly(char **args) {
 }
 
 
+/* Declare local variables within a function scope. */
 int builtin_local(char **args) {
     if (!args[1])
         return 1;

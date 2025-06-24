@@ -99,6 +99,7 @@ static int parse_symbolic_umask(const char *str, mode_t *out)
     return 0;
 }
 
+/* Display or set the process file mode creation mask. */
 int builtin_umask(char **args)
 {
     mode_t mask = umask(0);
