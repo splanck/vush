@@ -31,6 +31,9 @@ static int redraw_search(const char *label, const char *search,
     return len;
 }
 
+/* Begin an incremental reverse search triggered by Ctrl-R.  The line buffer
+ * is updated as the user types and the search may be accepted or cancelled.
+ * Returns 1 when a match is accepted, 0 if cancelled, and -1 on error. */
 int reverse_search(const char *prompt, char *buf, int *lenp, int *posp,
                    int *disp_lenp) {
     char search[MAX_LINE];
@@ -95,6 +98,8 @@ int reverse_search(const char *prompt, char *buf, int *lenp, int *posp,
     }
 }
 
+/* Begin an incremental forward search triggered by Ctrl-S.  Behaviour and
+ * return codes mirror reverse_search above. */
 int forward_search(const char *prompt, char *buf, int *lenp, int *posp,
                    int *disp_lenp) {
     char search[MAX_LINE];
@@ -159,6 +164,12 @@ int forward_search(const char *prompt, char *buf, int *lenp, int *posp,
     }
 }
 
+/*
+ * Dispatch an incremental history search based on the received control
+ * character.  Ctrl-R triggers a reverse search while Ctrl-S performs a
+ * forward search.  The return value matches that of the invoked search
+ * routine or 0 when no search is started.
+ */
 int handle_history_search(char c, const char *prompt, char *buf,
                           int *lenp, int *posp, int *disp_lenp) {
     if (c == 0x12)

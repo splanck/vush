@@ -321,6 +321,10 @@ static char *read_simple_line(const char *prompt) {
 }
 
 /* Read a line using the editor and return it as a new string. */
+/*
+ * Display PROMPT and read a line using the active editing mode.
+ * The returned string must be freed by the caller.
+ */
 char *line_edit(const char *prompt) {
     if (lineedit_mode == LINEEDIT_VI)
         return read_simple_line(prompt);
