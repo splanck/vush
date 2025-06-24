@@ -103,6 +103,11 @@ static int exec_funcdef(Command *cmd, const char *line) {
 }
 
 
+/*
+ * Expand CMD and spawn the resulting builtins, functions or external
+ * programs.  LINE is used when reporting jobs and trace output.  The exit
+ * status of the final command is returned.
+ */
 int run_pipeline(Command *cmd, const char *line) {
     if (!cmd)
         return 0;

@@ -36,7 +36,8 @@
 
 
 /*
- * Configure the child's standard input and output.
+ * Configure the child's standard input and output when spawning a pipeline
+ * segment.
  *
  * If 'in_fd' is valid it becomes the child's stdin.  When the segment has a
  * successor, 'pipefd' is the pipe whose write end should be connected to
@@ -57,11 +58,11 @@ void setup_child_pipes(PipelineSegment *seg, int in_fd, int pipefd[2]) {
 /*
  * Fork a child process for one pipeline segment.
  *
- * A pipe is created when the segment has a successor.  The child installs
- * the appropriate pipe ends using setup_child_pipes(), applies any I/O
- * redirections and exports temporary assignments before executing the
- * command.  The parent's copy of 'in_fd' is updated with the read end of the
- * pipe so the next segment can consume it.
+ * This spawns the command for SEG.  A pipe is created when the segment has a
+ * successor.  The child installs the appropriate pipe ends using
+ * setup_child_pipes(), applies any I/O redirections and exports temporary
+ * assignments before executing the command.  The parent's copy of 'in_fd' is
+ * updated with the read end of the pipe so the next segment can consume it.
  */
 pid_t fork_segment(PipelineSegment *seg, int *in_fd) {
     if (!seg->argv[0] || seg->argv[0][0] == '\0') {
