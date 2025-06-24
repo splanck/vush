@@ -93,9 +93,13 @@ static Command *parse_until_clause(char **p) {
     return parse_loop_clause(p, 1);
 }
 
-static int parse_word_list(char **p, char ***out, int *count) {
+static int parse_word_list(char **p, char ***out, int **quoted_out,
+                          int **expand_out, int *count) {
     StrArray arr;
     strarray_init(&arr);
+    int cap = 0;
+    int *qflags = NULL;
+    int *eflags = NULL;
     while (1) {
         int q = 0; int de = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
@@ -111,20 +115,26 @@ static int parse_word_list(char **p, char ***out, int *count) {
             char *dup_tok = next;
             if (strarray_push(&arr, dup_tok) == -1) {
                 free(dup_tok);
-                strarray_release(&arr);
-                return -1;
+                goto fail;
             }
+            if (arr.count > cap) {
+                int nc = cap ? cap * 2 : 4;
+                int *tmpq = realloc(qflags, nc * sizeof(int));
+                int *tmpe = realloc(eflags, nc * sizeof(int));
+                if (!tmpq || !tmpe) { free(tmpq); free(tmpe); goto fail; }
+                qflags = tmpq; eflags = tmpe; cap = nc;
+            }
+            qflags[arr.count - 1] = q;
+            eflags[arr.count - 1] = de;
             continue;
         }
         if (**p == '\0') {
-            strarray_release(&arr);
-            return -1;
+            goto fail;
         }
         q = 0; de = 1;
         char *w = read_token(p, &q, &de);
         if (!w) {
-            strarray_release(&arr);
-            return -1;
+            goto fail;
         }
         if (!q && strcmp(w, "do") == 0) { free(w); break; }
         if (!q && strcmp(w, ";") == 0) {
@@ -139,23 +149,48 @@ static int parse_word_list(char **p, char ***out, int *count) {
             if (!q && strcmp(next, "do") == 0) { free(next); break; }
             if (strarray_push(&arr, next) == -1) {
                 free(next);
-                strarray_release(&arr);
-                return -1;
+                goto fail;
             }
+            if (arr.count > cap) {
+                int nc = cap ? cap * 2 : 4;
+                int *tmpq = realloc(qflags, nc * sizeof(int));
+                int *tmpe = realloc(eflags, nc * sizeof(int));
+                if (!tmpq || !tmpe) { free(tmpq); free(tmpe); goto fail; }
+                qflags = tmpq; eflags = tmpe; cap = nc;
+            }
+            qflags[arr.count - 1] = q;
+            eflags[arr.count - 1] = de;
             continue;
         }
         if (strarray_push(&arr, w) == -1) {
             free(w);
-            strarray_release(&arr);
-            return -1;
+            goto fail;
         }
+        if (arr.count > cap) {
+            int nc = cap ? cap * 2 : 4;
+            int *tmpq = realloc(qflags, nc * sizeof(int));
+            int *tmpe = realloc(eflags, nc * sizeof(int));
+            if (!tmpq || !tmpe) { free(tmpq); free(tmpe); goto fail; }
+            qflags = tmpq; eflags = tmpe; cap = nc;
+        }
+        qflags[arr.count - 1] = q;
+        eflags[arr.count - 1] = de;
     }
-    char **vals = strarray_finish(&arr);
-    if (!vals)
-        return -1;
-    *out = vals;
-    if (count) *count = arr.count ? arr.count - 1 : 0;
-    return 0;
+    {
+        int cnt = arr.count;
+        char **vals = strarray_finish(&arr);
+        if (!vals) goto fail;
+        *out = vals;
+        if (quoted_out) *quoted_out = qflags; else free(qflags);
+        if (expand_out) *expand_out = eflags; else free(eflags);
+        if (count) *count = cnt;
+        return 0;
+    }
+fail:
+    strarray_release(&arr);
+    free(qflags);
+    free(eflags);
+    return -1;
 }
 
 static Command *parse_for_clause(char **p) {
@@ -168,8 +203,8 @@ static Command *parse_for_clause(char **p) {
     char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
-    char **words = NULL; int count = 0;
-    if (parse_word_list(p, &words, &count) == -1) {
+    char **words = NULL; int count = 0; int *qflags = NULL; int *eflags = NULL;
+    if (parse_word_list(p, &words, &qflags, &eflags, &count) == -1) {
         free(var);
         return NULL;
     }
@@ -189,6 +224,8 @@ static Command *parse_for_clause(char **p) {
     cmd->var = var;
     cmd->words = words;
     cmd->word_count = count;
+    cmd->word_quoted = qflags;
+    cmd->word_expand = eflags;
     cmd->body = body_cmd;
     return cmd;
 }
@@ -203,8 +240,8 @@ static Command *parse_select_clause(char **p) {
     char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "in") != 0) { free(var); free(tok); return NULL; }
     free(tok);
-    char **words = NULL; int count = 0;
-    if (parse_word_list(p, &words, &count) == -1) {
+    char **words = NULL; int count = 0; int *qflags = NULL; int *eflags = NULL;
+    if (parse_word_list(p, &words, &qflags, &eflags, &count) == -1) {
         free(var);
         return NULL;
     }
@@ -224,6 +261,8 @@ static Command *parse_select_clause(char **p) {
     cmd->var = var;
     cmd->words = words;
     cmd->word_count = count;
+    cmd->word_quoted = qflags;
+    cmd->word_expand = eflags;
     cmd->body = body_cmd;
     return cmd;
 }

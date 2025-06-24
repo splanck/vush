@@ -50,12 +50,16 @@ void free_commands(Command *c) {
             for (int i = 0; i < c->word_count; i++)
                 free(c->words[i]);
             free(c->words);
+            free(c->word_expand);
+            free(c->word_quoted);
             free_commands(c->body);
         } else if (c->type == CMD_SELECT) {
             free(c->var);
             for (int i = 0; i < c->word_count; i++)
                 free(c->words[i]);
             free(c->words);
+            free(c->word_expand);
+            free(c->word_quoted);
             free_commands(c->body);
         } else if (c->type == CMD_FOR_ARITH) {
             free(c->arith_init);

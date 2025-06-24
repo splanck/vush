@@ -76,6 +76,8 @@ typedef struct Command {
     char *var;                /* for for loop variable */
     char **words;             /* for loop word list or [[ expression ]] */
     int word_count;
+    int *word_expand;         /* expansion flags for words */
+    int *word_quoted;         /* quoting flags for words */
     char *arith_init;         /* for arithmetic for loop */
     char *arith_cond;
     char *arith_update;
