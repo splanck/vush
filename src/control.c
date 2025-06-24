@@ -92,11 +92,23 @@ int exec_for(Command *cmd, const char *line) {
     loop_depth++;
     char *last = NULL;
     for (int i = 0; i < cmd->word_count; i++) {
-        char *exp = expand_var(cmd->words[i]);
+        char *word = cmd->words[i];
+        char *exp = cmd->word_expand ?
+                     (cmd->word_expand[i] ? expand_var(word) : strdup(word)) :
+                     expand_var(word);
         if (!exp) { loop_depth--; free(last); return last_status; }
         int count = 0;
-        char **fields = split_fields(exp, &count);
-        free(exp);
+        char **fields;
+        if (cmd->word_quoted && cmd->word_quoted[i]) {
+            fields = malloc(2 * sizeof(char *));
+            if (!fields) { free(exp); loop_depth--; free(last); return last_status; }
+            fields[0] = exp;
+            fields[1] = NULL;
+            count = 1;
+        } else {
+            fields = split_fields(exp, &count);
+            free(exp);
+        }
         for (int fi = 0; fi < count; fi++) {
             char *w = fields[fi];
             if (cmd->var) {
