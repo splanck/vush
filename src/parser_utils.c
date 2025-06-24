@@ -33,6 +33,7 @@ struct proc_sub {
 };
 static struct proc_sub *proc_subs = NULL;
 
+/* Track a new process substitution FIFO. */
 static int add_proc_sub(const char *path, pid_t pid) {
     struct proc_sub *ps = malloc(sizeof(struct proc_sub));
     if (!ps)
@@ -48,6 +49,7 @@ static int add_proc_sub(const char *path, pid_t pid) {
     return 1;
 }
 
+/* Remove a tracked process substitution FIFO. */
 static void remove_proc_sub(const char *path) {
     struct proc_sub **pp = &proc_subs;
     while (*pp) {
@@ -68,6 +70,7 @@ static void remove_proc_sub(const char *path) {
     }
 }
 
+/* Wait for and remove any remaining process substitutions. */
 void cleanup_proc_subs(void) {
     struct proc_sub *ps = proc_subs;
     while (ps) {
@@ -83,6 +86,7 @@ void cleanup_proc_subs(void) {
     proc_subs = NULL;
 }
 
+/* Collect tokens until one of STOPS is encountered. */
 char *gather_until(char **p, const char **stops, int nstops, int *idx) {
     char *res = NULL;
     if (idx) *idx = -1;
@@ -176,6 +180,7 @@ char *gather_until_done(char **p) {
     return res ? res : strdup("");
 }
 
+/* Return text inside matching braces starting at *p. */
 char *gather_braced(char **p) {
     if (**p != '{')
         return NULL;
@@ -210,6 +215,7 @@ char *gather_braced(char **p) {
     return NULL;
 }
 
+/* Return text inside matching parentheses starting at *p. */
 char *gather_parens(char **p) {
     if (**p != '(')
         return NULL;
@@ -244,6 +250,7 @@ char *gather_parens(char **p) {
     return NULL;
 }
 
+/* Duplicate S without leading or trailing whitespace. */
 char *trim_ws(const char *s) {
     while (*s && isspace((unsigned char)*s)) s++;
     const char *end = s + strlen(s);
@@ -251,6 +258,7 @@ char *trim_ws(const char *s) {
     return strndup(s, end - s);
 }
 
+/* Extract contents of a double parenthesis arithmetic expression. */
 char *gather_dbl_parens(char **p) {
     if (strncmp(*p, "((", 2) != 0)
         return NULL;
@@ -286,6 +294,7 @@ char *gather_dbl_parens(char **p) {
     return NULL;
 }
 
+/* Parse a <( ) or >( ) process substitution and return the FIFO path. */
 char *process_substitution(char **p, int read_from) {
     char *body = gather_parens(p);
     if (!body)

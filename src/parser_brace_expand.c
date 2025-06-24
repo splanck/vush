@@ -9,6 +9,7 @@
 #include "brace_expand.h"
 #include <stdlib.h>
 
+/* Expand TOK using brace expansion unless quoted or a parameter name. */
 char **expand_token_braces(char *tok, int quoted, int *count) {
     if (!quoted && !(tok[0] == '$' && tok[1] == '{')) {
         char **btoks = expand_braces(tok, count);

@@ -28,6 +28,7 @@ extern char *trim_ws(const char *s);
 /* Forward declaration used by parse_case_clause and free_commands */
 void free_case_items(CaseItem *ci);
 
+/* Parse an if/elif/else clause starting at *p. */
 static Command *parse_if_clause(char **p) {
     const char *stop1[] = {"then"};
     char *cond = gather_until(p, stop1, 1, NULL);
@@ -62,6 +63,7 @@ static Command *parse_if_clause(char **p) {
     return cmd;
 }
 
+/* Parse a while/until clause body using UNTIL flag for until loops. */
 static Command *parse_loop_clause(char **p, int until) {
     const char *stop1[] = {"do"};
     char *cond = gather_until(p, stop1, 1, NULL);
@@ -91,14 +93,17 @@ static Command *parse_loop_clause(char **p, int until) {
     return cmd;
 }
 
+/* Parse a while loop starting at *p. */
 static Command *parse_while_clause(char **p) {
     return parse_loop_clause(p, 0);
 }
 
+/* Parse an until loop starting at *p. */
 static Command *parse_until_clause(char **p) {
     return parse_loop_clause(p, 1);
 }
 
+/* Collect a list of words for for/select loops. */
 static int parse_word_list(char **p, char ***out, int **quoted_out,
                           int **expand_out, int *count) {
     StrArray arr;
@@ -199,6 +204,7 @@ fail:
     return -1;
 }
 
+/* Parse a traditional for loop clause. */
 static Command *parse_for_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int q = 0; int de = 1;
@@ -236,6 +242,7 @@ static Command *parse_for_clause(char **p) {
     return cmd;
 }
 
+/* Parse a select loop clause. */
 static Command *parse_select_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int q = 0; int de = 1;
@@ -273,6 +280,7 @@ static Command *parse_select_clause(char **p) {
     return cmd;
 }
 
+/* Split arithmetic for loop expressions into init, cond and incr parts. */
 static char *parse_for_arith_exprs(char **p, char **init, char **cond, char **incr) {
     while (**p == ' ' || **p == '\t') (*p)++;
     char *exprs = gather_dbl_parens(p);
@@ -322,6 +330,7 @@ static char *parse_for_arith_exprs(char **p, char **init, char **cond, char **in
     return *init;
 }
 
+/* Parse arithmetic for ((init; cond; incr)) clause. */
 static Command *parse_for_arith_clause(char **p) {
     char *init, *cond, *incr;
     if (!parse_for_arith_exprs(p, &init, &cond, &incr))
@@ -353,6 +362,7 @@ static Command *parse_for_arith_clause(char **p) {
     return cmd;
 }
 
+/* Free the linked list of case patterns and their command bodies. */
 void free_case_items(CaseItem *ci) {
     while (ci) {
         CaseItem *n = ci->next;
@@ -365,6 +375,7 @@ void free_case_items(CaseItem *ci) {
     }
 }
 
+/* Parse a case/esac clause starting at *p. */
 static Command *parse_case_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int q = 0; int de = 1;
@@ -452,6 +463,7 @@ static Command *parse_case_clause(char **p) {
     return cmd;
 }
 
+/* Parse a shell function definition and return the command node. */
 Command *parse_function_def(char **p, CmdOp *op_out) {
     char *savep = *p;
     int qfunc = 0; int de = 1;
@@ -519,6 +531,7 @@ fail:
     return NULL;
 }
 
+/* Parse a subshell command enclosed in parentheses. */
 Command *parse_subshell(char **p, CmdOp *op_out) {
     char *bodytxt = gather_parens(p);
     if (!bodytxt)
@@ -542,6 +555,7 @@ Command *parse_subshell(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Parse a command group enclosed in braces. */
 Command *parse_brace_group(char **p, CmdOp *op_out) {
     char *bodytxt = gather_braced(p);
     if (!bodytxt)
@@ -565,6 +579,7 @@ Command *parse_brace_group(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Parse a [[ conditional ]] expression. */
 Command *parse_conditional(char **p, CmdOp *op_out) {
     if (strncmp(*p, "[[", 2) != 0)
         return NULL;
@@ -626,6 +641,7 @@ Command *parse_conditional(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Parse a $(( expression )) arithmetic command. */
 Command *parse_arith_command(char **p, CmdOp *op_out) {
     char *expr = gather_dbl_parens(p);
     if (!expr)
@@ -651,6 +667,7 @@ Command *parse_arith_command(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Dispatch to the appropriate control clause parser based on keywords. */
 Command *parse_control_clause(char **p, CmdOp *op_out) {
     Command *cmd = NULL;
     if (strncmp(*p, "if", 2) == 0 && isspace((unsigned char)(*p)[2])) {

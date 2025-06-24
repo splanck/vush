@@ -39,6 +39,7 @@ extern char *trim_ws(const char *s);
 struct temp_var { char *name; char *value; struct temp_var *next; };
 static struct temp_var *temp_vars = NULL;
 
+/* Store NAME=VALUE for temporary environment bindings. */
 static void set_temp_var(const char *name, const char *value) {
     for (struct temp_var *v = temp_vars; v; v = v->next) {
         if (strcmp(v->name, name) == 0) {
@@ -60,6 +61,7 @@ static void set_temp_var(const char *name, const char *value) {
     temp_vars = v;
 }
 
+/* Release all temporary environment bindings. */
 static void clear_temp_vars(void) {
     struct temp_var *v = temp_vars;
     while (v) {
@@ -72,6 +74,7 @@ static void clear_temp_vars(void) {
     temp_vars = NULL;
 }
 
+/* Return non-zero if TOK looks like a variable assignment. */
 static int is_assignment(const char *tok) {
     const char *eq = strchr(tok, '=');
     if (!eq || eq == tok)
@@ -85,6 +88,7 @@ static int is_assignment(const char *tok) {
     return 1;
 }
 
+/* Handle input redirection like '< file' or 'n<file'. */
 static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
     char *t = tok;
     int fd = STDIN_FILENO;
@@ -104,6 +108,7 @@ static int parse_input_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
+/* Handle output redirection like '> file' or 'n>file'. */
 static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
     char *t = tok;
     int fd = STDOUT_FILENO;
@@ -143,6 +148,7 @@ static int parse_output_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
+/* Handle '2>' redirections for stderr. */
 static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (!(strcmp(tok, "2>") == 0 || strcmp(tok, "2>>") == 0))
         return 0;
@@ -171,6 +177,7 @@ static int parse_error_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
+/* Handle combined '&>' redirections sending stdout and stderr together. */
 static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
     if (!(strcmp(tok, "&>") == 0 || strcmp(tok, "&>>") == 0))
         return 0;
@@ -192,6 +199,7 @@ static int parse_combined_redirect(PipelineSegment *seg, char **p, char *tok) {
     return 1;
 }
 
+/* Try parsing a single redirection token for SEG. */
 static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted)
         return 0;
@@ -209,6 +217,7 @@ static int parse_redirection(PipelineSegment *seg, char **p, char *tok, int quot
     return 0;
 }
 
+/* Append VAL to assignment array ARR expanding as needed. */
 static int push_assign(char ***arr, int *count, char *val) {
     StrArray tmp = { *arr, *count, *count };
     if (strarray_push(&tmp, val) == -1)
@@ -218,6 +227,7 @@ static int push_assign(char ***arr, int *count, char *val) {
     return 0;
 }
 
+/* Process assignments or expand aliases for the next token. */
 static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
                                       char **tok_ptr, int quoted) {
     char *tok = *tok_ptr;
@@ -287,6 +297,7 @@ static int handle_assignment_or_alias(PipelineSegment *seg, int *argc, char **p,
     return 0;
 }
 
+/* Finish building SEG after all tokens have been parsed. */
 static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     if (argc > 0 && strcmp(seg->argv[argc - 1], "&") == 0) {
         *background = 1;
@@ -299,6 +310,7 @@ static void finalize_segment(PipelineSegment *seg, int argc, int *background) {
     }
 }
 
+/* Begin a new pipeline segment after a pipe symbol. */
 static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
     PipelineSegment *seg = *seg_ptr;
     seg->argv[*argc] = NULL;
@@ -320,6 +332,7 @@ static int start_new_segment(char **p, PipelineSegment **seg_ptr, int *argc) {
 }
 
 
+/* Parse one command segment of a pipeline. */
 static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc,
                                   CmdOp *op_out) {
     PipelineSegment *seg = *seg_ptr;
@@ -444,6 +457,7 @@ static int parse_pipeline_segment(char **p, PipelineSegment **seg_ptr, int *argc
     return 0;
 }
 
+/* Parse a full pipeline possibly with ! and time modifiers. */
 static Command *parse_pipeline(char **p, CmdOp *op_out) {
     while (**p == ' ' || **p == '\t') (*p)++;
     int negate = 0;
@@ -507,10 +521,12 @@ static Command *parse_pipeline(char **p, CmdOp *op_out) {
     return cmd;
 }
 
+/* Read a logical line including trailing continuation lines. */
 char *read_continuation_lines(FILE *f, char *buf, size_t size) {
     return read_logical_line(f, buf, size);
 }
 
+/* Parse LINE into a linked list of Command structures. */
 Command *parse_line(char *line) {
     char *p = line;
     Command *head = NULL, *cur_cmd = NULL;

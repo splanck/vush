@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+/* Parse here-document delimiter and store contents in a temporary file. */
 int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
     if (quoted || strncmp(tok, "<<", 2) != 0)
         return 0;
@@ -177,6 +178,7 @@ int process_here_doc(PipelineSegment *seg, char **p, char *tok, int quoted) {
     return 1;
 }
 
+/* Handle here-strings like <<<'word' or <<< $var. */
 int parse_here_string(PipelineSegment *seg, char **p, char *tok) {
     if (!((strcmp(tok, "<<") == 0 && **p == '<') || strncmp(tok, "<<<", 3) == 0))
         return 0;
