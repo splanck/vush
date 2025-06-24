@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Miscellaneous utility helpers.
+ */
+
+/*
  * Miscellaneous utility helpers used across the shell.
  * Functions declared here provide I/O conveniences such as
  * reading logical lines and opening files for redirection.

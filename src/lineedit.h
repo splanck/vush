@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Interactive line editor.
+ */
+
+/*
  * Interactive line editor interface.
  *
  * `line_edit` displays PROMPT and allows the user to edit the input using

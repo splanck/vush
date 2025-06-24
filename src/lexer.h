@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Tokenization and expansion helpers.
+ */
+
+/*
  * Lexing helpers used by the parser.  These functions read tokens from an
  * input string and perform shell expansions.  Expansion covers variable,
  * history and prompt substitution as well as simple brace patterns.

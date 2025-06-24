@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Error handling macros.
+ */
+
+/*
  * Error handling macros used across the shell.
  */
 #ifndef VUSH_ERROR_H

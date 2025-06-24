@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Arithmetic expression evaluation.
+ */
+
 #ifndef ARITH_H
 #define ARITH_H
 

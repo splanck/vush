@@ -1,6 +1,7 @@
 /*
  * vush - a simple UNIX shell
  * Licensed under the BSD 2-Clause Simplified License.
+ * Builtin command declarations.
  */
 
 #ifndef BUILTINS_H

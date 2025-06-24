@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Paths to persistent state files.
+ */
+
 #ifndef STATE_PATHS_H
 #define STATE_PATHS_H
 

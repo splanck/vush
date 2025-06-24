@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Pipeline process utilities.
+ */
+
 #ifndef PIPELINE_H
 #define PIPELINE_H
 /*

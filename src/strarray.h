@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Dynamic string array.
+ */
+
 #ifndef STRARRAY_H
 #define STRARRAY_H
 

@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Common definitions and portability helpers.
+ */
+
+/*
  * This header centralizes common definitions and portability helpers.
  * It provides fallbacks like PATH_MAX when the system lacks them.
  */

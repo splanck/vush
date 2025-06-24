@@ -1,4 +1,10 @@
 /*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Directory stack management.
+ */
+
+/*
  * Directory stack API.
  * Exposes a simple push/pop interface for maintaining the shell's directory stack.
  */

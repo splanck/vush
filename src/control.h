@@ -1,3 +1,9 @@
+/*
+ * vush - a simple UNIX shell
+ * Licensed under the BSD 2-Clause Simplified License.
+ * Execution helpers for control flow.
+ */
+
 #ifndef CONTROL_H
 #define CONTROL_H
 
