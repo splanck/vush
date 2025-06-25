@@ -30,11 +30,13 @@ char *make_user_path(const char *env_var, const char *secondary,
 /* Parse S as a non-negative integer.  Return 0 on success, -1 on error or
  * overflow.  The result is stored in OUT when successful. */
 int parse_positive_int(const char *s, int *out);
-/* Allocate memory and exit on failure */
+/* Allocate memory and exit on failure.  These wrappers never return NULL. */
 void *xcalloc(size_t nmemb, size_t size);
 void *xmalloc(size_t size);
+/* strdup that terminates the program when memory cannot be allocated. */
 char *xstrdup(const char *s);
-/* asprintf wrapper using system implementation when available */
+/* asprintf wrapper using system implementation when available.
+ * Returns the number of bytes written or -1 on failure. */
 int xasprintf(char **strp, const char *fmt, ...);
 /* Return the system PATH_MAX using pathconf when available, falling back
  * to the compile time PATH_MAX constant. */
