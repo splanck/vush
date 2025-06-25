@@ -10,12 +10,20 @@
 /*
  * Command history interface.
  *
- * The shell stores history entries in a doubly linked list.  Each added
- * command receives an incrementing identifier and is appended to the tail of
- * the list.  Entries are persisted to the file pointed to by $VUSH_HISTFILE
- * (defaulting to $HOME/.vush_history) so the list can be reloaded on startup.
- * Helper cursors are used to walk the list when navigating with the arrow keys
- * or searching through history.
+ * History lines are kept in an in-memory doubly linked list.  Every command
+ * entered by the user becomes a ``HistEntry`` which stores the command text
+ * and an incrementing identifier.  The newest entry is appended to the end of
+ * the list and when the history grows beyond the configured limit the oldest
+ * element is discarded.
+ *
+ * For persistence the list is synchronised with a history file determined by
+ * ``$VUSH_HISTFILE`` (falling back to ``$HOME/.vush_history``).  New entries
+ * are appended to this file and it can be rewritten as needed when items are
+ * removed.  Loading the shell reads this file back into the list so history is
+ * preserved across sessions.
+ *
+ * Helper cursors are used to iterate through the list when navigating with the
+ * arrow keys or performing incremental searches.
  */
 
 /* Maximum number of entries retained when VUSH_HISTSIZE is unset. */

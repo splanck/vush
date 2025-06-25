@@ -49,7 +49,11 @@ int builtin_history(char **args)
     return 1;
 }
 
-/* Replay or edit commands from history. */
+/*
+ * Replace the first occurrence of ``old`` in ``str`` with ``new`` and return a
+ * newly allocated string containing the result.  If ``old`` does not appear,
+ * a duplicate of ``str`` is returned.
+ */
 static char *replace_first(const char *str, const char *old, const char *new)
 {
     const char *p = strstr(str, old);
@@ -75,6 +79,10 @@ typedef struct {
     int arg_index;
 } FcOptions;
 
+/* Parse options for the ``fc`` builtin.  ``opts`` is populated with the parsed
+ * flags and the index of the first non-option argument.  Returns 0 on success
+ * or -1 on invalid usage.
+ */
 static int parse_fc_options(char **args, FcOptions *opts) {
     opts->list = 0;
     opts->nonum = 0;
@@ -116,6 +124,13 @@ static int parse_fc_options(char **args, FcOptions *opts) {
     return 0;
 }
 
+/*
+ * Determine the history range specified to ``fc``.  ``idx`` points to the
+ * first range argument in ``args`` and ``max_id`` is the last valid history
+ * identifier.  ``rev`` indicates whether the range should be reversed.
+ * ``start``/``end`` receive the resulting ids and ``step`` the iteration step.
+ * Returns 0 on success or -1 on invalid input.
+ */
 static int get_fc_range(char **args, int idx, int max_id, int rev,
                         int *start, int *end, int *step) {
     int first_id = max_id;
@@ -149,6 +164,10 @@ static int get_fc_range(char **args, int idx, int max_id, int rev,
     return 0;
 }
 
+/*
+ * Execute a single history entry immediately as ``fc -s`` would.  Optional
+ * substitution of the form ``old=new`` is applied before execution.
+ */
 static int fc_execute_immediate(char **args, int idx, int max_id) {
     const char *subst = NULL;
     if (args[idx] && strchr(args[idx], '=')) {
@@ -191,6 +210,11 @@ static int fc_execute_immediate(char **args, int idx, int max_id) {
     return 1;
 }
 
+/*
+ * Write the selected history range to a temporary file, invoke an editor on
+ * it and then execute each resulting command.  When ``opts->list`` is set the
+ * commands are listed instead of edited.
+ */
 static int fc_edit_commands(int start, int end, int step, const FcOptions *opts) {
     if (opts->list) {
         for (int id = start;; id += step) {
