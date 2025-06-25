@@ -7,5 +7,11 @@
 #ifndef REPL_H
 #define REPL_H
 #include <stdio.h>
+
+/*
+ * Start the shell's read-eval-print loop using INPUT as the source of
+ * commands.  When INPUT is stdin the shell runs interactively.
+ */
 void repl_loop(FILE *input);
+
 #endif /* REPL_H */

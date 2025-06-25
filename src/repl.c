@@ -26,6 +26,11 @@
 #include "vars.h"
 
 
+/*
+ * Main read-eval-print loop driving interactive and script execution.
+ * When INPUT is stdin the shell behaves interactively, otherwise it
+ * reads and executes commands from the given stream until EOF.
+ */
 void repl_loop(FILE *input)
 {
     char linebuf[MAX_LINE];
