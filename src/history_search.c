@@ -15,7 +15,12 @@
 #include <string.h>
 #include <stdio.h>
 
-/* helper to redraw the search prompt */
+/*
+ * Helper used by the interactive search functions.  It redraws the search
+ * prompt showing the current query and the latest matching history line.  The
+ * previous displayed length is provided so that any leftover characters can be
+ * cleared.
+ */
 static int redraw_search(const char *label, const char *search,
                          const char *match, int prev_len) {
     char line[MAX_LINE * 2];

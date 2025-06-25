@@ -20,7 +20,11 @@ void history_list_iter(void (*cb)(const char *cmd, void *arg), void *arg);
 void history_renumber(void);
 
 
-/* Append CMD to the history file. */
+/*
+ * Append ``cmd`` as a single line to the on-disk history file.  This is used
+ * whenever a new command is entered so that the file mirrors the in-memory
+ * list.
+ */
 void history_file_append(const char *cmd) {
     char *path = get_history_file();
     if (!path) {
@@ -35,13 +39,20 @@ void history_file_append(const char *cmd) {
     fclose(f);
 }
 
+/* Context used when rewriting the entire history file. */
 struct rewrite_ctx { FILE *f; };
+
+/* Callback passed to ``history_list_iter`` that writes each command to ``ctx``. */
 static void rewrite_cb(const char *cmd, void *arg) {
     struct rewrite_ctx *ctx = arg;
     fprintf(ctx->f, "%s\n", cmd);
 }
 
-/* Rewrite the entire history file from the current list. */
+/*
+ * Rewrite the history file so that it contains exactly the commands stored in
+ * memory.  This is called after deletions or when the in-memory limit differs
+ * from the file limit.
+ */
 void history_file_rewrite(void) {
     char *path = get_history_file();
     if (!path) {
@@ -57,7 +68,7 @@ void history_file_rewrite(void) {
     fclose(f);
 }
 
-/* Truncate the history file. */
+/* Remove all contents from the history file. */
 void history_file_clear(void) {
     char *path = get_history_file();
     if (!path) {
@@ -70,7 +81,11 @@ void history_file_clear(void) {
         fclose(f);
 }
 
-/* Load history entries from the history file. */
+/*
+ * Read the on-disk history file and populate the in-memory list.  Each line
+ * becomes a ``HistEntry``.  After loading the IDs are renumbered and the file
+ * rewritten to enforce size limits.
+ */
 void load_history(void) {
     char *path = get_history_file();
     if (!path) {

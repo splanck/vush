@@ -7,8 +7,18 @@
 /*
  * History expansion helper.
  *
- * Provides expand_history() used to replace leading '!'
- * references with the corresponding history entry.
+ * ``expand_history`` examines a line about to be executed and replaces leading
+ * ``!`` references with the appropriate command from history.  The supported
+ * forms mirror those of many traditional shells:
+ *   - ``!!`` expands to the previous command.
+ *   - ``!N`` expands to entry ``N``.
+ *   - ``!-N`` refers to the Nth previous command.
+ *   - ``!string`` looks up the most recent command beginning with ``string``.
+ *   - ``!$`` becomes the last word of the previous command and ``!*`` expands
+ *     to all of its arguments.
+ * On success a newly allocated string containing the expanded line is returned
+ * and should be freed by the caller.  On error ``NULL`` is returned and
+ * ``last_status`` is set.
  */
 #define _GNU_SOURCE
 #include "shell_state.h"
@@ -20,7 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+/*
+ * Expand leading history references in ``line`` and return the new string.  If
+ * no expansion is performed a duplicate of ``line`` is returned.
+ */
 char *expand_history(const char *line) {
     const char *p = line;
     while (*p == ' ' || *p == '\t')

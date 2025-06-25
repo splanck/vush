@@ -31,22 +31,30 @@
 #include "error.h"
 #include "list.h"
 
+/* Node stored for each command line.  ``cmd`` holds the literal line text and
+ * ``id`` is a monotonically increasing identifier used by ``history_get_by_id``
+ * and related helpers.  The ``node`` field links entries in the global history
+ * list.
+ */
 typedef struct HistEntry {
-    int id;
-    char cmd[MAX_LINE];
-    ListNode node;
+    int id;                /* numerical identifier for this entry */
+    char cmd[MAX_LINE];    /* command line string */
+    ListNode node;         /* links the entry into ``history`` */
 } HistEntry;
 
 static List history;
 
+/* Return the next history entry after ``e`` or NULL when at the tail. */
 static inline HistEntry *entry_next(HistEntry *e) {
     return e->node.next ? LIST_ENTRY(e->node.next, HistEntry, node) : NULL;
 }
 
+/* Return the previous history entry before ``e`` or NULL when at the head. */
 static inline HistEntry *entry_prev(HistEntry *e) {
     return e->node.prev ? LIST_ENTRY(e->node.prev, HistEntry, node) : NULL;
 }
 
+/* Convenience wrappers to obtain the first and last history entries. */
 static inline HistEntry *history_head(void) {
     return history.head ? LIST_ENTRY(history.head, HistEntry, node) : NULL;
 }
@@ -62,7 +70,10 @@ static int history_size = 0;
 static int max_history = MAX_HISTORY;
 static int max_file_history = MAX_HISTORY;
 
-/* Renumber history entries sequentially starting at 1. */
+/*
+ * Assign sequential numeric identifiers to each stored entry starting at 1.
+ * This is used after loading or deleting entries to keep IDs contiguous.
+ */
 void history_renumber(void)
 {
     int id = 1;
@@ -114,8 +125,13 @@ static void history_init(void) {
  * Internal helper to append an entry to the history list.  When
  * ``save_file`` is non-zero the entry is also appended to the history file.
  */
-/* Add a history entry. When SAVE_FILE is non-zero the entry is also
- * persisted via history_file_append(). */
+/*
+ * Add a command to the in-memory list.  ``cmd`` is copied into a new
+ * ``HistEntry`` which becomes the new tail.  When ``save_file`` is true the
+ * line is also appended to the on-disk history file via
+ * ``history_file_append``.  Older entries are pruned when the configured
+ * limits are exceeded.
+ */
 void history_add_entry(const char *cmd, int save_file) {
     history_init();
     HistEntry *e = malloc(sizeof(HistEntry));
@@ -358,7 +374,10 @@ const char *history_get_relative(int offset) {
     return e ? e->cmd : NULL;
 }
 
-/* Internal helper to duplicate the last word of CMD. */
+/*
+ * Internal helper: return a newly allocated copy of the final word in ``cmd``.
+ * Trailing whitespace is ignored.
+ */
 static char *dup_last_word(const char *cmd) {
     const char *end = cmd + strlen(cmd);
     while (end > cmd && isspace((unsigned char)*(end - 1)))
@@ -374,7 +393,10 @@ static char *dup_last_word(const char *cmd) {
     return res;
 }
 
-/* Duplicate all arguments of CMD after the first word. */
+/*
+ * Internal helper: duplicate everything after the first whitespace separated
+ * word in ``cmd``.  Used by history expansion for ``!*``.
+ */
 static char *dup_all_args(const char *cmd) {
     const char *p = cmd;
     while (*p && !isspace((unsigned char)*p))
