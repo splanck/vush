@@ -15,10 +15,15 @@ typedef struct {
     int capacity;
 } StrArray;
 
+/* Initialize ARR so it can accept strings. */
 void strarray_init(StrArray *arr);
+/* Append STR to ARR growing the backing store as needed. */
 int strarray_push(StrArray *arr, char *str);
-char **strarray_finish(StrArray *arr); /* returns NULL terminated array */
+/* Finish building ARR and return a NULL terminated array. */
+char **strarray_finish(StrArray *arr);
+/* Free an array created by strarray_finish. */
 void strarray_free(char **arr);
+/* Release all memory held by ARR without returning an array. */
 void strarray_release(StrArray *arr);
 
 #endif /* STRARRAY_H */

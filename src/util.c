@@ -21,6 +21,7 @@
 #include "parser.h" /* for MAX_LINE */
 #include "util.h"
 
+/* calloc wrapper that exits on allocation failure */
 void *xcalloc(size_t nmemb, size_t size) {
     void *ptr = calloc(nmemb, size);
     if (!ptr) {
@@ -30,6 +31,7 @@ void *xcalloc(size_t nmemb, size_t size) {
     return ptr;
 }
 
+/* malloc wrapper that exits on allocation failure */
 void *xmalloc(size_t size) {
     void *ptr = malloc(size);
     if (!ptr) {
@@ -39,6 +41,7 @@ void *xmalloc(size_t size) {
     return ptr;
 }
 
+/* strdup wrapper that exits on allocation failure */
 char *xstrdup(const char *s) {
     char *ptr = strdup(s);
     if (!ptr) {
@@ -49,9 +52,10 @@ char *xstrdup(const char *s) {
 }
 
 /*
- * Portable wrapper around asprintf.
- * Uses system vasprintf when available, otherwise falls back
- * to calculating the required size with vsnprintf and manual allocation.
+ * Portable wrapper around asprintf.  Allocates a formatted string
+ * into *STRP and returns its length or -1 on error.  Uses system
+ * vasprintf when available, otherwise falls back to a manual
+ * implementation.
  */
 int xasprintf(char **strp, const char *fmt, ...) {
     if (!strp)

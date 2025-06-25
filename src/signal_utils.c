@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <signal.h>
 
+/* Return the number of supported signals for the current system. */
 int get_nsig(void) {
 #ifdef NSIG
     return NSIG;

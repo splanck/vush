@@ -19,6 +19,7 @@ struct MailEntry {
 
 static struct MailEntry *mail_list = NULL;
 
+/* Return entry for PATH in the linked list or NULL if not found. */
 struct MailEntry *find_mail_entry(const char *path)
 {
     for (struct MailEntry *e = mail_list; e; e = e->next)
@@ -27,6 +28,7 @@ struct MailEntry *find_mail_entry(const char *path)
     return NULL;
 }
 
+/* Update or create the record for PATH with modification time MTIME. */
 void remember_mail_time(const char *path, time_t mtime)
 {
     struct MailEntry *e = find_mail_entry(path);
@@ -47,6 +49,7 @@ void remember_mail_time(const char *path, time_t mtime)
     mail_list = e;
 }
 
+/* Free all remembered mail entries. */
 void free_mail_list(void)
 {
     struct MailEntry *e = mail_list;
@@ -59,6 +62,7 @@ void free_mail_list(void)
     mail_list = NULL;
 }
 
+/* Check each configured mailbox and print a notice when new mail exists. */
 void check_mail(void)
 {
     char *mpath = getenv("MAILPATH");
