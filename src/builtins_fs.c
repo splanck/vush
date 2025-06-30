@@ -16,6 +16,7 @@
 #define _GNU_SOURCE
 #include "builtins.h"
 #include "dirstack.h"
+#include "shell_state.h"
 #include "util.h"
 #include <libgen.h>
 #include <stdio.h>
@@ -80,8 +81,12 @@ static void canonicalize_logical(const char *path, char *out, size_t out_size)
 int builtin_cd(char **args) {
     size_t pathmax = get_path_max();
     char *prev = getcwd(NULL, 0);
+    char *buf = NULL;
+    char *used = NULL;
+    char *newpwd = NULL;
     if (!prev) {
         perror("getcwd");
+        last_status = 1;
         return 1;
     }
 
@@ -97,7 +102,6 @@ int builtin_cd(char **args) {
     }
 
     const char *target;
-    char *buf = NULL;
     if (!args[idx]) {
         target = getenv("HOME");
     } else if (strcmp(args[idx], "-") == 0) {
@@ -107,6 +111,7 @@ int builtin_cd(char **args) {
             if (!buf) {
                 perror("getcwd");
                 free(prev);
+                last_status = 1;
                 return 1;
             }
             target = buf;
@@ -116,11 +121,12 @@ int builtin_cd(char **args) {
         target = args[idx];
     }
 
-    char *used = malloc(pathmax);
+    used = malloc(pathmax);
     if (!used) {
         perror("malloc");
         free(prev);
         free(buf);
+        last_status = 1;
         return 1;
     }
     const char *dir = target ? target : "";
@@ -162,6 +168,10 @@ int builtin_cd(char **args) {
         }
         if (chdir(path) != 0) {
             perror("cd");
+            free(prev);
+            free(buf);
+            free(used);
+            last_status = 1;
             return 1;
         }
         if (physical) {
@@ -183,12 +193,13 @@ int builtin_cd(char **args) {
         oldpwd = prev;
     update_pwd_env(oldpwd);
 
-    char *newpwd = malloc(pathmax);
+    newpwd = malloc(pathmax);
     if (!newpwd) {
         perror("malloc");
         free(prev);
         free(buf);
         free(used);
+        last_status = 1;
         return 1;
     }
     if (physical) {
@@ -210,6 +221,7 @@ int builtin_cd(char **args) {
                 free(buf);
                 free(used);
                 free(newpwd);
+                last_status = 1;
                 return 1;
             }
         }
@@ -225,6 +237,7 @@ int builtin_cd(char **args) {
     free(buf);
     free(used);
     free(newpwd);
+    last_status = 0;
     return 1;
 }
 
