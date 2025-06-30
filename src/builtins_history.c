@@ -246,6 +246,8 @@ static int fc_edit_commands(int start, int end, int step, const FcOptions *opts)
     int fd = mkstemp(template);
     if (fd < 0) {
         perror("mkstemp");
+        free(template);
+        last_status = 1;
         return 1;
     }
     FILE *f = fdopen(fd, "w+");
