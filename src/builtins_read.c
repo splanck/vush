@@ -121,6 +121,7 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
                         int timeout, int silent) {
     struct termios orig;
     int use_tty = silent && isatty(fd);
+    int result = 0;
     if (use_tty) {
         if (tcgetattr(fd, &orig) == -1)
             return -1;
@@ -135,15 +136,13 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
     while (pos < size - 1) {
         if (timeout >= 0) {
             if (remaining <= 0) {
-                if (use_tty)
-                    tcsetattr(fd, TCSANOW, &orig);
-                return 2; /* timeout */
+                result = 2; /* timeout */
+                goto cleanup;
             }
             if (fd >= FD_SETSIZE) {
-                if (use_tty)
-                    tcsetattr(fd, TCSANOW, &orig);
                 errno = EINVAL;
-                return -1;
+                result = -1;
+                goto cleanup;
             }
             fd_set set;
             FD_ZERO(&set);
@@ -158,14 +157,12 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
             } while (rv == -1 && errno == EINTR);
             clock_gettime(CLOCK_MONOTONIC, &end_ts);
             if (rv == 0) {
-                if (use_tty)
-                    tcsetattr(fd, TCSANOW, &orig);
-                return 2; /* timeout */
+                result = 2; /* timeout */
+                goto cleanup;
             }
             if (rv < 0) {
-                if (use_tty)
-                    tcsetattr(fd, TCSANOW, &orig);
-                return -1;
+                result = -1;
+                goto cleanup;
             }
             long long elapsed = (end_ts.tv_sec - start_ts.tv_sec) * 1000000000LL +
                                (end_ts.tv_nsec - start_ts.tv_nsec);
@@ -180,15 +177,13 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
             n = read(fd, &c, 1);
         } while (n == -1 && errno == EINTR);
         if (n == 0 || (n > 0 && pos == 0 && c == 0x04)) {
-            if (use_tty)
-                tcsetattr(fd, TCSANOW, &orig);
             errno = 0;
-            return 1; /* EOF */
+            result = 1; /* EOF */
+            goto cleanup;
         }
         if (n < 0) {
-            if (use_tty)
-                tcsetattr(fd, TCSANOW, &orig);
-            return -1;
+            result = -1;
+            goto cleanup;
         }
         if (c == '\n' || c == '\r')
             break;
@@ -197,12 +192,17 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
             break;
     }
     buf[pos] = '\0';
+    result = 0;
+
+cleanup:
     if (use_tty) {
         tcsetattr(fd, TCSANOW, &orig);
-        putchar('\n');
-        fflush(stdout);
+        if (result == 0) {
+            putchar('\n');
+            fflush(stdout);
+        }
     }
-    return 0;
+    return result;
 }
 
 
