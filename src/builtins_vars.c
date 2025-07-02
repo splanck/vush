@@ -406,8 +406,10 @@ int builtin_export(char **args) {
                 *eq = '=';
                 continue;
             }
-            if (setenv(arg, valdup, 1) != 0)
+            if (setenv(arg, valdup, 1) != 0) {
                 perror("export");
+                status = 1;
+            }
             set_shell_var(arg, valdup);
             free(valdup);
             *eq = '=';
@@ -417,8 +419,10 @@ int builtin_export(char **args) {
                 val = "";
                 set_shell_var(arg, val);
             }
-            if (setenv(arg, val, 1) != 0)
+            if (setenv(arg, val, 1) != 0) {
                 perror("export");
+                status = 1;
+            }
         }
     }
     last_status = status;
