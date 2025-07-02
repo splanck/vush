@@ -39,8 +39,10 @@ char **parse_array_values(const char *val, int *count) {
         if (!dup || strarray_push(&arr, dup) == -1) {
             free(dup);
             free(body);
+            *count = arr.count;
+            if (*count > 0)
+                last_status = 1;
             strarray_release(&arr);
-            *count = 0;
             return NULL;
         }
     }
@@ -48,8 +50,12 @@ char **parse_array_values(const char *val, int *count) {
 
     int arr_count = arr.count;
     char **vals = strarray_finish(&arr);
-    if (!vals)
+    if (!vals) {
+        *count = arr_count;
+        if (*count > 0)
+            last_status = 1;
         return NULL;
+    }
     *count = arr_count;
     if (*count == 0) {
         /* ensure caller sees an empty array terminator */
