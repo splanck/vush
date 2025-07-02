@@ -132,6 +132,12 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
     size_t pos = 0;
     while (pos < size - 1) {
         if (timeout >= 0) {
+            if (fd >= FD_SETSIZE) {
+                if (use_tty)
+                    tcsetattr(fd, TCSANOW, &orig);
+                errno = EINVAL;
+                return -1;
+            }
             fd_set set;
             FD_ZERO(&set);
             FD_SET(fd, &set);

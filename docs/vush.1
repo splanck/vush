@@ -104,7 +104,7 @@ Set or display aliases. With no arguments all aliases are listed. A single NAME 
 Remove aliases. With \-a all aliases are cleared.
 .TP
 .B "read [-r] VAR..."
-Read a line of input into variables using the first character of \$IFS to split fields.
+Read a line of input into variables using the first character of \$IFS to split fields. When a timeout is specified with \-t, the descriptor given to \-u must be less than FD_SETSIZE.
 .TP
 .B "return [status]"
 Return from a shell function with an optional status.
