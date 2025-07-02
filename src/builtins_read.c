@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <termios.h>
 #include <sys/select.h>
+#include <time.h>
 #include "util.h"
 
 /* ---- helper functions for builtin_read -------------------------------- */
@@ -130,8 +131,14 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
     }
 
     size_t pos = 0;
+    long long remaining = (long long)timeout * 1000000000LL;
     while (pos < size - 1) {
         if (timeout >= 0) {
+            if (remaining <= 0) {
+                if (use_tty)
+                    tcsetattr(fd, TCSANOW, &orig);
+                return 2; /* timeout */
+            }
             if (fd >= FD_SETSIZE) {
                 if (use_tty)
                     tcsetattr(fd, TCSANOW, &orig);
@@ -141,11 +148,15 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
             fd_set set;
             FD_ZERO(&set);
             FD_SET(fd, &set);
-            struct timeval tv = { timeout, 0 };
+            struct timeval tv = { remaining / 1000000000LL,
+                                 (remaining % 1000000000LL) / 1000 };
+            struct timespec start_ts, end_ts;
+            clock_gettime(CLOCK_MONOTONIC, &start_ts);
             int rv;
             do {
                 rv = select(fd + 1, &set, NULL, NULL, &tv);
             } while (rv == -1 && errno == EINTR);
+            clock_gettime(CLOCK_MONOTONIC, &end_ts);
             if (rv == 0) {
                 if (use_tty)
                     tcsetattr(fd, TCSANOW, &orig);
@@ -156,6 +167,11 @@ static int read_fd_line(int fd, char *buf, size_t size, int nchars,
                     tcsetattr(fd, TCSANOW, &orig);
                 return -1;
             }
+            long long elapsed = (end_ts.tv_sec - start_ts.tv_sec) * 1000000000LL +
+                               (end_ts.tv_nsec - start_ts.tv_nsec);
+            if (elapsed < 0)
+                elapsed = 0;
+            remaining -= elapsed;
         }
 
         char c;
