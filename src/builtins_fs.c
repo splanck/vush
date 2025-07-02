@@ -49,6 +49,7 @@ static void canonicalize_logical(const char *path, char *out, size_t out_size)
             if ((size_t)sp >= max_parts) {
                 fprintf(stderr,
                         "cd: path has too many components\n");
+                last_status = 1;
                 break;
             }
             parts[sp++] = t;
