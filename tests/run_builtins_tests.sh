@@ -82,6 +82,7 @@ test_read_n.expect
 test_read_s.expect
 test_read_t.expect
 test_read_u.expect
+test_read_fdsize.expect
 test_case.expect
 test_case_posix.expect
 test_trap.expect

@@ -353,7 +353,8 @@ hi
   read a line from input. `-a` stores fields in array `NAME`, `-p` displays a
   prompt, `-n` reads up to `nchars` characters, `-s` disables echo, `-t` sets a
   timeout in seconds, and `-u` reads from the specified file descriptor. The
-  input is split using the first character of `$IFS`.
+  input is split using the first character of `$IFS`. The command fails if
+  `fd` is greater than or equal to `FD_SETSIZE`.
 - `return [status]` - return from a shell function with an optional status.
 - `shift [N]` - drop the first `N` positional parameters (default 1).
 - `break [N]` - exit `N` levels of loops (default 1).
