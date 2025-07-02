@@ -38,6 +38,7 @@ static List aliases;
 
 static int set_alias(const char *name, const char *value);
 static void remove_all_aliases(const char *name);
+static void release_aliases(void);
 
 /* Write the current alias list to the file returned by get_alias_file(). */
 static void save_aliases(void)
@@ -82,6 +83,7 @@ void load_aliases(void)
         *eq = '\0';
         if (set_alias(line, eq + 1) < 0) {
             fclose(f);
+            release_aliases();
             return;
         }
     }
@@ -151,6 +153,21 @@ static void remove_all_aliases(const char *name)
     }
 }
 
+/* Release all alias list entries without saving them. */
+static void release_aliases(void)
+{
+    ListNode *n = aliases.head;
+    while (n) {
+        ListNode *next = n->next;
+        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
+        free(a->name);
+        free(a->value);
+        free(a);
+        n = next;
+    }
+    list_init(&aliases);
+}
+
 /* Print all defined aliases to stdout. */
 static int printed_before(const char *name, struct alias_entry *limit)
 {
@@ -187,16 +204,7 @@ static void list_aliases_p(void)
 void free_aliases(void)
 {
     save_aliases();
-    ListNode *n = aliases.head;
-    while (n) {
-        ListNode *next = n->next;
-        struct alias_entry *a = LIST_ENTRY(n, struct alias_entry, node);
-        free(a->name);
-        free(a->value);
-        free(a);
-        n = next;
-    }
-    list_init(&aliases);
+    release_aliases();
 }
 
 /* builtin_alias - list aliases or define name=value pairs. */
