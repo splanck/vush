@@ -13,6 +13,7 @@
 #include "util.h"
 #include "state_paths.h"
 #include "error.h"
+#include "shell_state.h"
 
 /* functions from history_list.c */
 void history_add_entry(const char *cmd, int save_file);
@@ -32,9 +33,13 @@ void history_file_append(const char *cmd) {
         return;
     }
     FILE *f = fopen(path, "a");
-    free(path);
-    if (!f)
+    if (!f) {
+        fprintf(stderr, "warning: unable to open history file for appending\n");
+        last_status = 1;
+        free(path);
         return;
+    }
+    free(path);
     fprintf(f, "%s\n", cmd);
     fclose(f);
 }
@@ -60,9 +65,13 @@ void history_file_rewrite(void) {
         return;
     }
     FILE *f = fopen(path, "w");
-    free(path);
-    if (!f)
+    if (!f) {
+        fprintf(stderr, "warning: unable to open history file for writing\n");
+        last_status = 1;
+        free(path);
         return;
+    }
+    free(path);
     struct rewrite_ctx ctx = { .f = f };
     history_list_iter(rewrite_cb, &ctx);
     fclose(f);
