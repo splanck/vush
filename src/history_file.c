@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "util.h"
 #include "state_paths.h"
 #include "error.h"
@@ -44,13 +45,18 @@ void history_file_append(const char *cmd) {
     fclose(f);
 }
 
-/* Context used when rewriting the entire history file. */
-struct rewrite_ctx { FILE *f; };
+/* Context used when rewriting the entire history file.  ``error`` is set to 1
+ * when a write fails so that the caller can detect incomplete output. */
+struct rewrite_ctx {
+    FILE *f;
+    int error;
+};
 
 /* Callback passed to ``history_list_iter`` that writes each command to ``ctx``. */
 static void rewrite_cb(const char *cmd, void *arg) {
     struct rewrite_ctx *ctx = arg;
-    fprintf(ctx->f, "%s\n", cmd);
+    if (fprintf(ctx->f, "%s\n", cmd) < 0)
+        ctx->error = 1;
 }
 
 /*
@@ -71,10 +77,16 @@ void history_file_rewrite(void) {
         free(path);
         return;
     }
-    free(path);
-    struct rewrite_ctx ctx = { .f = f };
+    struct rewrite_ctx ctx = { .f = f, .error = 0 };
     history_list_iter(rewrite_cb, &ctx);
-    fclose(f);
+    if (fclose(f) == EOF)
+        ctx.error = 1;
+    if (ctx.error) {
+        fprintf(stderr, "warning: failed to write history file\n");
+        last_status = 1;
+        unlink(path);
+    }
+    free(path);
 }
 
 /* Remove all contents from the history file. */
