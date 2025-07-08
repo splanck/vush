@@ -6,6 +6,7 @@
 
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "builtin_options.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,14 +85,8 @@ static int exec_cmd(void *d)
 int builtin_time(char **args)
 {
     int posix = 0;
-    int idx = 1;
-
-    if (args[idx] && strcmp(args[idx], "-p") == 0) {
-        posix = 1;
-        idx++;
-    }
-
-    if (!args[idx]) {
+    int idx = parse_builtin_options(args, "p", &posix);
+    if (idx < 0 || !args[idx]) {
         fprintf(stderr, "usage: time [-p] command [args...]\n");
         return 1;
     }

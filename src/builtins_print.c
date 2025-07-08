@@ -9,6 +9,7 @@
  */
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "builtin_options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "shell_state.h"
@@ -246,17 +247,8 @@ static int fmt_output_append(FILE *out, char **outbuf, size_t *outsize,
 int builtin_printf(char **args)
 {
     const char *varname = NULL;
-    int i = 1;
-    if (args[i] && strcmp(args[i], "-v") == 0) {
-        if (!args[i+1]) {
-            fprintf(stderr, "usage: printf [-v VAR] format [args...]\n");
-            last_status = 1;
-            return 1;
-        }
-        varname = args[i+1];
-        i += 2;
-    }
-    if (!args[i]) {
+    int i = parse_builtin_options(args, "v:", &varname);
+    if (i < 0 || !args[i]) {
         fprintf(stderr, "usage: printf [-v VAR] format [args...]\n");
         last_status = 1;
         return 1;

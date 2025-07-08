@@ -6,6 +6,7 @@
 
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "builtin_options.h"
 #include "history.h"
 #include "parser.h"
 #include "execute.h"
@@ -195,18 +196,10 @@ int builtin_exec(char **args) {
 /* Execute a command ignoring any shell aliases or functions. */
 int builtin_command(char **args) {
     const char fallback[] = "/bin:/usr/bin";
-    int i = 1;
     int opt_v = 0, opt_V = 0, opt_p = 0;
-
-    while (args[i] && args[i][0] == '-' && args[i][1]) {
-        for (int k = 1; args[i][k]; k++) {
-            if (args[i][k] == 'v') opt_v = 1;
-            else if (args[i][k] == 'V') opt_V = 1;
-            else if (args[i][k] == 'p') opt_p = 1;
-            else break;
-        }
-        i++;
-    }
+    int i = parse_builtin_options(args, "pvV", &opt_p, &opt_v, &opt_V);
+    if (i < 0)
+        return fprintf(stderr, "usage: command [-p|-v|-V] name [args...]\n"), 1;
 
     if (!args[i]) {
         fprintf(stderr, "usage: command [-p|-v|-V] name [args...]\n");
