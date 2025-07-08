@@ -29,5 +29,7 @@ void record_local_var(const char *name);
 void print_array(const char *prefix, char **arr, int len);
 void print_readonly_vars(void);
 void print_shell_vars(void);
+int export_var(const char *name, const char *val);
+void unset_var(const char *name);
 
 #endif /* VARS_H */

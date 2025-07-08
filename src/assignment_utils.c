@@ -179,14 +179,19 @@ void restore_assignments(PipelineSegment *pipeline, struct assign_backup *backs)
     for (int i = 0; i < pipeline->assign_count; i++) {
         if (!backs[i].name)
             continue;
-        if (backs[i].had_env)
-            setenv(backs[i].name, backs[i].env, 1);
-        else
-            unsetenv(backs[i].name);
-        if (backs[i].had_var)
-            set_shell_var(backs[i].name, backs[i].var);
-        else
-            unset_shell_var(backs[i].name);
+        if (backs[i].had_env && backs[i].had_var && backs[i].env && backs[i].var &&
+            strcmp(backs[i].env, backs[i].var) == 0) {
+            export_var(backs[i].name, backs[i].env);
+        } else {
+            if (backs[i].had_env)
+                setenv(backs[i].name, backs[i].env, 1);
+            else
+                unsetenv(backs[i].name);
+            if (backs[i].had_var)
+                set_shell_var(backs[i].name, backs[i].var);
+            else
+                unset_shell_var(backs[i].name);
+        }
         free(backs[i].name);
         free(backs[i].env);
         free(backs[i].var);

@@ -415,3 +415,16 @@ void free_shell_vars(void) {
     readonly_vars = NULL;
 }
 
+int export_var(const char *name, const char *val) {
+    set_shell_var(name, val);
+    const char *v = get_shell_var(name);
+    if (setenv(name, v ? v : "", 1) != 0)
+        return -1;
+    return 0;
+}
+
+void unset_var(const char *name) {
+    unsetenv(name);
+    unset_shell_var(name);
+}
+

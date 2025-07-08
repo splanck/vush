@@ -338,8 +338,7 @@ int builtin_unset(char **args) {
                 *lb = '[';
             }
         } else {
-            unsetenv(name);
-            unset_shell_var(name);
+            unset_var(name);
         }
     }
     return 1;
@@ -384,7 +383,7 @@ int builtin_export(char **args) {
     }
 
     if (strcmp(args[1], "-n") == 0 && args[2] && !args[3]) {
-        unsetenv(args[2]);
+        unset_var(args[2]);
         return 1;
     }
 
@@ -393,19 +392,10 @@ int builtin_export(char **args) {
         char *eq = strchr(arg, '=');
         if (eq) {
             *eq = '\0';
-            char *valdup = strdup(eq + 1);
-            if (!valdup) {
-                perror("export");
-                status = 1;
-                *eq = '=';
-                continue;
-            }
-            if (setenv(arg, valdup, 1) != 0) {
+            if (export_var(arg, eq + 1) < 0) {
                 perror("export");
                 status = 1;
             }
-            set_shell_var(arg, valdup);
-            free(valdup);
             *eq = '=';
         } else {
             const char *val = get_shell_var(arg);
@@ -413,7 +403,7 @@ int builtin_export(char **args) {
                 val = "";
                 set_shell_var(arg, val);
             }
-            if (setenv(arg, val, 1) != 0) {
+            if (export_var(arg, val) < 0) {
                 perror("export");
                 status = 1;
             }
