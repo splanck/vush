@@ -13,16 +13,17 @@
 #include "vars.h"
 #include "util.h"
 #include "strarray.h"
+#include "cleanup.h"
 #include "shell_state.h"
 #include "var_expand.h"
 
 char **parse_array_values(const char *val, int *count) {
     *count = 0;
-    char *body = strndup(val + 1, strlen(val) - 2);
+    CLEANUP_FREE char *body = strndup(val + 1, strlen(val) - 2);
     if (!body)
         return NULL;
 
-    StrArray arr;
+    CLEANUP_STRARRAY StrArray arr;
     strarray_init(&arr);
     char *p = body;
     while (*p) {
@@ -39,15 +40,12 @@ char **parse_array_values(const char *val, int *count) {
         char *dup = strdup(start);
         if (!dup || strarray_push(&arr, dup) == -1) {
             free(dup);
-            free(body);
             *count = arr.count;
             if (*count > 0)
                 last_status = 1;
-            strarray_release(&arr);
             return NULL;
         }
     }
-    free(body);
 
     int arr_count = arr.count;
     char **vals = strarray_finish(&arr);

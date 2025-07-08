@@ -14,6 +14,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "strarray.h"
+#include "cleanup.h"
 #include "util.h"
 #include "options.h"
 
@@ -114,11 +115,11 @@ static Command *parse_until_clause(char **p) {
 /* Collect a list of words for for/select loops. */
 static int parse_word_list(char **p, char ***out, int **quoted_out,
                           int **expand_out, int *count) {
-    StrArray arr;
+    CLEANUP_STRARRAY StrArray arr;
     strarray_init(&arr);
     int cap = 0;
-    int *qflags = NULL;
-    int *eflags = NULL;
+    CLEANUP_FREE int *qflags = NULL;
+    CLEANUP_FREE int *eflags = NULL;
     while (1) {
         int q = 0; int de = 1;
         while (**p == ' ' || **p == '\t') (*p)++;
@@ -200,15 +201,12 @@ static int parse_word_list(char **p, char ***out, int **quoted_out,
         char **vals = strarray_finish(&arr);
         if (!vals) goto fail;
         *out = vals;
-        if (quoted_out) *quoted_out = qflags; else free(qflags);
-        if (expand_out) *expand_out = eflags; else free(eflags);
+        if (quoted_out) { *quoted_out = qflags; qflags = NULL; }
+        if (expand_out) { *expand_out = eflags; eflags = NULL; }
         if (count) *count = cnt;
         return 0;
     }
 fail:
-    strarray_release(&arr);
-    free(qflags);
-    free(eflags);
     return -1;
 }
 
@@ -399,7 +397,7 @@ void free_case_items(CaseItem *ci) {
 
 /* Parse a single case item (patterns and body). */
 static CaseItem *parse_case_item(char **p) {
-    StrArray patarr;
+    CLEANUP_STRARRAY StrArray patarr;
     strarray_init(&patarr);
     int done = 0;
     while (!done) {
@@ -408,7 +406,6 @@ static CaseItem *parse_case_item(char **p) {
         int q = 0; int de = 1;
         char *ptok = read_token(p, &q, &de);
         if (!ptok) {
-            strarray_release(&patarr);
             return NULL;
         }
         if (!q && strcmp(ptok, "|") == 0) { free(ptok); continue; }
@@ -417,7 +414,6 @@ static CaseItem *parse_case_item(char **p) {
         if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
         if (strarray_push(&patarr, ptok) == -1) {
             free(ptok);
-            strarray_release(&patarr);
             return NULL;
         }
         if (done) break;
@@ -427,12 +423,10 @@ static CaseItem *parse_case_item(char **p) {
     int idx = -1;
     char *body = gather_until(p, stops, 2, &idx);
     if (!body) {
-        strarray_release(&patarr);
         return NULL;
     }
     if (idx == 1 && opt_posix) {
         fprintf(stderr, "syntax error: ';&' not allowed in posix mode\n");
-        strarray_release(&patarr);
         free(body);
         return NULL;
     }
@@ -440,7 +434,6 @@ static CaseItem *parse_case_item(char **p) {
     free(body);
     CaseItem *ci = xcalloc(1, sizeof(CaseItem));
     if (!ci) {
-        strarray_release(&patarr);
         free_commands(body_cmd);
         return NULL;
     }
