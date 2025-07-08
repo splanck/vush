@@ -70,36 +70,8 @@ static int run_builtin_shell(PipelineSegment *seg) {
 
 /* Expand only the temporary assignment words of SEG using the current environment. */
 static void expand_temp_assignments(PipelineSegment *seg) {
-    for (int i = 0; i < seg->assign_count; i++) {
-        char *eq = strchr(seg->assigns[i], '=');
-        if (eq) {
-            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
-            char *val = expand_var(eq + 1);
-            if (val) {
-                size_t len = strlen(val);
-                if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
-                                 (val[0] == '"' && val[len - 1] == '"'))) {
-                    char *trim = strndup(val + 1, len - 2);
-                    if (trim) { free(val); val = trim; }
-                }
-            }
-            char *tmp = NULL;
-            if (name && val)
-                xasprintf(&tmp, "%s=%s", name, val);
-            if (tmp) {
-                free(seg->assigns[i]);
-                seg->assigns[i] = tmp;
-            }
-            free(name);
-            free(val);
-        } else {
-            char *new = expand_var(seg->assigns[i]);
-            if (new) {
-                free(seg->assigns[i]);
-                seg->assigns[i] = new;
-            }
-        }
-    }
+    for (int i = 0; i < seg->assign_count; i++)
+        expand_assignment(&seg->assigns[i]);
 }
 
 static void expand_segment(PipelineSegment *seg) {
@@ -206,36 +178,8 @@ static void expand_segment(PipelineSegment *seg) {
         seg->quoted[j] = 0;
     }
 
-    for (int i = 0; i < seg->assign_count; i++) {
-        char *eq = strchr(seg->assigns[i], '=');
-        if (eq) {
-            char *name = strndup(seg->assigns[i], eq - seg->assigns[i]);
-            char *val = expand_var(eq + 1);
-            if (val) {
-                size_t len = strlen(val);
-                if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
-                                 (val[0] == '"' && val[len - 1] == '"'))) {
-                    char *trim = strndup(val + 1, len - 2);
-                    if (trim) { free(val); val = trim; }
-                }
-            }
-            char *tmp = NULL;
-            if (name && val)
-                xasprintf(&tmp, "%s=%s", name, val);
-            if (tmp) {
-                free(seg->assigns[i]);
-                seg->assigns[i] = tmp;
-            }
-            free(name);
-            free(val);
-        } else {
-            char *new = expand_var(seg->assigns[i]);
-            if (new) {
-                free(seg->assigns[i]);
-                seg->assigns[i] = new;
-            }
-        }
-    }
+    for (int i = 0; i < seg->assign_count; i++)
+        expand_assignment(&seg->assigns[i]);
 
     if (seg->in_file) {
         char *n = expand_var(seg->in_file);

@@ -19,6 +19,7 @@ struct assign_backup {
 
 char **parse_array_values(const char *val, int *count);
 void apply_array_assignment(const char *name, const char *val, int export_env);
+void expand_assignment(char **assign);
 struct assign_backup *backup_assignments(PipelineSegment *pipeline);
 void restore_assignments(PipelineSegment *pipeline, struct assign_backup *backs);
 

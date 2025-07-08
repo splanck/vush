@@ -14,6 +14,7 @@
 #include "util.h"
 #include "strarray.h"
 #include "shell_state.h"
+#include "var_expand.h"
 
 char **parse_array_values(const char *val, int *count) {
     *count = 0;
@@ -97,6 +98,41 @@ void apply_array_assignment(const char *name, const char *val, int export_env) {
     for (int j = 0; j < count; j++)
         free(vals[j]);
     free(vals);
+}
+
+/* Expand a temporary assignment word in-place.  ASSIGN points to a malloc'd
+ * string which will be replaced with an expanded version on success. */
+void expand_assignment(char **assign) {
+    if (!assign || !*assign)
+        return;
+    char *eq = strchr(*assign, '=');
+    if (eq) {
+        char *name = strndup(*assign, eq - *assign);
+        char *val = expand_var(eq + 1);
+        if (val) {
+            size_t len = strlen(val);
+            if (len >= 2 && ((val[0] == '\'' && val[len - 1] == '\'') ||
+                             (val[0] == '"' && val[len - 1] == '"'))) {
+                char *trim = strndup(val + 1, len - 2);
+                if (trim) { free(val); val = trim; }
+            }
+        }
+        char *tmp = NULL;
+        if (name && val)
+            xasprintf(&tmp, "%s=%s", name, val);
+        if (tmp) {
+            free(*assign);
+            *assign = tmp;
+        }
+        free(name);
+        free(val);
+    } else {
+        char *new = expand_var(*assign);
+        if (new) {
+            free(*assign);
+            *assign = new;
+        }
+    }
 }
 
 struct assign_backup *backup_assignments(PipelineSegment *pipeline) {
