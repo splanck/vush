@@ -8,6 +8,7 @@
 #include "var_expand.h"
 #include "vars.h"
 #include "strarray.h"
+#include "cleanup.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -46,12 +47,12 @@ char **split_fields(const char *text, int *count_out) {
             other_tab[c] = 1;
     }
 
-    char *dup = strdup(text);
+    CLEANUP_FREE char *dup = strdup(text);
     if (!dup)
         return NULL;
     char *p = dup;
     char *field_start = dup;
-    StrArray arr;
+    CLEANUP_STRARRAY StrArray arr;
     strarray_init(&arr);
     int last_nonspace = 0;
 
@@ -110,9 +111,7 @@ char **split_fields(const char *text, int *count_out) {
     return res;
 
 fail:
-    free(dup);
 fail_alloc:
-    strarray_release(&arr);
     if (count_out)
         *count_out = 0;
     return NULL;
