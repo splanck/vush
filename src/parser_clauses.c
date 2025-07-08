@@ -63,6 +63,16 @@ static Command *parse_if_clause(char **p) {
     return cmd;
 }
 
+/* Parse the body of a loop delimited by do/done. */
+static Command *parse_loop_body(char **p) {
+    char *body = gather_until_done(p);
+    if (!body)
+        return NULL;
+    Command *body_cmd = parse_line(body);
+    free(body);
+    return body_cmd;
+}
+
 /* Parse a while/until clause body using UNTIL flag for until loops. */
 static Command *parse_loop_clause(char **p, int until) {
     const char *stop1[] = {"do"};
@@ -72,13 +82,11 @@ static Command *parse_loop_clause(char **p, int until) {
     Command *cond_cmd = parse_line(cond);
     free(cond);
 
-    char *body = gather_until_done(p);
-    if (!body) {
+    Command *body_cmd = parse_loop_body(p);
+    if (!body_cmd) {
         free_commands(cond_cmd);
         return NULL;
     }
-    Command *body_cmd = parse_line(body);
-    free(body);
 
     Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
@@ -220,9 +228,14 @@ static Command *parse_for_clause(char **p) {
         free(var);
         return NULL;
     }
-    char *body = gather_until_done(p);
-    if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
-    Command *body_cmd = parse_line(body); free(body);
+    Command *body_cmd = parse_loop_body(p);
+    if (!body_cmd) {
+        free(var);
+        for (int i=0;i<count;i++)
+            free(words[i]);
+        free(words);
+        return NULL;
+    }
     Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(var);
@@ -258,9 +271,14 @@ static Command *parse_select_clause(char **p) {
         free(var);
         return NULL;
     }
-    char *body = gather_until_done(p);
-    if (!body) { free(var); for (int i=0;i<count;i++) free(words[i]); free(words); return NULL; }
-    Command *body_cmd = parse_line(body); free(body);
+    Command *body_cmd = parse_loop_body(p);
+    if (!body_cmd) {
+        free(var);
+        for (int i=0;i<count;i++)
+            free(words[i]);
+        free(words);
+        return NULL;
+    }
     Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(var);
@@ -343,9 +361,13 @@ static Command *parse_for_arith_clause(char **p) {
     int q = 0; int de = 1; char *tok = read_token(p, &q, &de);
     if (!tok || strcmp(tok, "do") != 0) { free(init); free(cond); free(incr); free(tok); return NULL; }
     free(tok);
-    char *body = gather_until_done(p);
-    if (!body) { free(init); free(cond); free(incr); return NULL; }
-    Command *body_cmd = parse_line(body); free(body);
+    Command *body_cmd = parse_loop_body(p);
+    if (!body_cmd) {
+        free(init);
+        free(cond);
+        free(incr);
+        return NULL;
+    }
     Command *cmd = xcalloc(1, sizeof(Command));
     if (!cmd) {
         free(init);
@@ -375,6 +397,66 @@ void free_case_items(CaseItem *ci) {
     }
 }
 
+/* Parse a single case item (patterns and body). */
+static CaseItem *parse_case_item(char **p) {
+    StrArray patarr;
+    strarray_init(&patarr);
+    int done = 0;
+    while (!done) {
+        while (**p == ' ' || **p == '\t') (*p)++;
+        if (**p == '(') { (*p)++; continue; }
+        int q = 0; int de = 1;
+        char *ptok = read_token(p, &q, &de);
+        if (!ptok) {
+            strarray_release(&patarr);
+            return NULL;
+        }
+        if (!q && strcmp(ptok, "|") == 0) { free(ptok); continue; }
+        if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
+        size_t len = strlen(ptok);
+        if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
+        if (strarray_push(&patarr, ptok) == -1) {
+            free(ptok);
+            strarray_release(&patarr);
+            return NULL;
+        }
+        if (done) break;
+    }
+
+    const char *stops[] = {";;", ";&"};
+    int idx = -1;
+    char *body = gather_until(p, stops, 2, &idx);
+    if (!body) {
+        strarray_release(&patarr);
+        return NULL;
+    }
+    if (idx == 1 && opt_posix) {
+        fprintf(stderr, "syntax error: ';&' not allowed in posix mode\n");
+        strarray_release(&patarr);
+        free(body);
+        return NULL;
+    }
+    Command *body_cmd = parse_line(body);
+    free(body);
+    CaseItem *ci = xcalloc(1, sizeof(CaseItem));
+    if (!ci) {
+        strarray_release(&patarr);
+        free_commands(body_cmd);
+        return NULL;
+    }
+    int pat_count = patarr.count;
+    ci->patterns = strarray_finish(&patarr);
+    if (!ci->patterns) {
+        free_commands(body_cmd);
+        free(ci);
+        return NULL;
+    }
+    ci->pattern_count = pat_count;
+    ci->body = body_cmd;
+    ci->fall_through = (idx == 1);
+    return ci;
+}
+
 /* Parse a case/esac clause starting at *p. */
 static Command *parse_case_clause(char **p) {
     while (**p == ' ' || **p == '\t') (*p)++;
@@ -392,62 +474,8 @@ static Command *parse_case_clause(char **p) {
         while (**p == ' ' || **p == '\t' || **p == '\n') (*p)++;
         if (strncmp(*p, "esac", 4) == 0) { *p += 4; break; }
 
-        StrArray patarr;
-        strarray_init(&patarr);
-        int done = 0;
-        while (!done) {
-            while (**p == ' ' || **p == '\t') (*p)++;
-            if (**p == '(') { (*p)++; continue; }
-            int q = 0; int de2 = 1; char *ptok = read_token(p, &q, &de2); if (!ptok) { free_case_items(head); free(word); return NULL; }
-            if (!q && strcmp(ptok, "|") == 0) { free(ptok); continue; }
-            if (!q && strcmp(ptok, ")") == 0) { free(ptok); break; }
-            size_t len = strlen(ptok);
-            if (!q && len > 0 && ptok[len-1] == ')') { ptok[len-1] = '\0'; done = 1; }
-            if (strarray_push(&patarr, ptok) == -1) {
-                free(ptok);
-                strarray_release(&patarr);
-                free_case_items(head);
-                free(word);
-                return NULL;
-            }
-            if (done) break;
-        }
-
-        const char *stops[] = {";;", ";&"};
-        int idx = -1;
-        char *body = gather_until(p, stops, 2, &idx);
-        if (!body) { free_case_items(head); free(word); return NULL; }
-        if (idx == 1 && opt_posix) {
-            fprintf(stderr, "syntax error: ';&' not allowed in posix mode\n");
-            strarray_release(&patarr);
-            free_case_items(head);
-            free(word);
-            free(body);
-            return NULL;
-        }
-        Command *body_cmd = parse_line(body); free(body);
-        CaseItem *ci = xcalloc(1, sizeof(CaseItem));
-        if (!ci) {
-            strarray_release(&patarr);
-            free_case_items(head);
-            free(word);
-            free_commands(body_cmd);
-            return NULL;
-        }
-        int pat_count = patarr.count; /* save count before finish() resets it */
-        ci->patterns = strarray_finish(&patarr);
-        if (!ci->patterns) {
-            free_case_items(head);
-            free(word);
-            free_commands(body_cmd);
-            free(ci);
-            return NULL;
-        }
-        /* pattern_count excludes the terminating NULL element added by
-         * strarray_finish(). */
-        ci->pattern_count = pat_count;
-        ci->body = body_cmd;
-        ci->fall_through = (idx == 1);
+        CaseItem *ci = parse_case_item(p);
+        if (!ci) { free_case_items(head); free(word); return NULL; }
         if (!head) head = ci; else tail->next = ci; tail = ci;
     }
 
