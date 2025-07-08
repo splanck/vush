@@ -15,62 +15,52 @@
 static char *parse_quoted_word(char **p, int *quoted, int *do_expand_out);
 static char *parse_ansi_quoted_word(char **p, int *quoted, int *do_expand_out);
 
-/* set when a memory allocation fails inside parse_redirect_token */
+/* set when a memory allocation fails inside read_redirect_token */
 static int token_alloc_failed = 0;
+
+/* Allocate and return a copy of BUF. Sets token_alloc_failed on failure. */
+static char *dup_token_string(const char buf[]) {
+    char *tmp = strdup(buf);
+    if (!tmp)
+        token_alloc_failed = 1;
+    return tmp;
+}
+
+/* Handle patterns like '2>' or '&>' optionally followed by another '>'. */
+static char *read_fd_redirect(char **p) {
+    if ((**p != '2' && **p != '&') || *(*p + 1) != '>')
+        return NULL;
+    char buf[MAX_LINE];
+    int len = 0;
+    buf[len++] = **p;
+    (*p)++;
+    buf[len++] = '>';
+    (*p)++;
+    if (**p == '>') {
+        buf[len++] = '>';
+        (*p)++;
+    }
+    buf[len] = '\0';
+    return dup_token_string(buf);
+}
 
 /* If *p points at a redirection or control operator, extract the operator
  * token and advance *p.  Returns the allocated token string or NULL when
  * no operator is found. */
-static char *parse_redirect_token(char **p) {
+static char *read_redirect_token(char **p) {
     char buf[MAX_LINE];
     int len = 0;
     token_alloc_failed = 0;
-    if (**p == '2' && *(*p + 1) == '>') {
-        buf[len++] = '2';
-        (*p)++;
-        buf[len++] = '>';
-        (*p)++;
-        if (**p == '>') {
-            buf[len++] = '>';
-            (*p)++;
-        }
-        buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
-    }
-    if (**p == '&' && *(*p + 1) == '>') {
-        buf[len++] = '&';
-        (*p)++;
-        buf[len++] = '>';
-        (*p)++;
-        if (**p == '>') {
-            buf[len++] = '>';
-            (*p)++;
-        }
-        buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
-    }
+    char *redir = read_fd_redirect(p);
+    if (redir)
+        return redir;
     if (**p == '>' && *(*p + 1) == '|') {
         buf[len++] = '>';
         (*p)++;
         buf[len++] = '|';
         (*p)++;
         buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
+        return dup_token_string(buf);
     }
     if (**p == '&' && *(*p + 1) != '&' && *(*p + 1) != '>') {
         buf[len++] = '&';
@@ -81,12 +71,7 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
+        return dup_token_string(buf);
     }
     if (**p == '<' && *(*p + 1) == '<') {
         buf[len++] = '<';
@@ -99,12 +84,7 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
+        return dup_token_string(buf);
     }
     if (**p == '>' || **p == '<' || **p == '|' || **p == '&' || **p == ';') {
         buf[len++] = **p;
@@ -117,12 +97,7 @@ static char *parse_redirect_token(char **p) {
             (*p)++;
         }
         buf[len] = '\0';
-        char *tmp = strdup(buf);
-        if (!tmp) {
-            token_alloc_failed = 1;
-            return NULL;
-        }
-        return tmp;
+        return dup_token_string(buf);
     }
     return NULL;
 }
@@ -131,9 +106,9 @@ static char *parse_redirect_token(char **p) {
  * FIRST indicates whether this is the first character of the token and thus
  * controls whether variable expansion should occur. DO_EXPAND is updated
  * accordingly. */
-static void handle_backslash_escape(char **p, char buf[], int *len,
-                                   int *first, int *do_expand,
-                                   int disable_first) {
+static void read_backslash_escape(char **p, char buf[], int *len,
+                                 int *first, int *do_expand,
+                                 int disable_first) {
     (*p)++; /* move past the backslash */
     if (!**p) {
         /* dangling backslash at end of input */
@@ -162,6 +137,27 @@ static void handle_backslash_escape(char **p, char buf[], int *len,
         *do_expand = 0;
     (*p)++;
     *first = 0;
+}
+
+/* Attempt to read a ${...} braced expansion. Returns 1 when consumed. */
+static int read_braced_expansion(char **p, char buf[], int *len) {
+    const char *start = *p;
+    if (!(**p == '$' && *(*p + 1) == '{'))
+        return 0;
+
+    if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* $ */
+    if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* { */
+    while (**p && **p != '}' && *len < MAX_LINE - 1) {
+        buf[(*len)++] = **p;
+        (*p)++;
+    }
+    if (**p == '}') {
+        if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
+        return 1;
+    }
+    /* unmatched, reset pointer for error */
+    *p = (char *)start;
+    return 0;
 }
 
 
@@ -345,25 +341,13 @@ static int read_simple_token(char **p, int (*is_end)(int), char buf[],
                 first = 0;
                 continue;
             }
-            handle_backslash_escape(p, buf, len, &first, do_expand,
-                                   disable_first);
+            read_backslash_escape(p, buf, len, &first, do_expand,
+                                 disable_first);
             continue;
         }
-        if (**p == '$' && *(*p + 1) == '{') {
-            const char *start = *p;
-            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* $ */
-            if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* { */
-            while (**p && **p != '}' && *len < MAX_LINE - 1) {
-                buf[(*len)++] = **p;
-                (*p)++;
-            }
-            if (**p == '}') {
-                if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++;
-                first = 0;
-                continue;
-            }
-            /* unmatched, reset pointer for error */
-            *p = (char *)start;
+        if (read_braced_expansion(p, buf, len)) {
+            first = 0;
+            continue;
         }
         if (**p == '$' && strchr("#?*@-$!", *(*p + 1))) {
             if (*len < MAX_LINE - 1) buf[(*len)++] = *(*p)++; /* '$' */
@@ -498,7 +482,7 @@ char *read_token(char **p, int *quoted, int *do_expand_out) {
     int len = 0;
     int do_expand = parse_noexpand ? 0 : 1;
     *quoted = 0;
-    char *redir = parse_redirect_token(p);
+    char *redir = read_redirect_token(p);
     if (token_alloc_failed)
         return NULL;
     if (redir)
