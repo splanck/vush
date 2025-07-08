@@ -15,6 +15,7 @@
  */
 #define _GNU_SOURCE
 #include "builtins.h"
+#include "builtin_options.h"
 #include "history.h"
 #include "parser.h"
 #include "execute.h"
@@ -290,16 +291,9 @@ int builtin_let(char **args) {
 int builtin_unset(char **args) {
     int remove_func = 0;
     int remove_vars = 0;
-    int i = 1;
-    while (args[i] && args[i][0] == '-') {
-        if (strcmp(args[i], "-f") == 0)
-            remove_func = 1;
-        else if (strcmp(args[i], "-v") == 0)
-            remove_vars = 1;
-        else
-            break;
-        i++;
-    }
+    int i = parse_builtin_options(args, "fv", &remove_func, &remove_vars);
+    if (i < 0)
+        i = 1; /* treat as no options to match previous behavior */
     if (!remove_func && !remove_vars) {
         remove_func = remove_vars = 1;
     }
@@ -432,16 +426,9 @@ int builtin_export(char **args) {
 /* Mark variables as read-only so they cannot be modified. */
 int builtin_readonly(char **args) {
     int pflag = 0;
-    int i = 1;
-
-    for (; args[i] && args[i][0] == '-'; i++) {
-        if (strcmp(args[i], "-p") == 0) {
-            pflag = 1;
-        } else {
-            fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n");
-            return 1;
-        }
-    }
+    int i = parse_builtin_options(args, "p", &pflag);
+    if (i < 0)
+        return fprintf(stderr, "usage: readonly [-p] NAME[=VALUE]...\n"), 1;
 
     if (pflag && !args[i]) {
         print_readonly_vars();
