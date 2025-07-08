@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "shell_state.h"
+#include "util.h"
 
 static int cmpstr(const void *a, const void *b) {
     const char *aa = *(const char **)a;
@@ -42,14 +43,7 @@ static char **collect_builtin_matches(const char *prefix, int prefix_len,
                                       int *countp) {
     StrArray arr; strarray_init(&arr);
     int count = 0; int cap = 16;
-    arr.items = malloc(cap * sizeof(char *));
-    if (!arr.items) {
-        /* allocation failure when initializing match array */
-        perror("malloc");
-        last_status = 1;
-        if (countp) *countp = 0;
-        return NULL;
-    }
+    arr.items = xmalloc(cap * sizeof(char *));
     arr.capacity = cap;
 
     const char **bn = get_builtin_names();
@@ -69,14 +63,7 @@ static char **collect_builtin_matches(const char *prefix, int prefix_len,
                 }
                 arr.items = tmp; arr.capacity = cap;
             }
-            char *dup = strdup(bn[i]);
-            if (!dup) {
-                for (int j = 0; j < count; j++)
-                    free(arr.items[j]);
-                free(arr.items);
-                if (countp) *countp = 0;
-                return NULL;
-            }
+            char *dup = xstrdup(bn[i]);
             arr.items[count++] = dup; arr.count = count;
         }
     }
@@ -103,19 +90,9 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
     StrArray arr; strarray_init(&arr);
     int count = 0;
     int cap = 16;
-    arr.items = malloc(cap * sizeof(char *));
-    if (!arr.items) {
-        perror("malloc");
-        last_status = 1;
-        arr.items = NULL;
-    }
+    arr.items = xmalloc(cap * sizeof(char *));
 
     DIR *d = opendir(".");
-    if (!arr.items) {
-        if (d)
-            closedir(d); /* early return when initial allocation failed */
-        return NULL;
-    }
     if (d) {
         struct dirent *de;
         while ((de = readdir(d))) {
@@ -136,14 +113,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                     }
                     arr.items = tmp; arr.capacity = cap;
                 }
-                char *dup = strdup(de->d_name);
-                if (!dup) {
-                    for (int j = 0; j < count; j++)
-                        free(arr.items[j]);
-                    free(arr.items);
-                    closedir(d);
-                    return NULL;
-                }
+                char *dup = xstrdup(de->d_name);
                 arr.items[count++] = dup; arr.count = count;
             }
         }
@@ -152,13 +122,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
 
     const char *path = getenv("PATH");
     if (path && arr.items) {
-        char *pdup = strdup(path);
-        if (!pdup) {
-            for (int j = 0; j < count; j++)
-                free(arr.items[j]);
-            free(arr.items);
-            return NULL;
-        }
+        char *pdup = xstrdup(path);
         char *saveptr = NULL;
         char *dir = strtok_r(pdup, ":", &saveptr);
         while (dir) {
@@ -170,17 +134,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                 while ((pe = readdir(pd))) {
                     if (strncmp(pe->d_name, prefix, prefix_len) == 0) {
                         size_t len = strlen(d) + strlen(pe->d_name) + 2;
-                        char *full = malloc(len);
-                        if (!full) {
-                            perror("malloc");
-                            last_status = 1;
-                            for (int j = 0; j < count; j++)
-                                free(arr.items[j]);
-                            free(arr.items);
-                            closedir(pd);
-                            free(pdup);
-                            return NULL;
-                        }
+                        char *full = xmalloc(len);
                         snprintf(full, len, "%s/%s", d, pe->d_name);
                         if (access(full, X_OK) == 0) {
                             if (!has_match(arr.items, count, pe->d_name)) {
@@ -198,16 +152,7 @@ static char **collect_matches(const char *prefix, int prefix_len, int *countp) {
                                     }
                                     arr.items = tmp; arr.capacity = cap;
                                 }
-                                char *dup = strdup(pe->d_name);
-                                if (!dup) {
-                                    for (int j = 0; j < count; j++)
-                                        free(arr.items[j]);
-                                    free(arr.items);
-                                    closedir(pd);
-                                    free(pdup);
-                                    free(full);
-                                    return NULL;
-                                }
+                                char *dup = xstrdup(pe->d_name);
                                 arr.items[count++] = dup; arr.count = count;
                                 found = 1;
                             }
@@ -296,20 +241,7 @@ void handle_completion(const char *prompt, char *buf, int *lenp, int *posp,
     }
 
     int cap = bcount + pcount + 1;
-    char **matches = malloc(cap * sizeof(char *));
-    if (!matches) {
-        perror("malloc");
-        last_status = 1;
-        for (int i = 0; i < bcount; i++)
-            free(bmatches[i]);
-        free(bmatches);
-        if (pmatches) {
-            for (int i = 0; i < pcount; i++)
-                free(pmatches[i]);
-            free(pmatches);
-        }
-        return;
-    }
+    char **matches = xmalloc(cap * sizeof(char *));
 
     int mcount = 0;
     for (int i = 0; i < bcount; i++)

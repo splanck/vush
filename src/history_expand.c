@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 
 /*
  * Expand leading history references in ``line`` and return the new string.  If
@@ -39,9 +40,9 @@ char *expand_history(const char *line) {
     while (*p == ' ' || *p == '\t')
         p++;
     if (*p != '!')
-        return strdup(line);
+        return xstrdup(line);
     if (p[1] == '\0' || isspace((unsigned char)p[1]))
-        return strdup(line);
+        return xstrdup(line);
     const char *bang = p;
     const char *rest;
     char *expansion = NULL;
@@ -49,7 +50,7 @@ char *expand_history(const char *line) {
     if (p[1] == '!' && (p[2] == '\0' || isspace((unsigned char)p[2]))) {
         const char *tmp = history_last();
         if (tmp)
-            expansion = strdup(tmp);
+            expansion = xstrdup(tmp);
         rest = p + 2;
         if (!expansion) {
             fprintf(stderr, "history: event not found\n");
@@ -68,7 +69,7 @@ char *expand_history(const char *line) {
         int id = atoi(pref);
         const char *tmp = neg ? history_get_relative(id) : history_get_by_id(id);
         if (tmp)
-            expansion = strdup(tmp);
+            expansion = xstrdup(tmp);
         if (!expansion) {
             fprintf(stderr, "history: event not found: %s%s\n", neg ? "-" : "", pref);
             last_status = 1;
@@ -98,7 +99,7 @@ char *expand_history(const char *line) {
         pref[n] = '\0';
         const char *tmp = history_find_prefix(pref);
         if (tmp)
-            expansion = strdup(tmp);
+            expansion = xstrdup(tmp);
         rest = p;
         if (!expansion) {
             fprintf(stderr, "history: event not found: %s\n", pref);
@@ -109,17 +110,7 @@ char *expand_history(const char *line) {
     size_t pre_len = (size_t)(bang - line);
     size_t exp_len = strlen(expansion);
     size_t rest_len = strlen(rest);
-    char *res = malloc(pre_len + exp_len + rest_len + 1);
-    if (!res) {
-        /*
-         * Allocation failure constructing the expanded line.
-         * Report the error and set last_status before returning NULL.
-         */
-        perror("malloc");
-        last_status = 1;
-        free(expansion);
-        return NULL;
-    }
+    char *res = xmalloc(pre_len + exp_len + rest_len + 1);
     memcpy(res, line, pre_len);
     memcpy(res + pre_len, expansion, exp_len);
     memcpy(res + pre_len + exp_len, rest, rest_len + 1);
