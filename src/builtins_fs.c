@@ -74,6 +74,128 @@ static void canonicalize_logical(const char *path, char *out, size_t out_size)
     free(tmp);
 }
 
+/* Change to DIR resolving CDPATH and -P when requested. The final directory
+ * path is returned, using BUF when needed.  On failure NULL is returned and the
+ * current directory is unchanged.  SEARCHED is set when CDPATH was used. */
+static const char *resolve_cd_target(const char *dir, int physical, char *buf,
+                                     size_t buf_size, int *searched)
+{
+    const char *res = dir ? dir : "";
+    if (searched)
+        *searched = 0;
+
+    /* Search CDPATH when the argument does not contain a slash and is not
+     * absolute. */
+    if (res[0] != '/' && res[0] != '.' && strchr(res, '/') == NULL) {
+        const char *cdpath = getenv("CDPATH");
+        if (cdpath && *cdpath) {
+            char *paths = strdup(cdpath);
+            if (paths) {
+                for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
+                    const char *base = *p ? p : ".";
+                    int n = snprintf(buf, buf_size, "%s/%s", base, res);
+                    if (n < 0 || (size_t)n >= buf_size) {
+                        fprintf(stderr, "cd: path too long\n");
+                        continue;
+                    }
+                    if (chdir(buf) == 0) {
+                        if (searched)
+                            *searched = 1;
+                        res = buf;
+                        break;
+                    }
+                }
+                free(paths);
+            }
+        }
+    }
+
+    if (res != buf) {
+        const char *path = res;
+        int unresolved = 0;
+        if (physical) {
+            if (realpath(res, buf)) {
+                path = buf;
+            } else {
+                unresolved = 1;
+            }
+        }
+        if (chdir(path) != 0)
+            return NULL;
+        if (physical) {
+            if (!unresolved) {
+                res = path;
+            } else if (getcwd(buf, buf_size)) {
+                res = buf;
+            }
+        }
+    } else if (physical) {
+        if (realpath(".", buf))
+            res = buf;
+        else if (getcwd(buf, buf_size))
+            res = buf;
+    }
+
+    return res;
+}
+
+/* Update PWD and OLDPWD after a directory change.  OLDPWD is set to OLDPWD and
+ * PWD is computed from DIR according to PHYSICAL. */
+static void update_pwd(const char *oldpwd, const char *dir, int physical,
+                       size_t pathmax)
+{
+    if (!oldpwd)
+        oldpwd = "";
+
+    char *newpwd = malloc(pathmax);
+    if (!newpwd) {
+        perror("malloc");
+        return;
+    }
+
+    if (physical) {
+        if (!realpath(".", newpwd)) {
+            if (!getcwd(newpwd, pathmax)) {
+                strncpy(newpwd, dir, pathmax - 1);
+                newpwd[pathmax - 1] = '\0';
+            }
+        }
+    } else {
+        if (dir[0] == '/') {
+            strncpy(newpwd, dir, pathmax);
+            newpwd[pathmax - 1] = '\0';
+        } else {
+            int n = snprintf(newpwd, pathmax, "%s/%s", oldpwd, dir);
+            if (n < 0 || (size_t)n >= pathmax) {
+                fprintf(stderr, "cd: path too long\n");
+                free(newpwd);
+                return;
+            }
+        }
+        canonicalize_logical(newpwd, newpwd, pathmax);
+    }
+
+    setenv("OLDPWD", oldpwd, 1);
+    setenv("PWD", newpwd, 1);
+    free(newpwd);
+}
+
+/* Print the current directory using -P or -L semantics. */
+static void print_pwd(int physical)
+{
+    if (physical || !getenv("PWD")) {
+        char *cwd = getcwd(NULL, 0);
+        if (cwd) {
+            printf("%s\n", cwd);
+            free(cwd);
+        } else {
+            perror("pwd");
+        }
+    } else {
+        printf("%s\n", getenv("PWD"));
+    }
+}
+
 /*
  * builtin_cd - implement the cd command.  Changes the current directory and
  * sets PWD and OLDPWD.  When CDPATH is used the resolved directory is printed
@@ -84,7 +206,6 @@ int builtin_cd(char **args) {
     char *prev = getcwd(NULL, 0);
     char *buf = NULL;
     char *used = NULL;
-    char *newpwd = NULL;
     if (!prev) {
         perror("getcwd");
         last_status = 1;
@@ -130,114 +251,29 @@ int builtin_cd(char **args) {
         last_status = 1;
         return 1;
     }
-    const char *dir = target ? target : "";
+
     int searched = 0;
-
-    if (args[idx] && strcmp(args[idx], "-") != 0 && dir[0] != '/' && dir[0] != '.' &&
-        strchr(dir, '/') == NULL) {
-        const char *cdpath = getenv("CDPATH");
-        if (cdpath && *cdpath) {
-            char *paths = strdup(cdpath);
-            if (paths) {
-                for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
-                    const char *base = *p ? p : ".";
-                    int n = snprintf(used, pathmax, "%s/%s", base, dir);
-                    if (n < 0 || (size_t)n >= pathmax) {
-                        fprintf(stderr, "cd: path too long\n");
-                        continue;
-                    }
-                    if (chdir(used) == 0) {
-                        dir = used;
-                        searched = 1;
-                        break;
-                    }
-                }
-                free(paths);
-            }
-        }
-    }
-
-    if (!searched) {
-        const char *path = dir;
-        int unresolved = 0;
-        if (physical) {
-            if (realpath(dir, used)) {
-                path = used;
-            } else {
-                unresolved = 1;
-            }
-        }
-        if (chdir(path) != 0) {
-            perror("cd");
-            free(prev);
-            free(buf);
-            free(used);
-            last_status = 1;
-            return 1;
-        }
-        if (physical) {
-            if (!unresolved) {
-                dir = path;
-            } else if (getcwd(used, pathmax)) {
-                dir = used;
-            }
-        }
-    } else if (physical) {
-        if (realpath(".", used))
-            dir = used;
-        else if (getcwd(used, pathmax))
-            dir = used;
-    }
-
-    const char *oldpwd = getenv("PWD");
-    if (!oldpwd)
-        oldpwd = prev;
-    update_pwd_env(oldpwd);
-
-    newpwd = malloc(pathmax);
-    if (!newpwd) {
-        perror("malloc");
+    const char *dir = resolve_cd_target(target, physical, used, pathmax, &searched);
+    if (!dir) {
+        perror("cd");
         free(prev);
         free(buf);
         free(used);
         last_status = 1;
         return 1;
     }
-    if (physical) {
-        if (!realpath(".", newpwd)) {
-            if (!getcwd(newpwd, pathmax)) {
-                strncpy(newpwd, dir, pathmax - 1);
-                newpwd[pathmax - 1] = '\0';
-            }
-        }
-    } else {
-        if (dir[0] == '/') {
-            strncpy(newpwd, dir, pathmax);
-            newpwd[pathmax - 1] = '\0';
-        } else {
-            int n = snprintf(newpwd, pathmax, "%s/%s", oldpwd, dir);
-            if (n < 0 || (size_t)n >= pathmax) {
-                fprintf(stderr, "cd: path too long\n");
-                free(prev);
-                free(buf);
-                free(used);
-                free(newpwd);
-                last_status = 1;
-                return 1;
-            }
-        }
-        canonicalize_logical(newpwd, newpwd, pathmax);
-    }
-    setenv("PWD", newpwd, 1);
 
-    if (searched) {
+    const char *oldpwd = getenv("PWD");
+    if (!oldpwd)
+        oldpwd = prev;
+    update_pwd(oldpwd, dir, physical, pathmax);
+
+    if (searched)
         printf("%s\n", dir);
-    }
 
     free(prev);
     free(buf);
     free(used);
-    free(newpwd);
     last_status = 0;
     return 1;
 }
@@ -252,6 +288,7 @@ int builtin_pushd(char **args) {
         fprintf(stderr, "usage: pushd dir\n");
         return 1;
     }
+    size_t pathmax = get_path_max();
     char *prev = getcwd(NULL, 0);
     if (!prev) {
         perror("getcwd");
@@ -263,9 +300,7 @@ int builtin_pushd(char **args) {
         return 1;
     }
     dirstack_push(prev);
-    const char *pwd = getenv("PWD");
-    if (!pwd) pwd = prev;
-    update_pwd_env(pwd);
+    update_pwd(prev, args[1], 1, pathmax);
     free(prev);
     dirstack_print();
     return 1;
@@ -282,6 +317,7 @@ int builtin_popd(char **args) {
         fprintf(stderr, "popd: directory stack empty\n");
         return 1;
     }
+    size_t pathmax = get_path_max();
     char *prev = getcwd(NULL, 0);
     if (!prev) {
         perror("getcwd");
@@ -294,7 +330,7 @@ int builtin_popd(char **args) {
         free(prev);
         return 1;
     }
-    update_pwd_env(prev);
+    update_pwd(prev, dir, 1, pathmax);
     free(prev);
     free(dir);
     dirstack_print();
@@ -339,17 +375,7 @@ int builtin_pwd(char **args) {
         return 1;
     }
 
-    if (physical || !getenv("PWD")) {
-        char *cwd = getcwd(NULL, 0);
-        if (cwd) {
-            printf("%s\n", cwd);
-            free(cwd);
-        } else {
-            perror("pwd");
-        }
-    } else {
-        printf("%s\n", getenv("PWD"));
-    }
+    print_pwd(physical);
     return 1;
 }
 
