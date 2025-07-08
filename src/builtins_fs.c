@@ -28,15 +28,9 @@
 /* Remove '.' and '..' path segments without resolving symlinks. */
 static void canonicalize_logical(const char *path, char *out, size_t out_size)
 {
-    char *tmp = strdup(path);
-    if (!tmp)
-        return;
+    char *tmp = xstrdup(path);
     size_t max_parts = strlen(tmp) / 2 + 2;
-    char **parts = malloc(max_parts * sizeof(char *));
-    if (!parts) {
-        free(tmp);
-        return;
-    }
+    char **parts = xmalloc(max_parts * sizeof(char *));
     int sp = 0;
     char *save;
     for (char *t = strtok_r(tmp, "/", &save); t; t = strtok_r(NULL, "/", &save)) {
@@ -89,24 +83,22 @@ static const char *resolve_cd_target(const char *dir, int physical, char *buf,
     if (res[0] != '/' && res[0] != '.' && strchr(res, '/') == NULL) {
         const char *cdpath = getenv("CDPATH");
         if (cdpath && *cdpath) {
-            char *paths = strdup(cdpath);
-            if (paths) {
-                for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
-                    const char *base = *p ? p : ".";
-                    int n = snprintf(buf, buf_size, "%s/%s", base, res);
-                    if (n < 0 || (size_t)n >= buf_size) {
-                        fprintf(stderr, "cd: path too long\n");
-                        continue;
-                    }
-                    if (chdir(buf) == 0) {
-                        if (searched)
-                            *searched = 1;
-                        res = buf;
-                        break;
-                    }
+            char *paths = xstrdup(cdpath);
+            for (char *p = strtok(paths, ":"); p; p = strtok(NULL, ":")) {
+                const char *base = *p ? p : ".";
+                int n = snprintf(buf, buf_size, "%s/%s", base, res);
+                if (n < 0 || (size_t)n >= buf_size) {
+                    fprintf(stderr, "cd: path too long\n");
+                    continue;
                 }
-                free(paths);
+                if (chdir(buf) == 0) {
+                    if (searched)
+                        *searched = 1;
+                    res = buf;
+                    break;
+                }
             }
+            free(paths);
         }
     }
 
@@ -147,11 +139,7 @@ static void update_pwd(const char *oldpwd, const char *dir, int physical,
     if (!oldpwd)
         oldpwd = "";
 
-    char *newpwd = malloc(pathmax);
-    if (!newpwd) {
-        perror("malloc");
-        return;
-    }
+    char *newpwd = xmalloc(pathmax);
 
     if (physical) {
         if (!realpath(".", newpwd)) {
@@ -243,14 +231,7 @@ int builtin_cd(char **args) {
         target = args[idx];
     }
 
-    used = malloc(pathmax);
-    if (!used) {
-        perror("malloc");
-        free(prev);
-        free(buf);
-        last_status = 1;
-        return 1;
-    }
+    used = xmalloc(pathmax);
 
     int searched = 0;
     const char *dir = resolve_cd_target(target, physical, used, pathmax, &searched);
