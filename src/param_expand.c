@@ -111,15 +111,17 @@ static char *expand_tilde(const char *token) {
     }
     if (!home) home = getenv("HOME");
     if (!home) home = "";
-    char *ret = malloc(strlen(home) + strlen(rest) + 1);
+    size_t home_len = strlen(home);
+    size_t rest_len = strlen(rest);
+    size_t retlen = home_len + rest_len + 1;
+    char *ret = malloc(retlen);
     if (!ret) {
         perror("malloc");
         last_status = 1;
         free(home_alloc);
         return NULL;
     }
-    strcpy(ret, home);
-    strcat(ret, rest);
+    snprintf(ret, retlen, "%s%s", home, rest);
     free(home_alloc);
     return ret;
 }
