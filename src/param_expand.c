@@ -197,21 +197,38 @@ static char *quote_value(const char *val) {
     if (!val)
         val = "";
     size_t len = strlen(val);
-    char *res = malloc(len * 4 + 3);
+    size_t alloc = len * 4 + 3;
+    char *res = malloc(alloc);
     if (!res)
         return NULL;
+
     char *p = res;
+    size_t remaining = alloc;
+
     *p++ = '\'';
+    remaining--;
+
     for (const char *s = val; *s; s++) {
         if (*s == '\'') {
-            strcpy(p, "'\\''");
+            if (remaining < 6)
+                break;
+            memcpy(p, "'\\''", 4);
             p += 4;
+            remaining -= 4;
         } else {
+            if (remaining < 3)
+                break;
             *p++ = *s;
+            remaining--;
         }
     }
-    *p++ = '\'';
-    *p = '\0';
+
+    if (remaining >= 2) {
+        *p++ = '\'';
+        *p = '\0';
+    } else if (alloc > 0) {
+        res[alloc - 1] = '\0';
+    }
     return res;
 }
 
