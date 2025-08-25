@@ -198,14 +198,14 @@ char *expand_var(const char *token) {
         char *res = expand_var(inner);
         if (!res)
             return NULL;
-        char *quoted = malloc(strlen(res) + 3);
+        size_t rlen = strlen(res);
+        char *quoted = malloc(rlen + 3);
         if (!quoted) {
             free(res);
             return NULL;
         }
         quoted[0] = '"';
-        strcpy(quoted + 1, res);
-        size_t rlen = strlen(res);
+        memcpy(quoted + 1, res, rlen + 1);
         quoted[rlen + 1] = '"';
         quoted[rlen + 2] = '\0';
         free(res);
